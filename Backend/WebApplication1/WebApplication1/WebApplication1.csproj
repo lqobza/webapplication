@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Dapper" Version="2.0.151" />
+        <PackageReference Include="dotenv.net" Version="3.1.2" />
+        <PackageReference Include="Microsoft.AspNetCore" Version="2.2.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.5" />
+        <PackageReference Include="Microsoft.AspNetCore.Razor.Runtime" Version="2.2.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.11" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="7.0.11" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools.DotNet" Version="2.0.3" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+        <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
+        <PackageReference Include="System.Text.Json" Version="7.0.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Models\DTOs\" />
+      <Folder Include="Models\Exceptions\" />
+      <Folder Include="Models\Migrations\" />
+      <Folder Include="Models\Utils\" />
+    </ItemGroup>
+
+</Project>
