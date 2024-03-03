@@ -1,13 +1,10 @@
-﻿using System.Data;
-using System.Data.Common;
-using System.Data.SqlClient;
-using Dapper;
+﻿using System.Data.SqlClient;
 
 namespace WebApplication1.Models.Repositories;
 
 public class PersonRepository : IPersonRepository
 {
-    public IConfiguration _configuration;
+    private IConfiguration _configuration;
 
     public PersonRepository(IConfiguration configuration)
     {
@@ -29,4 +26,20 @@ public class PersonRepository : IPersonRepository
             return rv;
         }
     }
+
+    public void SetAddress(string address)
+    {
+        var connectionString = _configuration.GetConnectionString("DefaultConnection");
+        using (SqlConnection dbConnection = new SqlConnection(connectionString))
+        {
+            dbConnection.Open();
+            string query = "UPDATE Persons SET Address = @Address WHERE PersonID = 1";
+            SqlCommand command = new SqlCommand(query, dbConnection);
+            command.Parameters.AddWithValue("@Address", address);
+
+            command.ExecuteScalar();
+            dbConnection.Close();
+        }
+    }
+
 }

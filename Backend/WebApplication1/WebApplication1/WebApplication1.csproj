@@ -24,7 +24,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Models\DTOs\" />
       <Folder Include="Models\Exceptions\" />
       <Folder Include="Models\Migrations\" />
       <Folder Include="Models\Utils\" />

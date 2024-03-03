@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders   } from '@angular/common/http';
 
 @Component({
   selector: 'app-person',
@@ -8,7 +8,7 @@ import { HttpClient } from '@angular/common/http';
 })
 export class PersonComponent {
   firstName = '';
-
+  address = '';
   constructor(private http: HttpClient) { }
 
   sendRequest() {
@@ -17,5 +17,16 @@ export class PersonComponent {
         console.log(response);
       });
   }
-
+  setAddress() {
+    this.http.get(`/api/Person/update-address?address=${this.address.trim()}`).subscribe(
+      response => {
+        console.log('Address updated successfully:', response);
+        // Handle success, e.g., show a success message
+      },
+      error => {
+        console.error('Error updating address:', error);
+        // Handle error, e.g., show an error message
+      }
+    );
+  }
 }

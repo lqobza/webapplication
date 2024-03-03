@@ -14,4 +14,9 @@ public class PersonService : IPersonService
     {
         return _personRepository.GetAddress(firstName);
     }
+
+    public void SetAddress(string address)
+    {
+        _personRepository.SetAddress(address);
+    }
 }
