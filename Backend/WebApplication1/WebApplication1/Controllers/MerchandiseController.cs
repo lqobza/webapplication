@@ -73,7 +73,6 @@ public class MerchandiseController : ControllerBase
             Description = merchandiseCreateDto.Description,
             Size = merchandiseCreateDto.Size,
             BrandId = merchandiseCreateDto.BrandId,
-            Rating = null //New merchandise does not have rating yet
         };
         
         InsertMerchResult insertMerchResult = _merchandiseService.InsertMerch(merchandise);
@@ -102,12 +101,12 @@ public class MerchandiseController : ControllerBase
         if (isDeleted)
         {
             _logger.LogInformation("Merchandise deleted successfully with id: {Id}", id);
-            return Ok(new { message = "Merchandise deleted successfully." });
+            return NoContent();
         }
         else
         {
             _logger.LogWarning("Merchandise not found with id: {Id}", id);
-            return NotFound(new { message = "Merchandise not found." });
+            return NoContent(); //The outcome is the same if the merchandise was already deleted or didn't exist in the first place as if it was deleted -> its not present anymore in the DB
         }
     }
     

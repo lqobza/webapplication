@@ -24,7 +24,7 @@ public class MerchandiseRepository : IMerchandiseRepository
 
         try
         {
-            using (SqlConnection dbConnection = new SqlConnection(connectionString))
+            using (var dbConnection = new SqlConnection(connectionString))
             {
                 dbConnection.Open();
 
@@ -70,7 +70,7 @@ public class MerchandiseRepository : IMerchandiseRepository
             var connectionString = _configuration.GetConnectionString("DefaultConnection");
             
             // Using statement ensures the connection is properly disposed of
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            using (var connection = new SqlConnection(connectionString))
             {
                 command.Connection = connection;
                 connection.Open();
@@ -101,7 +101,7 @@ public class MerchandiseRepository : IMerchandiseRepository
         var query = "SELECT COUNT(*) FROM Merch WHERE category = @category AND name = @name AND brand = @brand;";
         try
         {
-            using (SqlCommand command = new SqlCommand(query))
+            using (var command = new SqlCommand(query))
             {
                 command.Parameters.Add("category", SqlDbType.Int).Value = categoryId;
                 command.Parameters.Add("name", SqlDbType.NVarChar, 255).Value = name;
@@ -117,25 +117,52 @@ public class MerchandiseRepository : IMerchandiseRepository
             throw; // or return a default value if appropriate
         }
     }
+    
+    private List<RatingDto> GetRatingsForMerchandise(int merchId, SqlConnection dbConnection) //TODO: move some things inside ratingrepository maybe?
+    {
+        var ratings = new List<RatingDto>();
 
+        using (var ratingCommand = new SqlCommand("SELECT * FROM Ratings WHERE merch_id = @MerchId", dbConnection))
+        {
+            ratingCommand.Parameters.Add("@MerchId", SqlDbType.Int).Value = merchId;
+            using (SqlDataReader ratingReader = ratingCommand.ExecuteReader())
+            {
+                while (ratingReader.Read())
+                {
+                    var rating = new RatingDto()
+                    {
+                        Id = (int)ratingReader["id"],
+                        MerchId = (int)ratingReader["merch_id"],
+                        Rating = (int)ratingReader["rating"],
+                        Description = ratingReader["description"] as string ?? string.Empty,
+                        CreatedAt = (DateTime)ratingReader["created_at"]
+                    };
+                    ratings.Add(rating);
+                }
+            }
+        }
+
+        return ratings;
+    }
+    
     public List<MerchandiseDto> GetAllMerchandise()
     {
         var connectionString = _configuration.GetConnectionString("DefaultConnection");
         var merchList = new List<MerchandiseDto>();
 
-        using (SqlConnection dbConnection = new SqlConnection(connectionString))
+        using (var dbConnection = new SqlConnection(connectionString))
         {
             dbConnection.Open();
             string query = @"
-                SELECT m.id, m.category, m.name, m.instock, m.price, m.description, m.rating, m.size, m.brand, b.name as brandName
+                SELECT m.*, b.name as BrandName
                 FROM Merch m
-                INNER JOIN Brand b ON m.brand = b.id";
-            SqlCommand command = new SqlCommand(query, dbConnection);
+                JOIN Brand b ON m.brand = b.id";
+            var command = new SqlCommand(query, dbConnection);
             SqlDataReader reader = command.ExecuteReader();
 
             while (reader.Read())
             {
-                MerchandiseDto merchandise = new MerchandiseDto()
+                var merchandise = new MerchandiseDto()
                 {
                     Id = (int)reader["id"],
                     CategoryId = (int)reader["category"],
@@ -143,15 +170,20 @@ public class MerchandiseRepository : IMerchandiseRepository
                     InStock = (int)reader["instock"],
                     Price = (int)reader["price"],
                     Description = (string)reader["description"],
-                    Rating = reader["rating"] != DBNull.Value ? (int)reader["rating"] : 0,
                     Size = (string)reader["size"],
                     BrandId = (int)reader["brand"],
-                    BrandName = (string)reader["brandName"]
+                    BrandName = (string)reader["BrandName"],
+                    Ratings = new List<RatingDto>()
                 };
                 merchList.Add(merchandise);
             }
 
             reader.Close();
+            
+            foreach (var merchandise in merchList)
+            {
+                merchandise.Ratings = GetRatingsForMerchandise(merchandise.Id, dbConnection);
+            }
             dbConnection.Close();
         }
 
@@ -165,18 +197,22 @@ public class MerchandiseRepository : IMerchandiseRepository
 
         try
         {
-            using (SqlConnection dbConnection = new SqlConnection(connectionString))
+            using (var dbConnection = new SqlConnection(connectionString))
             {
                 dbConnection.Open();
-                string query = "SELECT * FROM Merch WHERE size = @size";
-                using (SqlCommand command = new SqlCommand(query, dbConnection))
+                string query = @"
+            SELECT m.*, b.name as BrandName
+            FROM Merch m
+            JOIN Brand b ON m.brand = b.id
+            WHERE size = @size";
+                using (var command = new SqlCommand(query, dbConnection))
                 {
-                    command.Parameters.Add(new SqlParameter("@size", SqlDbType.NVarChar, 255) { Value = size });
+                    command.Parameters.Add(new SqlParameter("@size", SqlDbType.NVarChar, 255).Value = size);
                     SqlDataReader reader = command.ExecuteReader();
                 
                     while (reader.Read())
                     {
-                        MerchandiseDto merchandise = new MerchandiseDto()
+                        var merchandise = new MerchandiseDto()
                         {
                             Id = (int)reader["id"],
                             CategoryId = (int)reader["category"],
@@ -184,20 +220,27 @@ public class MerchandiseRepository : IMerchandiseRepository
                             InStock = (int)reader["instock"],
                             Price = (int)reader["price"],
                             Description = (string)reader["description"],
-                            Rating = (int)reader["rating"],
                             Size = (string)reader["size"],
-                            BrandId = (int)reader["brand"]
+                            BrandId = (int)reader["brand"],
+                            Ratings = new List<RatingDto>()
                         };
+                        
                         merchList.Add(merchandise);
                     }
                     reader.Close();
+                    
+                    foreach (var merchandise in merchList)
+                    {
+                        merchandise.Ratings = GetRatingsForMerchandise(merchandise.Id, dbConnection);
+                    }
+                    dbConnection.Close();
                 }
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "An error occurred while fetching merchandise by size");
-            throw new Exception("An error occurred while fetching merchandise", ex); // Optional: throw a custom exception
+            throw new Exception("An error occurred while fetching merchandise", ex);
         }
 
         return merchList;
@@ -210,14 +253,13 @@ public class MerchandiseRepository : IMerchandiseRepository
             var insertCommandText = "INSERT INTO Merch (category, name, instock, price, description, rating, size, brand) " +
                                     "VALUES (@category, @name, @instock, @price, @description, @rating, @size, @brand);";
 
-            using (SqlCommand insertCommand = new SqlCommand(insertCommandText))
+            using (var insertCommand = new SqlCommand(insertCommandText))
             {
                 insertCommand.Parameters.Add("category", SqlDbType.Int).Value = merchandise.CategoryId;
                 insertCommand.Parameters.Add("name", SqlDbType.NVarChar, 255).Value = merchandise.Name;
                 insertCommand.Parameters.Add("instock", SqlDbType.Int).Value = merchandise.InStock;
                 insertCommand.Parameters.Add("price", SqlDbType.Int).Value = merchandise.Price;
                 insertCommand.Parameters.Add("description", SqlDbType.NVarChar, 255).Value = merchandise.Description;
-                insertCommand.Parameters.Add("rating", SqlDbType.Int).Value = merchandise.Rating.HasValue ? merchandise.Rating.Value : DBNull.Value;
                 insertCommand.Parameters.Add("size", SqlDbType.NVarChar, 255).Value = merchandise.Size;
                 insertCommand.Parameters.Add("brand", SqlDbType.Int).Value = merchandise.BrandId;
 
@@ -240,19 +282,19 @@ public class MerchandiseRepository : IMerchandiseRepository
 
     public bool DeleteMerchandiseById(int id)
     {
-        var deleteMerchThemeCommandText = "DELETE FROM MerchTheme WHERE merchid = @id;";
+        var deleteMerchThemeCommandText = "DELETE FROM MerchTheme WHERE merch_id = @id;";
         var deleteMerchCommandText = "DELETE FROM Merch WHERE ID = @id;";
 
-        using (SqlCommand deleteMerchThemeCommand = new SqlCommand(deleteMerchThemeCommandText))
+        using (var deleteMerchThemeCommand = new SqlCommand(deleteMerchThemeCommandText))
         {
             deleteMerchThemeCommand.Parameters.Add("id", SqlDbType.Int).Value = id;
             if (ExecuteNonQuery(deleteMerchThemeCommand) > 0)
             {
-                Console.WriteLine("MerchTheme was deleted successfully");
+                _logger.LogInformation("MerchTheme {id} was deleted successfully.", id);
             }
         }
         
-        using (SqlCommand deleteMerchCommand = new SqlCommand(deleteMerchCommandText))
+        using (var deleteMerchCommand = new SqlCommand(deleteMerchCommandText))
         {
             deleteMerchCommand.Parameters.Add("id", SqlDbType.Int).Value = id;
             return ExecuteNonQuery(deleteMerchCommand) == 1;
@@ -269,23 +311,18 @@ public class MerchandiseRepository : IMerchandiseRepository
 
             if (merchandiseUpdateDto.InStock.HasValue)
             {
-                updateFields.Add("instock = @InStock");
-                command.Parameters.AddWithValue("@InStock", merchandiseUpdateDto.InStock.Value);
+                updateFields.Add("instock = @InStock");                                                                     //TODO: are both of these lines needed inside the ifs?
+                command.Parameters.Add("@InStock", SqlDbType.Int).Value = merchandiseUpdateDto.InStock.Value;       //TODO is .Value needed?
             }
             if (merchandiseUpdateDto.Price.HasValue)
             {
                 updateFields.Add("price = @Price");
-                command.Parameters.AddWithValue("@Price", merchandiseUpdateDto.Price.Value);
+                command.Parameters.Add("@Price", SqlDbType.Int).Value = merchandiseUpdateDto.Price.Value;
             }
             if (!string.IsNullOrEmpty(merchandiseUpdateDto.Description))
             {
                 updateFields.Add("description = @Description");
-                command.Parameters.AddWithValue("@Description", merchandiseUpdateDto.Description);
-            }
-            if (merchandiseUpdateDto.Rating.HasValue)
-            {
-                updateFields.Add("rating = @Rating");
-                command.Parameters.AddWithValue("@Rating", merchandiseUpdateDto.Rating.Value);
+                command.Parameters.Add("@Description", SqlDbType.VarChar, 255).Value = merchandiseUpdateDto.Description;
             }
 
             if (!updateFields.Any())
@@ -295,7 +332,7 @@ public class MerchandiseRepository : IMerchandiseRepository
 
             var updateQuery = $"UPDATE Merch SET {string.Join(", ", updateFields)} WHERE id = @Id";
             command.CommandText = updateQuery;
-            command.Parameters.AddWithValue("@Id", id);
+            command.Parameters.Add("@Id", SqlDbType.Int).Value = id;
 
             command.Connection = connection;
             connection.Open();
@@ -303,4 +340,40 @@ public class MerchandiseRepository : IMerchandiseRepository
             return rowsAffected > 0;
         }
     }
+    
+    /*public List<ThemeDto> GetThemesByMerchId(int merchId)
+    {
+        var connectionString = _configuration.GetConnectionString("DefaultConnection");
+        var themes = new List<ThemeDto>();
+
+        using (SqlConnection dbConnection = new SqlConnection(connectionString))
+        {
+            dbConnection.Open();
+            string query = @"
+            SELECT t.*
+            FROM Theme t
+            JOIN MerchTheme mt ON t.id = mt.theme_id
+            WHERE mt.merch_id = @MerchId";
+
+            SqlCommand command = new SqlCommand(query, dbConnection);
+            command.Parameters.Add("@MerchId", merchId);
+            SqlDataReader reader = command.ExecuteReader();
+
+            while (reader.Read())
+            {
+                ThemeDto theme = new ThemeDto
+                {
+                    Id = (int)reader["id"],
+                    Name = (string)reader["name"]
+                };
+                themes.Add(theme);
+            }
+
+            reader.Close();
+            dbConnection.Close();
+        }
+
+        return themes;
+    }*/
+
 }

@@ -11,5 +11,5 @@ public interface IMerchandiseRepository
     public InsertMerchResult InsertMerch(MerchandiseDto merchandise);
     public bool DeleteMerchandiseById(int id);
     public bool UpdateMerch(int id, MerchandiseUpdateDto merchandiseUpdateDto);
-    
+
 }

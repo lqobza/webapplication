@@ -21,14 +21,21 @@ CREATE TABLE Merch (
 	instock int,
 	price int,
 	description nvarchar(255),
-	rating int check (rating >= 1 AND rating <= 5),
 	size nvarchar(255),
 	brand int foreign key references Brand(id) NOT NULL
 );
 
 
 CREATE TABLE MerchTheme (
-    merchid int foreign key references Merch(id) NOT NULL,
-    themeid int foreign key references Theme(id) NOT NULL,
+    merch_id int foreign key references Merch(id) NOT NULL,
+    theme_id int foreign key references Theme(id) NOT NULL,
     PRIMARY KEY (merchid, themeid)
+);
+
+CREATE TABLE Ratings (
+    id int identity(1,1) primary key,
+    merch_id int foreign key references Merch(id) NOT NULL,
+    rating int check (rating >= 1 AND rating <= 5) NOT NULL,
+    description nvarchar(255),
+    created_at datetime default getdate()
 );

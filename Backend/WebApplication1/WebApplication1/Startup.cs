@@ -21,6 +21,8 @@ public class Startup
         services.AddHttpClient();
         services.AddTransient<IMerchandiseRepository, MerchandiseRepository>();
         services.AddTransient<IMerchandiseService, MerchandiseService>();
+        services.AddTransient<IRatingRepository, RatingRepository>();
+        services.AddTransient<IRatingService, RatingService>();
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
     }
 
