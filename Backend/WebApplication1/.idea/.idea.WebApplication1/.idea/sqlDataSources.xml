@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DdlMappings">
+    <mapping uuid="44b58c08-573c-41fc-a8a0-22a1662d73e3" name="test@DESKTOP-LMF4SP5 Mapping">
+      <data-sources db="09aef5d3-cf11-4b71-a44d-b8f1d9e6b942" ddl="6189fd26-9897-4d39-8cb1-6cb97d9da51f" />
+      <scope>
+        <node kind="database" negative="1" />
+      </scope>
+    </mapping>
+  </component>
+</project>

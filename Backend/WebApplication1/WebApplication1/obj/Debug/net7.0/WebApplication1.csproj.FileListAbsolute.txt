@@ -52,3 +52,8 @@ D:\Szakdoga\Backend\WebApplication1\WebApplication1\bin\Debug\net7.0\runtimes\wi
 D:\Szakdoga\Backend\WebApplication1\WebApplication1\bin\Debug\net7.0\runtimes\unix\lib\netcoreapp2.1\System.Data.SqlClient.dll
 D:\Szakdoga\Backend\WebApplication1\WebApplication1\bin\Debug\net7.0\runtimes\win\lib\netcoreapp2.1\System.Data.SqlClient.dll
 D:\Szakdoga\Backend\WebApplication1\WebApplication1\bin\Debug\net7.0\System.Text.Json.dll
+D:\Szakdoga\Backend\WebApplication1\WebApplication1\bin\Debug\net7.0\Microsoft.Extensions.DependencyInjection.dll
+D:\Szakdoga\Backend\WebApplication1\WebApplication1\bin\Debug\net7.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+D:\Szakdoga\Backend\WebApplication1\WebApplication1\bin\Debug\net7.0\Microsoft.Extensions.Logging.dll
+D:\Szakdoga\Backend\WebApplication1\WebApplication1\bin\Debug\net7.0\Microsoft.Extensions.Logging.Abstractions.dll
+D:\Szakdoga\Backend\WebApplication1\WebApplication1\bin\Debug\net7.0\Microsoft.Extensions.Primitives.dll
