@@ -23,6 +23,11 @@ public class MerchandiseService : IMerchandiseService
         return _merchandiseRepository.GetMerchandiseBySize(size);
     }
 
+    public List<MerchandiseDto> GetMerchandiseByCategory(int category)
+    {
+        return _merchandiseRepository.GetMerchandiseByCategory(category);
+    }
+
     public InsertMerchResult InsertMerch(MerchandiseDto merchandise)
     {
         

@@ -3,12 +3,13 @@ using System.Data.SqlClient;
 
 namespace WebApplication1.Models.Repositories;
 
-public class RatingRepository : IRatingRepository
+public class RatingRepository : BaseRepository, IRatingRepository
 {
     private IConfiguration _configuration;
     private readonly ILogger<RatingRepository> _logger;
 
     public RatingRepository(IConfiguration configuration, ILogger<RatingRepository> logger)
+        : base(configuration)
     {
         _configuration = configuration;
         _logger = logger;
@@ -16,8 +17,7 @@ public class RatingRepository : IRatingRepository
     
     public bool AddRating(RatingCreateDto ratingCreateDto)
     {
-        var connectionString = _configuration.GetConnectionString("DefaultConnection");
-        using (var connection = new SqlConnection(connectionString))
+        using (var connection = CreateConnection())
         {
             connection.Open();
 
@@ -48,5 +48,35 @@ public class RatingRepository : IRatingRepository
             }
         }
     }
+    
+    public List<RatingDto> GetRatingsForMerchandise(int merchId)
+    {
+        var ratings = new List<RatingDto>();
 
+        using (var connection = CreateConnection())
+        {
+            connection.Open();
+            using (var ratingCommand = new SqlCommand("SELECT * FROM Ratings WHERE merch_id = @MerchId", connection))
+            {
+                ratingCommand.Parameters.Add("@MerchId", SqlDbType.Int).Value = merchId;
+                using (SqlDataReader ratingReader = ratingCommand.ExecuteReader())
+                {
+                    while (ratingReader.Read())
+                    {
+                        var rating = new RatingDto()
+                        {
+                            Id = (int)ratingReader["id"],
+                            MerchId = (int)ratingReader["merch_id"],
+                            Rating = (int)ratingReader["rating"],
+                            Description = ratingReader["description"] as string ?? string.Empty,
+                            CreatedAt = (DateTime)ratingReader["created_at"]
+                        };
+                        ratings.Add(rating);
+                    }
+                }
+            }
+        }
+
+        return ratings;
+    }
 }

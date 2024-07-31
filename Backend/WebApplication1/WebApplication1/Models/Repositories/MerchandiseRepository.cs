@@ -6,85 +6,60 @@ using WebApplication1.Models.Enums;
 
 namespace WebApplication1.Models.Repositories;
 
-public class MerchandiseRepository : IMerchandiseRepository
+public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
 {
     private IConfiguration _configuration;
     private readonly ILogger<MerchandiseRepository> _logger;
+    private readonly IRatingRepository _ratingRepository;
 
-    public MerchandiseRepository(IConfiguration configuration, ILogger<MerchandiseRepository> logger)
+    public MerchandiseRepository(IConfiguration configuration, ILogger<MerchandiseRepository> logger, IRatingRepository ratingRepository)
+        : base(configuration)
     {
         _configuration = configuration;
         _logger = logger;
+        _ratingRepository = ratingRepository;
     }
-    
+
     private int ExecuteNonQuery(SqlCommand dbCommand)
     {
-        var connectionString = _configuration.GetConnectionString("DefaultConnection");
-        int rowsAffected;
-
-        try
+        using (var connection = CreateConnection())
         {
-            using (var dbConnection = new SqlConnection(connectionString))
+            dbCommand.Connection = connection;
+            connection.Open();
+
+            using (var dbTransaction = connection.BeginTransaction())
             {
-                dbConnection.Open();
-
-                using (SqlTransaction dbTransaction = dbConnection.BeginTransaction())
+                try
                 {
-                    try
-                    {
-                        dbCommand.Connection = dbConnection;
-                        dbCommand.Transaction = dbTransaction;
-
-                        rowsAffected = dbCommand.ExecuteNonQuery();
-
-                        dbTransaction.Commit();
-                    }
-                    catch (SqlException)
-                    {
-                        dbTransaction.Rollback();
-                        throw; // bubble up the exception and preserve the stack trace
-                    }
+                    dbCommand.Transaction = dbTransaction;
+                    var rowsAffected = dbCommand.ExecuteNonQuery();
+                    dbTransaction.Commit();
+                    return rowsAffected;
                 }
-
-                dbConnection.Close();
+                catch (SqlException ex)
+                {
+                    _logger.LogError(ex, "A database error occurred while executing non-query.");
+                    dbTransaction.Rollback();
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "An unexpected error occurred while executing non-query.");
+                    throw;
+                }
             }
         }
-        catch (SqlException ex)
-        {
-            _logger.LogError(ex, "Database error occurred while executing non-query.");
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "An unexpected error occurred while executing non-query.");
-            throw;
-        }
-
-        return rowsAffected;
     }
     
     private int ExecuteScalar(SqlCommand command)
     {
-        try
+        using (var connection = CreateConnection())
         {
-            var connectionString = _configuration.GetConnectionString("DefaultConnection");
-            
-            // Using statement ensures the connection is properly disposed of
-            using (var connection = new SqlConnection(connectionString))
-            {
-                command.Connection = connection;
-                connection.Open();
-                
-                // ExecuteScalar returns the first column of the first row in the result set
-                // If no value is found, it will return null, so we cast it to an int
-                // Ensure you handle potential null values appropriately
-                var returnValue = (int)command.ExecuteScalar();
-                
-                //connection.Close();
-                return returnValue;
-            }
+            command.Connection = connection;
+            connection.Open();
+            return (int)command.ExecuteScalar();
         }
-        catch (SqlException ex)
+        /*catch (SqlException ex)
         {
             _logger.LogError(ex, "Database error occurred while executing scalar query.");
             throw;
@@ -93,126 +68,82 @@ public class MerchandiseRepository : IMerchandiseRepository
         {
             _logger.LogError(ex, "An unexpected error occurred while executing scalar query.");
             throw;
-        }
+        }*/
     }
     
     public bool Exists(int categoryId, string name, int brandId)
     {
         var query = "SELECT COUNT(*) FROM Merch WHERE category = @category AND name = @name AND brand = @brand;";
-        try
+        using (var command = new SqlCommand(query))
         {
-            using (var command = new SqlCommand(query))
-            {
-                command.Parameters.Add("category", SqlDbType.Int).Value = categoryId;
-                command.Parameters.Add("name", SqlDbType.NVarChar, 255).Value = name;
-                command.Parameters.Add("brand", SqlDbType.Int).Value = brandId;
+            command.Parameters.Add("category", SqlDbType.Int).Value = categoryId;
+            command.Parameters.Add("name", SqlDbType.NVarChar, 255).Value = name;
+            command.Parameters.Add("brand", SqlDbType.Int).Value = brandId;
 
-                int count = ExecuteScalar(command);
-                return count > 0;
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "An unexpected error occurred while checking existence of merchandise.");
-            throw; // or return a default value if appropriate
+            int count = ExecuteScalar(command);
+            return count > 0;
         }
     }
-    
-    private List<RatingDto> GetRatingsForMerchandise(int merchId, SqlConnection dbConnection) //TODO: move some things inside ratingrepository maybe?
-    {
-        var ratings = new List<RatingDto>();
 
-        using (var ratingCommand = new SqlCommand("SELECT * FROM Ratings WHERE merch_id = @MerchId", dbConnection))
-        {
-            ratingCommand.Parameters.Add("@MerchId", SqlDbType.Int).Value = merchId;
-            using (SqlDataReader ratingReader = ratingCommand.ExecuteReader())
-            {
-                while (ratingReader.Read())
-                {
-                    var rating = new RatingDto()
-                    {
-                        Id = (int)ratingReader["id"],
-                        MerchId = (int)ratingReader["merch_id"],
-                        Rating = (int)ratingReader["rating"],
-                        Description = ratingReader["description"] as string ?? string.Empty,
-                        CreatedAt = (DateTime)ratingReader["created_at"]
-                    };
-                    ratings.Add(rating);
-                }
-            }
-        }
-
-        return ratings;
-    }
-    
     public List<MerchandiseDto> GetAllMerchandise()
     {
-        var connectionString = _configuration.GetConnectionString("DefaultConnection");
-        var merchList = new List<MerchandiseDto>();
-
-        using (var dbConnection = new SqlConnection(connectionString))
-        {
-            dbConnection.Open();
-            string query = @"
+        var query = @"
                 SELECT m.*, b.name as BrandName
                 FROM Merch m
                 JOIN Brand b ON m.brand = b.id";
-            var command = new SqlCommand(query, dbConnection);
-            SqlDataReader reader = command.ExecuteReader();
-
-            while (reader.Read())
+        using (var connection = CreateConnection())
+        {
+            connection.Open();
+            using (var command = new SqlCommand(query, connection))
+            using (var reader = command.ExecuteReader())
             {
-                var merchandise = new MerchandiseDto()
+                var merchList = new List<MerchandiseDto>();
+                while (reader.Read())
                 {
-                    Id = (int)reader["id"],
-                    CategoryId = (int)reader["category"],
-                    Name = (string)reader["name"],
-                    InStock = (int)reader["instock"],
-                    Price = (int)reader["price"],
-                    Description = (string)reader["description"],
-                    Size = (string)reader["size"],
-                    BrandId = (int)reader["brand"],
-                    BrandName = (string)reader["BrandName"],
-                    Ratings = new List<RatingDto>()
-                };
-                merchList.Add(merchandise);
-            }
+                    var merchandise = new MerchandiseDto
+                    {
+                        Id = (int)reader["id"],
+                        CategoryId = (int)reader["category"],
+                        Name = (string)reader["name"],
+                        InStock = (int)reader["instock"],
+                        Price = (int)reader["price"],
+                        Description = (string)reader["description"],
+                        Size = (string)reader["size"],
+                        BrandId = (int)reader["brand"],
+                        BrandName = (string)reader["BrandName"],
+                        Ratings = new List<RatingDto>()
+                    };
+                    merchList.Add(merchandise);
+                }
 
-            reader.Close();
-            
-            foreach (var merchandise in merchList)
-            {
-                merchandise.Ratings = GetRatingsForMerchandise(merchandise.Id, dbConnection);
+                foreach (var merchandise in merchList)
+                {
+                    merchandise.Ratings = _ratingRepository.GetRatingsForMerchandise(merchandise.Id);
+                }
+                return merchList;
             }
-            dbConnection.Close();
         }
-
-        return merchList;
     }
     
     public List<MerchandiseDto> GetMerchandiseBySize(string size)
     {
-        var connectionString = _configuration.GetConnectionString("DefaultConnection");
-        var merchList = new List<MerchandiseDto>();
-
-        try
+        var query = @"
+                SELECT m.*, b.name as BrandName
+                FROM Merch m
+                JOIN Brand b ON m.brand = b.id
+                WHERE size = @size";
+        using (var connection = CreateConnection())
         {
-            using (var dbConnection = new SqlConnection(connectionString))
+            connection.Open();
+            using (var command = new SqlCommand(query, connection))
             {
-                dbConnection.Open();
-                string query = @"
-            SELECT m.*, b.name as BrandName
-            FROM Merch m
-            JOIN Brand b ON m.brand = b.id
-            WHERE size = @size";
-                using (var command = new SqlCommand(query, dbConnection))
+                command.Parameters.Add(new SqlParameter("@size", SqlDbType.NVarChar, 255) { Value = size });
+                using (var reader = command.ExecuteReader())
                 {
-                    command.Parameters.Add(new SqlParameter("@size", SqlDbType.NVarChar, 255).Value = size);
-                    SqlDataReader reader = command.ExecuteReader();
-                
+                    var merchList = new List<MerchandiseDto>();
                     while (reader.Read())
                     {
-                        var merchandise = new MerchandiseDto()
+                        var merchandise = new MerchandiseDto
                         {
                             Id = (int)reader["id"],
                             CategoryId = (int)reader["category"],
@@ -224,59 +155,78 @@ public class MerchandiseRepository : IMerchandiseRepository
                             BrandId = (int)reader["brand"],
                             Ratings = new List<RatingDto>()
                         };
-                        
                         merchList.Add(merchandise);
                     }
-                    reader.Close();
-                    
+
                     foreach (var merchandise in merchList)
                     {
-                        merchandise.Ratings = GetRatingsForMerchandise(merchandise.Id, dbConnection);
+                        merchandise.Ratings = _ratingRepository.GetRatingsForMerchandise(merchandise.Id);
                     }
-                    dbConnection.Close();
+                    return merchList;
                 }
             }
         }
-        catch (Exception ex)
+    }
+    
+    public List<MerchandiseDto> GetMerchandiseByCategory(int category)
+    {
+        var query = @"
+                SELECT m.*, b.name as BrandName
+                FROM Merch m
+                JOIN Brand b ON m.brand = b.id
+                WHERE category = @category";
+        using (var connection = CreateConnection())
         {
-            _logger.LogError(ex, "An error occurred while fetching merchandise by size");
-            throw new Exception("An error occurred while fetching merchandise", ex);
-        }
+            connection.Open();
+            using (var command = new SqlCommand(query, connection))
+            {
+                command.Parameters.Add(new SqlParameter("@category", SqlDbType.Int) { Value = category });
+                using (var reader = command.ExecuteReader())
+                {
+                    var merchList = new List<MerchandiseDto>();
+                    while (reader.Read())
+                    {
+                        var merchandise = new MerchandiseDto
+                        {
+                            Id = (int)reader["id"],
+                            CategoryId = (int)reader["category"],
+                            Name = (string)reader["name"],
+                            InStock = (int)reader["instock"],
+                            Price = (int)reader["price"],
+                            Description = (string)reader["description"],
+                            Size = (string)reader["size"],
+                            BrandId = (int)reader["brand"],
+                            Ratings = new List<RatingDto>()
+                        };
+                        merchList.Add(merchandise);
+                    }
 
-        return merchList;
+                    foreach (var merchandise in merchList)
+                    {
+                        merchandise.Ratings = _ratingRepository.GetRatingsForMerchandise(merchandise.Id);
+                    }
+                    return merchList;
+                }
+            }
+        }
     }
 
     public InsertMerchResult InsertMerch(MerchandiseDto merchandise)
     {
-        try
-        {
-            var insertCommandText = "INSERT INTO Merch (category, name, instock, price, description, rating, size, brand) " +
-                                    "VALUES (@category, @name, @instock, @price, @description, @rating, @size, @brand);";
+        var insertCommandText = "INSERT INTO Merch (category, name, instock, price, description, size, brand) " +
+                                "VALUES (@category, @name, @instock, @price, @description, @size, @brand);";
 
-            using (var insertCommand = new SqlCommand(insertCommandText))
-            {
-                insertCommand.Parameters.Add("category", SqlDbType.Int).Value = merchandise.CategoryId;
-                insertCommand.Parameters.Add("name", SqlDbType.NVarChar, 255).Value = merchandise.Name;
-                insertCommand.Parameters.Add("instock", SqlDbType.Int).Value = merchandise.InStock;
-                insertCommand.Parameters.Add("price", SqlDbType.Int).Value = merchandise.Price;
-                insertCommand.Parameters.Add("description", SqlDbType.NVarChar, 255).Value = merchandise.Description;
-                insertCommand.Parameters.Add("size", SqlDbType.NVarChar, 255).Value = merchandise.Size;
-                insertCommand.Parameters.Add("brand", SqlDbType.Int).Value = merchandise.BrandId;
-
-                if (ExecuteNonQuery(insertCommand) == 1)
-                {
-                    return InsertMerchResult.Success;
-                }
-                else
-                {
-                    return InsertMerchResult.Error;
-                }
-            }
-        }
-        catch (Exception e)
+        using (var insertCommand = new SqlCommand(insertCommandText))
         {
-            //TODO log
-            return InsertMerchResult.Error;
+            insertCommand.Parameters.Add("category", SqlDbType.Int).Value = merchandise.CategoryId;
+            insertCommand.Parameters.Add("name", SqlDbType.NVarChar, 255).Value = merchandise.Name;
+            insertCommand.Parameters.Add("instock", SqlDbType.Int).Value = merchandise.InStock;
+            insertCommand.Parameters.Add("price", SqlDbType.Int).Value = merchandise.Price;
+            insertCommand.Parameters.Add("description", SqlDbType.NVarChar, 255).Value = merchandise.Description;
+            insertCommand.Parameters.Add("size", SqlDbType.NVarChar, 255).Value = merchandise.Size;
+            insertCommand.Parameters.Add("brand", SqlDbType.Int).Value = merchandise.BrandId;
+
+            return ExecuteNonQuery(insertCommand) == 1 ? InsertMerchResult.Success : InsertMerchResult.Error;
         }
     }
 
@@ -303,37 +253,36 @@ public class MerchandiseRepository : IMerchandiseRepository
     
     public bool UpdateMerch(int id, MerchandiseUpdateDto merchandiseUpdateDto)
     {
-        var connectionString = _configuration.GetConnectionString("DefaultConnection");
-        using (SqlConnection connection = new SqlConnection(connectionString))
+        var updateFields = new List<string>();
+        var command = new SqlCommand();
+
+        if (merchandiseUpdateDto.InStock.HasValue)
         {
-            var updateFields = new List<string>();
-            var command = new SqlCommand();
+            updateFields.Add("instock = @InStock");
+            command.Parameters.Add("@InStock", SqlDbType.Int).Value = merchandiseUpdateDto.InStock.Value;
+        }
+        if (merchandiseUpdateDto.Price.HasValue)
+        {
+            updateFields.Add("price = @Price");
+            command.Parameters.Add("@Price", SqlDbType.Int).Value = merchandiseUpdateDto.Price.Value;
+        }
+        if (!string.IsNullOrEmpty(merchandiseUpdateDto.Description))
+        {
+            updateFields.Add("description = @Description");
+            command.Parameters.Add("@Description", SqlDbType.VarChar, 255).Value = merchandiseUpdateDto.Description;
+        }
 
-            if (merchandiseUpdateDto.InStock.HasValue)
-            {
-                updateFields.Add("instock = @InStock");                                                                     //TODO: are both of these lines needed inside the ifs?
-                command.Parameters.Add("@InStock", SqlDbType.Int).Value = merchandiseUpdateDto.InStock.Value;       //TODO is .Value needed?
-            }
-            if (merchandiseUpdateDto.Price.HasValue)
-            {
-                updateFields.Add("price = @Price");
-                command.Parameters.Add("@Price", SqlDbType.Int).Value = merchandiseUpdateDto.Price.Value;
-            }
-            if (!string.IsNullOrEmpty(merchandiseUpdateDto.Description))
-            {
-                updateFields.Add("description = @Description");
-                command.Parameters.Add("@Description", SqlDbType.VarChar, 255).Value = merchandiseUpdateDto.Description;
-            }
+        if (!updateFields.Any())
+        {
+            throw new ArgumentException("No fields to update.");
+        }
 
-            if (!updateFields.Any())
-            {
-                throw new ArgumentException("No fields to update.");
-            }
+        var updateQuery = $"UPDATE Merch SET {string.Join(", ", updateFields)} WHERE id = @Id";
+        command.CommandText = updateQuery;
+        command.Parameters.Add("@Id", SqlDbType.Int).Value = id;
 
-            var updateQuery = $"UPDATE Merch SET {string.Join(", ", updateFields)} WHERE id = @Id";
-            command.CommandText = updateQuery;
-            command.Parameters.Add("@Id", SqlDbType.Int).Value = id;
-
+        using (var connection = CreateConnection())
+        {
             command.Connection = connection;
             connection.Open();
             var rowsAffected = command.ExecuteNonQuery();

@@ -15,4 +15,9 @@ public class RatingService : IRatingService
     {
         return _ratingRepository.AddRating(ratingCreateDto);
     }
+
+    public List<RatingDto> GetRatingsForMerchandise(int merchId)
+    {
+        return _ratingRepository.GetRatingsForMerchandise(merchId);
+    }
 }

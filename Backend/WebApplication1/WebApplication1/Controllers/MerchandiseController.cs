@@ -36,7 +36,7 @@ public class MerchandiseController : ControllerBase
         return Ok(merchList);
     }
     
-    [HttpGet("{size}")]
+    [HttpGet("size/{size}")]
     public IActionResult GetMerchandiseBySize(string size)
     {
         _logger.LogInformation("GetMerchandiseBySize endpoint called with size: {Size}", size);
@@ -50,6 +50,23 @@ public class MerchandiseController : ControllerBase
         }
 
         _logger.LogInformation("Returning merchandise list for size: {Size}", size);
+        return Ok(merchList);
+    }
+    
+    [HttpGet("category/{category:int}")]
+    public IActionResult GetMerchandiseByCategory(int category)
+    {
+        _logger.LogInformation("GetMerchandiseByCategory endpoint called with category: {category}", category);
+
+        var merchList = _merchandiseService.GetMerchandiseByCategory(category);
+
+        if (merchList.Count == 0)
+        {
+            _logger.LogInformation("No merchandise found for category: {category}", category);
+            return NoContent();
+        }
+
+        _logger.LogInformation("Returning merchandise list for category: {category}", category);
         return Ok(merchList);
     }
 
@@ -93,7 +110,7 @@ public class MerchandiseController : ControllerBase
         }
     }
     
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:int}")]
     public IActionResult DeleteMerchandiseById(int id)
     {
         _logger.LogInformation("DeleteMerchandiseById endpoint called with id: {Id}", id);
@@ -110,7 +127,7 @@ public class MerchandiseController : ControllerBase
         }
     }
     
-    [HttpPatch("{id}")]
+    [HttpPatch("{id:int}")]
     public IActionResult UpdateMerchandise(int id, [FromBody] MerchandiseUpdateDto merchandiseUpdateDto)
     {
         _logger.LogInformation("UpdateMerchandise endpoint called with data: {Merchandise}", merchandiseUpdateDto);
