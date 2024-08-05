@@ -1,0 +1,21 @@
+<div>
+    <h2>Create Merchandise</h2>
+    <form [formGroup]="merchandiseForm" (ngSubmit)="onSubmit()">
+      <label>Category ID:</label>
+      <input formControlName="categoryId" type="number">
+      <label>Name:</label>
+      <input formControlName="name" type="text">
+      <label>In Stock:</label>
+      <input formControlName="inStock" type="number">
+      <label>Price:</label>
+      <input formControlName="price" type="number">
+      <label>Description:</label>
+      <input formControlName="description" type="text">
+      <label>Size:</label>
+      <input formControlName="size" type="text">
+      <label>Brand ID:</label>
+      <input formControlName="brandId" type="number">
+      <button type="submit" [disabled]="merchandiseForm.invalid">Create</button>
+    </form>
+  </div>
+  

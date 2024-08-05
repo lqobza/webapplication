@@ -14,6 +14,16 @@ public class Startup
     }
     public void ConfigureServices(IServiceCollection services)
     {
+        services.AddCors(options =>
+        {
+            options.AddPolicy("AllowAllOrigins",
+                builder =>
+                {
+                    builder.WithOrigins("http://localhost:4200")
+                        .AllowAnyMethod()
+                        .AllowAnyHeader();
+                });
+        });
         // Other service configurations...
         services.AddControllers();
         services.AddEndpointsApiExplorer();
@@ -28,18 +38,21 @@ public class Startup
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
+        app.UseCors("AllowAllOrigins");
+        
         // Configure the HTTP request pipeline.
         if (env.IsDevelopment())
         {
             app.UseSwagger();
             app.UseSwaggerUI();
+            app.UseDeveloperExceptionPage();
         }
         // Other app configurations...
         // Other middleware configurations...
-        //app.UseHttpsRedirection();
+        // app.UseHttpsRedirection();
         app.UseRouting();
-        //app.UseAuthentication();
-        //app.UseAuthorization();
+        app.UseAuthentication();
+        app.UseAuthorization();
         //app.UseHttpLogging();
         app.UseDefaultFiles();
         app.UseStaticFiles();
