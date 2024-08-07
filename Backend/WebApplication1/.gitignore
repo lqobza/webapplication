@@ -6,6 +6,8 @@
 *.vbproj
 *.vspscc
 *.userprefs
+WebApplication1/bin/
+WebApplication1/obj/
 
 # Build results
 /bin/
