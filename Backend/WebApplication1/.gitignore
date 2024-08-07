@@ -1,0 +1,17 @@
+# Visual Studio solution and project files
+*.sln
+*.suo
+*.user
+*.csproj
+*.vbproj
+*.vspscc
+*.userprefs
+
+# Build results
+/bin/
+/obj/
+
+# Temporary files
+*.tmp
+*.log
+
