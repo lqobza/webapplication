@@ -11,19 +11,19 @@ public class MerchandiseCreateDto
     [Required]
     [StringLength(255)]
     public string Name { get; set; }
-        
-    [Range(0, int.MaxValue)]
-    public int InStock { get; set; }
-        
+    
+    [Required]
     [Range(1, int.MaxValue)]
     public int Price { get; set; }
         
+    [Required]
     [StringLength(255)]
     public string Description { get; set; }
         
-    [StringLength(50)]
-    public string Size { get; set; }
-        
     [Required]
     public int BrandId { get; set; }
+    
+    public List<int>? ThemeIds { get; set; }
+
+    public List<MerchSizeCreateDto>? Sizes { get; set; }
 }

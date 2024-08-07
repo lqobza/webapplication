@@ -81,15 +81,15 @@ public class MerchandiseController : ControllerBase
         
         _logger.LogInformation("InsertMerchandise endpoint called with data: {Merchandise}", merchandiseCreateDto);
         
-        var merchandise = new MerchandiseDto
+        var merchandise = new MerchandiseCreateDto()
         {
             CategoryId = merchandiseCreateDto.CategoryId,
             Name = merchandiseCreateDto.Name,
-            InStock = merchandiseCreateDto.InStock,
             Price = merchandiseCreateDto.Price,
             Description = merchandiseCreateDto.Description,
-            Size = merchandiseCreateDto.Size,
             BrandId = merchandiseCreateDto.BrandId,
+            ThemeIds = merchandiseCreateDto.ThemeIds,
+            Sizes = merchandiseCreateDto.Sizes
         };
         
         InsertMerchResult insertMerchResult = _merchandiseService.InsertMerch(merchandise);

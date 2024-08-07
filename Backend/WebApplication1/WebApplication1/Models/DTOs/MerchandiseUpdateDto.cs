@@ -1,8 +1,12 @@
-﻿namespace WebApplication1.Models;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace WebApplication1.Models;
 
 public class MerchandiseUpdateDto
 {
-        public int? InStock { get; set; }
+        [Range(1, int.MaxValue)] //TODO Check if update endpoint checks for input validity
         public int? Price { get; set; }
+        
+        [StringLength(255)]
         public string? Description { get; set; }
 }

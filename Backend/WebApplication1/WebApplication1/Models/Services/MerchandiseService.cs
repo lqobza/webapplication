@@ -28,7 +28,7 @@ public class MerchandiseService : IMerchandiseService
         return _merchandiseRepository.GetMerchandiseByCategory(category);
     }
 
-    public InsertMerchResult InsertMerch(MerchandiseDto merchandise)
+    public InsertMerchResult InsertMerch(MerchandiseCreateDto merchandise)
     {
         
         // Business rule validation: Check if the merchandise already exists

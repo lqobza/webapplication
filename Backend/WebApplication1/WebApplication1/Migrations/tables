@@ -1,35 +1,33 @@
 CREATE TABLE Theme (
-	id int identity(1,1) primary key,
-	name nvarchar(255)
+    id int identity(1,1) primary key,
+    name nvarchar(255) NOT NULL UNIQUE
 );
 
 CREATE TABLE Brand (
-	id int identity(1,1) primary key,
-	name nvarchar(255)
+    id int identity(1,1) primary key,
+    name nvarchar(255) NOT NULL UNIQUE
 );
 
 CREATE TABLE Category (
-	id int identity(1,1) primary key,
-	name nvarchar(255)
+    id int identity(1,1) primary key,
+    name nvarchar(255) NOT NULL UNIQUE
 );
 
 
 CREATE TABLE Merch (
     id int identity(1,1) primary key,
-    category int foreign key references Category(id) NOT NULL,
-	name nvarchar(255),
-	instock int,
-	price int,
-	description nvarchar(255),
-	size nvarchar(255),
-	brand int foreign key references Brand(id) NOT NULL
+    category_id int NOT NULL foreign key references Category(id),
+    name nvarchar(255) NOT NULL,
+    price int NOT NULL,
+    description nvarchar(255) NOT NULL,
+    brand_id int NOT NULL foreign key references Brand(id)
 );
 
 
 CREATE TABLE MerchTheme (
     merch_id int foreign key references Merch(id) NOT NULL,
     theme_id int foreign key references Theme(id) NOT NULL,
-    PRIMARY KEY (merchid, themeid)
+    PRIMARY KEY (merch_id, theme_id)
 );
 
 CREATE TABLE Ratings (
@@ -39,3 +37,29 @@ CREATE TABLE Ratings (
     description nvarchar(255),
     created_at datetime default getdate()
 );
+
+CREATE TABLE MerchSize (
+    id int identity(1,1) primary key,
+    merch_id int foreign key references Merch(id) NOT NULL,
+    size nvarchar(255) NULL,
+    instock int NOT NULL
+);
+
+-- Create indexes on foreign key columns
+-- Index on Merch.category_id
+CREATE INDEX idx_merch_category_id ON Merch(category_id);
+
+-- Index on Merch.brand_id
+CREATE INDEX idx_merch_brand_id ON Merch(brand_id);
+
+-- Index on MerchTheme.merch_id
+CREATE INDEX idx_merchtheme_merch_id ON MerchTheme(merch_id);
+
+-- Index on MerchTheme.theme_id
+CREATE INDEX idx_merchtheme_theme_id ON MerchTheme(theme_id);
+
+-- Index on Ratings.merch_id
+CREATE INDEX idx_ratings_merch_id ON Ratings(merch_id);
+
+-- Index on MerchSize.merch_id
+CREATE INDEX idx_merchsize_merch_id ON MerchSize(merch_id);
