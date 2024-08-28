@@ -10,7 +10,7 @@ public class RatingService : IRatingService
     {
         _ratingRepository = ratingRepository;
     }
-    
+
     public bool AddRating(RatingCreateDto ratingCreateDto)
     {
         return _ratingRepository.AddRating(ratingCreateDto);

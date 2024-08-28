@@ -1,5 +1,5 @@
-using WebApplication1;
 using dotenv.net;
+using WebApplication1;
 
 var builder = Host.CreateDefaultBuilder();
 

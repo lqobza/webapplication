@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Models;
-using WebApplication1.Models.Repositories;
 using WebApplication1.Models.Services;
 
 namespace WebApplication1.Controllers;
@@ -9,8 +8,8 @@ namespace WebApplication1.Controllers;
 [Route("api/[controller]")]
 public class RatingController : ControllerBase
 {
-    private readonly IRatingService _ratingService;
     private readonly ILogger<RatingController> _logger;
+    private readonly IRatingService _ratingService;
 
     public RatingController(IRatingService ratingService, ILogger<RatingController> logger)
     {
@@ -21,24 +20,16 @@ public class RatingController : ControllerBase
     [HttpPost("addRating")]
     public IActionResult AddRating([FromBody] RatingCreateDto ratingCreateDto)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-        
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
         _logger.LogInformation("AddRating endpoint called with data: {Rating}", ratingCreateDto);
         try
         {
             var result = _ratingService.AddRating(ratingCreateDto);
             if (result)
-            {
                 return Ok(new { message = "Rating added successfully." });
-            }
-            else
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError,
-                    new { message = "An error occurred while adding the rating." });
-            }
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "An error occurred while adding the rating." });
         }
         catch (ArgumentException ex)
         {

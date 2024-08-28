@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Text.Json.Serialization;
 using WebApplication1.Models.Repositories;
 using WebApplication1.Models.Services;
 
@@ -12,6 +12,7 @@ public class Startup
     {
         _configuration = configuration;
     }
+
     public void ConfigureServices(IServiceCollection services)
     {
         services.AddCors(options =>
@@ -33,20 +34,26 @@ public class Startup
         services.AddTransient<IMerchandiseService, MerchandiseService>();
         services.AddTransient<IRatingRepository, RatingRepository>();
         services.AddTransient<IRatingService, RatingService>();
+        services.AddControllers()
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            });
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
         app.UseCors("AllowAllOrigins");
-        
+
         // Configure the HTTP request pipeline.
         if (env.IsDevelopment())
         {
             app.UseSwagger();
-            app.UseSwaggerUI();
+            app.UseSwaggerUI(c => { c.InjectStylesheet("/swagger-ui/SwaggerDark.css"); });
             app.UseDeveloperExceptionPage();
         }
+
         // Other app configurations...
         // Other middleware configurations...
         // app.UseHttpsRedirection();
@@ -56,9 +63,6 @@ public class Startup
         //app.UseHttpLogging();
         app.UseDefaultFiles();
         app.UseStaticFiles();
-        app.UseEndpoints(endpoints =>
-        {
-            endpoints.MapControllers();
-        });
-    }   
+        app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
+    }
 }
