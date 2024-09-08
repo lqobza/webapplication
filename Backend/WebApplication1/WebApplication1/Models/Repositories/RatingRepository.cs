@@ -6,12 +6,10 @@ namespace WebApplication1.Models.Repositories;
 public class RatingRepository : BaseRepository, IRatingRepository
 {
     private readonly ILogger<RatingRepository> _logger;
-    private IConfiguration _configuration;
 
     public RatingRepository(IConfiguration configuration, ILogger<RatingRepository> logger)
         : base(configuration)
     {
-        _configuration = configuration;
         _logger = logger;
     }
 
@@ -76,6 +74,7 @@ public class RatingRepository : BaseRepository, IRatingRepository
                     }
                 }
             }
+            connection.Close();
         }
 
         return ratings;

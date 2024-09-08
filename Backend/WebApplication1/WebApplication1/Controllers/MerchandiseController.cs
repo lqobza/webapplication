@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Models;
 using WebApplication1.Models.Enums;
 using WebApplication1.Models.Services;
@@ -68,12 +69,13 @@ public class MerchandiseController : ControllerBase
         _logger.LogInformation("Returning merchandise list for category: {category}", category);
         return Ok(merchList);
     }
-
+    
+    //[Authorize(Roles = "Admin")]
     [HttpPost("")]
     public IActionResult InsertMerchandise([FromBody] MerchandiseCreateDto merchandiseCreateDto)
     {
         _logger.LogInformation("InsertMerchandise endpoint called with data: {Merchandise}", merchandiseCreateDto);
-        
+
         if (!ModelState.IsValid)
         {
             _logger.LogWarning("Invalid input data: {ModelStateErrors}", ModelState);
@@ -81,13 +83,13 @@ public class MerchandiseController : ControllerBase
         }
 
         var insertMerchResult = _merchandiseService.InsertMerch(merchandiseCreateDto);
-        if (insertMerchResult == InsertMerchResult.Success)
+        if (insertMerchResult == InsertResult.Success)
         {
             _logger.LogInformation("Merchandise inserted successfully: {Merchandise}", merchandiseCreateDto);
             return Ok(new { message = "Merchandise inserted successfully." });
         }
 
-        if (insertMerchResult == InsertMerchResult.AlreadyExists)
+        if (insertMerchResult == InsertResult.AlreadyExists)
         {
             _logger.LogWarning("Merchandise already exists: {Merchandise}", merchandiseCreateDto);
             return Conflict(
@@ -99,6 +101,7 @@ public class MerchandiseController : ControllerBase
             new { message = "Merch insert was unsuccessful due to internal server error." });
     }
 
+    //[Authorize(Roles = "Admin")]
     [HttpDelete("{id:int}")]
     public IActionResult DeleteMerchandiseById(int id)
     {
@@ -115,6 +118,7 @@ public class MerchandiseController : ControllerBase
             NoContent(); //The outcome is the same if the merchandise was already deleted or didn't exist in the first place as if it was deleted -> its not present anymore in the DB
     }
 
+    //[Authorize(Roles = "Admin")]
     [HttpPatch("{id:int}")]
     public IActionResult UpdateMerchandise(int id, [FromBody] MerchandiseUpdateDto merchandiseUpdateDto)
     {
@@ -144,8 +148,8 @@ public class MerchandiseController : ControllerBase
         }
     }
 
-    [HttpGet("sizes")]
-    public IActionResult GetSizesByCategoryId([FromQuery] int categoryId)
+    [HttpGet("sizes/{categoryId:int}")]
+    public IActionResult GetSizesByCategoryId(int categoryId)
     {
         _logger.LogInformation("GetSizesByCategoryId endpoint called with categoryId: {categoryId}", categoryId);
 
@@ -172,36 +176,49 @@ public class MerchandiseController : ControllerBase
         var themes = _merchandiseService.GetThemes();
         return Ok(themes);
     }
-
-    [HttpPost("categories")]
-    public IActionResult AddCategoryToDb([FromBody] CreateCategoryDto createCategoryDto)
+    
+    [HttpGet("brands")]
+    public IActionResult GetBrands()
     {
-        _logger.LogInformation("AddCategoryToDb endpoint called with data: {createCategoryDto}", createCategoryDto);
+        _logger.LogInformation("GetBrands endpoint called");
 
-        if (string.IsNullOrWhiteSpace(createCategoryDto.Name)) return BadRequest("Category name is required.");
+        var brands = _merchandiseService.GetBrands();
+        return Ok(brands);
+    }
+
+    //[Authorize(Roles = "Admin")]
+    [HttpPost("categories")]
+    public IActionResult AddCategoryToDb([FromBody] CategoryCreateDto categoryCreateDto)
+    {
+        _logger.LogInformation("AddCategoryToDb endpoint called with data: {categoryCreateDto}", categoryCreateDto);
+
+        if (string.IsNullOrWhiteSpace(categoryCreateDto.Name)) return BadRequest("Category name is required.");
 
         try
         {
-            var categoryId = AddCategoryToDb(createCategoryDto);
-            return CreatedAtAction(nameof(GetCategories), new { id = categoryId }, createCategoryDto); //TODO valszeg itt szall el a db duplikatum esetben
+            var categoryId = AddCategoryToDb(categoryCreateDto);
+            return CreatedAtAction(nameof(GetCategories), new { id = categoryId },
+                categoryCreateDto); //TODO valszeg itt szall el a db duplikatum esetben
         }
         catch (InvalidOperationException ex)
         {
             return BadRequest(ex.Message);
         }
     }
-
+    
+    //[Authorize(Roles = "Admin")]
     [HttpPost("themes")]
-    public IActionResult AddThemeToDb([FromBody] CreateThemeDto createThemeDto)
+    public IActionResult AddThemeToDb([FromBody] ThemeCreateDto themeCreateDto)
     {
-        _logger.LogInformation("AddThemeToDb endpoint called with data: {createThemeDto}", createThemeDto);
+        _logger.LogInformation("AddThemeToDb endpoint called with data: {themeCreateDto}", themeCreateDto);
 
-        if (string.IsNullOrWhiteSpace(createThemeDto.Name)) return BadRequest("Theme name is required.");
+        if (string.IsNullOrWhiteSpace(themeCreateDto.Name)) return BadRequest("Theme name is required.");
 
         try
         {
-            var themeId = AddThemeToDb(createThemeDto);
-            return CreatedAtAction(nameof(GetThemes), new { id = themeId }, createThemeDto); //TODO valszeg itt szall el a db duplikatum esetben
+            var themeId = AddThemeToDb(themeCreateDto);
+            return CreatedAtAction(nameof(GetThemes), new { id = themeId },
+                themeCreateDto); //TODO valszeg itt szall el a db duplikatum esetben
         }
         catch (InvalidOperationException ex)
         {

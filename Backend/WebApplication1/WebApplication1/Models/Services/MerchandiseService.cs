@@ -27,11 +27,11 @@ public class MerchandiseService : IMerchandiseService
         return _merchandiseRepository.GetMerchandiseByCategory(category);
     }
 
-    public InsertMerchResult InsertMerch(MerchandiseCreateDto merchandise)
+    public InsertResult InsertMerch(MerchandiseCreateDto merchandise)
     {
         // Business rule validation: Check if the merchandise already exists
         if (_merchandiseRepository.Exists(merchandise.CategoryId, merchandise.Name, merchandise.BrandId))
-            return InsertMerchResult.AlreadyExists;
+            return InsertResult.AlreadyExists;
 
         return _merchandiseRepository.InsertMerch(merchandise);
     }
@@ -62,13 +62,18 @@ public class MerchandiseService : IMerchandiseService
         return _merchandiseRepository.GetThemes();
     }
 
-    public int AddCategoryToDb(CreateCategoryDto createCategoryDto)
+    public List<BrandDto> GetBrands()
     {
-        return _merchandiseRepository.AddCategoryToDb(createCategoryDto);
+        return _merchandiseRepository.GetBrands();
     }
 
-    public int AddThemeToDb(CreateThemeDto createThemeDto)
+    public int AddCategoryToDb(CategoryCreateDto categoryCreateDto)
     {
-        return _merchandiseRepository.AddThemeToDb(createThemeDto);
+        return _merchandiseRepository.AddCategoryToDb(categoryCreateDto);
+    }
+
+    public int AddThemeToDb(ThemeCreateDto themeCreateDto)
+    {
+        return _merchandiseRepository.AddThemeToDb(themeCreateDto);
     }
 }

@@ -7,12 +7,13 @@ public interface IMerchandiseService
     public List<MerchandiseDto> GetAllMerchandise();
     public List<MerchandiseDto> GetMerchandiseBySize(string size);
     public List<MerchandiseDto> GetMerchandiseByCategory(int category);
-    public InsertMerchResult InsertMerch(MerchandiseCreateDto merchandise);
+    public InsertResult InsertMerch(MerchandiseCreateDto merchandise);
     public bool DeleteMerchandiseById(int id);
     public bool UpdateMerch(int id, MerchandiseUpdateDto merchandiseUpdateDto);
     public List<string>? GetSizesByCategoryId(int categoryId);
     public List<CategoryDto> GetCategories();
     public List<ThemeDto> GetThemes();
-    public int AddCategoryToDb(CreateCategoryDto createCategoryDto);
-    public int AddThemeToDb(CreateThemeDto createThemeDto);
+    public List<BrandDto> GetBrands();
+    public int AddCategoryToDb(CategoryCreateDto categoryCreateDto);
+    public int AddThemeToDb(ThemeCreateDto themeCreateDto);
 }

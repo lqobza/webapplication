@@ -8,13 +8,11 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
 {
     private readonly ILogger<MerchandiseRepository> _logger;
     private readonly IRatingRepository _ratingRepository;
-    private IConfiguration _configuration;
 
     public MerchandiseRepository(IConfiguration configuration, ILogger<MerchandiseRepository> logger,
         IRatingRepository ratingRepository)
         : base(configuration)
     {
-        _configuration = configuration;
         _logger = logger;
         _ratingRepository = ratingRepository;
     }
@@ -214,7 +212,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
         }
     }
 
-    public InsertMerchResult InsertMerch(MerchandiseCreateDto merchandise)
+    public InsertResult InsertMerch(MerchandiseCreateDto merchandise)
     {
         var insertMerchCommandText = "INSERT INTO Merch (category_id, name, price, description, brand_id) " +
                                      "OUTPUT INSERTED.ID " +
@@ -244,7 +242,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
                             sizeValue ?? (object)DBNull.Value;
                         insertMerchSizeCommand.Parameters.Add("instock", SqlDbType.Int).Value = sizeDto.InStock;
 
-                        if (ExecuteNonQuery(insertMerchSizeCommand) != 1) return InsertMerchResult.Error;
+                        if (ExecuteNonQuery(insertMerchSizeCommand) != 1) return InsertResult.Error;
                     }
                 }
 
@@ -259,11 +257,11 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
                         insertMerchThemeCommand.Parameters.Add("merchId", SqlDbType.Int).Value = merchId;
                         insertMerchThemeCommand.Parameters.Add("themeId", SqlDbType.Int).Value = themeId;
 
-                        if (ExecuteNonQuery(insertMerchThemeCommand) != 1) return InsertMerchResult.Error;
+                        if (ExecuteNonQuery(insertMerchThemeCommand) != 1) return InsertResult.Error;
                     }
                 }
 
-            return InsertMerchResult.Success;
+            return InsertResult.Success;
         }
     }
 
@@ -394,7 +392,30 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
         return themes;
     }
 
-    public int AddCategoryToDb(CreateCategoryDto createCategoryDto)
+    public List<BrandDto> GetBrands()
+    {
+        var brands = new List<BrandDto>();
+        var query = "SELECT id, name FROM Brand";
+
+        using (var connection = CreateConnection())
+        using (var command = new SqlCommand(query, connection))
+        {
+            connection.Open();
+            using (var reader = command.ExecuteReader())
+            {
+                while (reader.Read())
+                    brands.Add(new BrandDto
+                    {
+                        Id = (int)reader["id"],
+                        Name = (string)reader["name"]
+                    });
+            }
+        }
+
+        return brands;
+    }
+
+    public int AddCategoryToDb(CategoryCreateDto categoryCreateDto)
     {
         var query = "INSERT INTO Category (name) OUTPUT INSERTED.ID VALUES (@name)";
 
@@ -404,7 +425,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
             using (var command = new SqlCommand(query, connection))
             {
                 command.Parameters.Add(new SqlParameter("@name", SqlDbType.NVarChar, 255)
-                    { Value = createCategoryDto.Name });
+                    { Value = categoryCreateDto.Name });
 
                 connection.Open();
                 return (int)command.ExecuteScalar();
@@ -416,7 +437,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
         }
     }
 
-    public int AddThemeToDb(CreateThemeDto createThemeDto)
+    public int AddThemeToDb(ThemeCreateDto themeCreateDto)
     {
         var query = "INSERT INTO Theme (name) OUTPUT INSERTED.ID VALUES (@name)";
 
@@ -426,7 +447,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
             using (var command = new SqlCommand(query, connection))
             {
                 command.Parameters.Add(new SqlParameter("@name", SqlDbType.NVarChar, 255)
-                    { Value = createThemeDto.Name });
+                    { Value = themeCreateDto.Name });
 
                 connection.Open();
                 return (int)command.ExecuteScalar();

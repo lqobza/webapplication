@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Models;
 using WebApplication1.Models.Services;
 
@@ -17,7 +18,7 @@ public class RatingController : ControllerBase
         _logger = logger;
     }
 
-    [HttpPost("addRating")]
+    [HttpPost("")]
     public IActionResult AddRating([FromBody] RatingCreateDto ratingCreateDto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -31,7 +32,7 @@ public class RatingController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError,
                 new { message = "An error occurred while adding the rating." });
         }
-        catch (ArgumentException ex)
+        catch (ArgumentException)
         {
             _logger.LogWarning("Merchandise not found with id: {Id}", ratingCreateDto.MerchId);
             return StatusCode(StatusCodes.Status400BadRequest);

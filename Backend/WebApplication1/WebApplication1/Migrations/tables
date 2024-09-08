@@ -45,6 +45,24 @@ CREATE TABLE MerchSize (
     instock int NOT NULL
 );
 
+CREATE TABLE Orders (
+    id int identity(1,1) PRIMARY KEY,
+    order_date DATETIME DEFAULT GETDATE() NOT NULL,
+    total_amount decimal(10, 2) NOT NULL,
+    customer_name nvarchar(255) NOT NULL,
+    customer_email nvarchar(255) NOT NULL,
+    customer_address nvarchar(255) NOT NULL
+);
+
+CREATE TABLE OrderItems (
+    id int IDENTITY(1,1) PRIMARY KEY,
+    order_id int NOT NULL FOREIGN KEY REFERENCES Orders(id) ON DELETE CASCADE,
+    merch_id int NOT NULL FOREIGN KEY REFERENCES Merch(id),
+    size nvarchar(255) NOT NULL,
+    quantity int NOT NULL,
+    price decimal(10, 2) NOT NULL
+);
+
 -- Create indexes on foreign key columns
 -- Index on Merch.category_id
 CREATE INDEX idx_merch_category_id ON Merch(category_id);
