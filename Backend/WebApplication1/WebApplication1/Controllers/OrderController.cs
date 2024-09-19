@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Models;
 using WebApplication1.Models.Enums;
-using WebApplication1.Models.Services;
+using WebApplication1.Services.Interface;
 
 namespace WebApplication1.Controllers;
 

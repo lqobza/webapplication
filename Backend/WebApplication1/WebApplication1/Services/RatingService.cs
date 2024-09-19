@@ -1,6 +1,9 @@
-﻿using WebApplication1.Models.Repositories;
+﻿using WebApplication1.Models;
+using WebApplication1.Models.Repositories;
+using WebApplication1.Repositories.Interface;
+using WebApplication1.Services.Interface;
 
-namespace WebApplication1.Models.Services;
+namespace WebApplication1.Services;
 
 public class RatingService : IRatingService
 {

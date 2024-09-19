@@ -28,8 +28,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="Models\Exceptions\" />
-        <Folder Include="Models\Migrations\" />
+        <Folder Include="Exceptions\" />
     </ItemGroup>
 
 </Project>

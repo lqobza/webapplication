@@ -4,8 +4,11 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using WebApplication1.Models.Repositories;
-using WebApplication1.Models.Services;
-using WebApplication1.Models.Utils;
+using WebApplication1.Repositories;
+using WebApplication1.Repositories.Interface;
+using WebApplication1.Services;
+using WebApplication1.Services.Interface;
+using WebApplication1.Utils;
 
 namespace WebApplication1;
 

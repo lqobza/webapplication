@@ -1,13 +1,14 @@
-﻿using Microsoft.AspNetCore.Cryptography.KeyDerivation;
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using WebApplication1.Models.Utils;
+using WebApplication1.Models;
+using WebApplication1.Utils;
 
-namespace WebApplication1.Models.Services;
+namespace WebApplication1.Services;
 
 public class AuthService
 {

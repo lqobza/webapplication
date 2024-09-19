@@ -1,6 +1,7 @@
 ﻿using System.Data.SqlClient;
+using WebApplication1.Models;
 
-namespace WebApplication1.Models.Repositories;
+namespace WebApplication1.Repositories.Interface;
 
 public interface IOrderRepository
 {

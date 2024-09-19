@@ -1,6 +1,6 @@
 ﻿using System.Data.SqlClient;
 
-namespace WebApplication1.Models.Repositories;
+namespace WebApplication1.Repositories;
 
 public abstract class BaseRepository
 {

@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Models;
-using WebApplication1.Models.Services;
+using WebApplication1.Services.Interface;
 
 namespace WebApplication1.Controllers;
 
@@ -21,7 +21,8 @@ public class RatingController : ControllerBase
     [HttpPost("")]
     public IActionResult AddRating([FromBody] RatingCreateDto ratingCreateDto)
     {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (!ModelState.IsValid) 
+            return BadRequest(ModelState);
 
         _logger.LogInformation("AddRating endpoint called with data: {Rating}", ratingCreateDto);
         try
@@ -29,6 +30,7 @@ public class RatingController : ControllerBase
             var result = _ratingService.AddRating(ratingCreateDto);
             if (result)
                 return Ok(new { message = "Rating added successfully." });
+            
             return StatusCode(StatusCodes.Status500InternalServerError,
                 new { message = "An error occurred while adding the rating." });
         }

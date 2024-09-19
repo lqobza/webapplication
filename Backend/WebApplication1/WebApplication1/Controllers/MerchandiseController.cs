@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Models;
 using WebApplication1.Models.Enums;
-using WebApplication1.Models.Services;
+using WebApplication1.Services.Interface;
 
 namespace WebApplication1.Controllers;
 
@@ -20,7 +20,7 @@ public class MerchandiseController : ControllerBase
     }
 
     [HttpGet]
-    public IActionResult GetAllMercandise()
+    public IActionResult GetAllMerchandise()
     {
         _logger.LogInformation("GetAllMerchandise endpoint called");
 
@@ -60,7 +60,7 @@ public class MerchandiseController : ControllerBase
 
         var merchList = _merchandiseService.GetMerchandiseByCategory(category);
 
-        if (merchList.Count == 0)
+        if (merchList.Count is 0)
         {
             _logger.LogInformation("No merchandise found for category: {category}", category);
             return NoContent();
@@ -88,8 +88,8 @@ public class MerchandiseController : ControllerBase
             _logger.LogInformation("Merchandise inserted successfully: {Merchandise}", merchandiseCreateDto);
             return Ok(new { message = "Merchandise inserted successfully." });
         }
-
         if (insertMerchResult == InsertResult.AlreadyExists)
+
         {
             _logger.LogWarning("Merchandise already exists: {Merchandise}", merchandiseCreateDto);
             return Conflict(

@@ -1,4 +1,6 @@
-﻿namespace WebApplication1.Models.Repositories;
+﻿using WebApplication1.Models;
+
+namespace WebApplication1.Repositories.Interface;
 
 public interface IRatingRepository
 {

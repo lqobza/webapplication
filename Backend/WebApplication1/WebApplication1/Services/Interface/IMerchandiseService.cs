@@ -1,6 +1,7 @@
-﻿using WebApplication1.Models.Enums;
+﻿using WebApplication1.Models;
+using WebApplication1.Models.Enums;
 
-namespace WebApplication1.Models.Services;
+namespace WebApplication1.Services.Interface;
 
 public interface IMerchandiseService
 {
