@@ -1,0 +1,57 @@
+/* General styles */
+div {
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    max-width: 500px;
+}
+  
+h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+  
+/* Form styles */
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+  
+select, input[type="text"], input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    margin-bottom: 15px;
+}
+  
+textarea { /* Add styles for description field if it's a textarea */
+    height: 100px;
+    resize: vertical;
+}
+  
+button[type="submit"] {
+    background-color: #4CAF50; /* Green */
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin-top: 15px;
+    cursor: pointer;
+    border-radius: 5px;
+    opacity: 0.6; /* Button initially a bit transparent */
+}
+  
+button[type="submit"]:hover {
+    opacity: 1; /* Button becomes fully opaque on hover */
+}
+  
+button[type="submit"][disabled] {
+    background-color: #ccc; /* Button disabled state with gray background */
+    cursor: default; /* Disable pointer cursor on disabled button */
+}

@@ -19,32 +19,30 @@ public class OrderService : BaseRepository, IOrderService
 
     public InsertResult CreateOrder(OrderCreateDto orderCreateDto)
     {
-        using (var connection = CreateConnection())
+        using var connection = CreateConnection();
+        
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
+        
+        try
         {
-            connection.Open();
-            using (var transaction = connection.BeginTransaction())
+            // Insert the order
+            var orderId = _orderRepository.InsertOrder(connection, transaction, orderCreateDto);
+
+            // Insert the order items and update instock values
+            foreach (var item in orderCreateDto.Items)
             {
-                try
-                {
-                    // Insert the order
-                    var orderId = _orderRepository.InsertOrder(connection, transaction, orderCreateDto);
-
-                    // Insert the order items and update instock values
-                    foreach (var item in orderCreateDto.Items)
-                    {
-                        _orderRepository.InsertOrderItem(connection, transaction, orderId, item);
-                        _orderRepository.UpdateStock(connection, transaction, item);
-                    }
-
-                    transaction.Commit();
-                    return InsertResult.Success;
-                }
-                catch (Exception)
-                {
-                    transaction.Rollback();
-                    return InsertResult.Error;
-                }
+                _orderRepository.InsertOrderItem(connection, transaction, orderId, item);
+                _orderRepository.UpdateStock(connection, transaction, item);
             }
+
+            transaction.Commit();
+            return InsertResult.Success;
+        }
+        catch (Exception)
+        {
+            transaction.Rollback();
+            return InsertResult.Error;
         }
     }
 

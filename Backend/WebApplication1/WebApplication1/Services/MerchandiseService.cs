@@ -29,13 +29,12 @@ public class MerchandiseService : IMerchandiseService
         return _merchandiseRepository.GetMerchandiseByCategory(category);
     }
 
-    public InsertResult InsertMerch(MerchandiseCreateDto merchandise)
+    public InsertResult InsertMerchandise(MerchandiseCreateDto merchandise)
     {
-        // Business rule validation: Check if the merchandise already exists
-        if (_merchandiseRepository.Exists(merchandise.CategoryId, merchandise.Name, merchandise.BrandId))
+        if (_merchandiseRepository.MerchandiseExists(merchandise.CategoryId, merchandise.Name, merchandise.BrandId))
             return InsertResult.AlreadyExists;
 
-        return _merchandiseRepository.InsertMerch(merchandise);
+        return _merchandiseRepository.InsertMerchandise(merchandise);
     }
 
     public bool DeleteMerchandiseById(int id)
@@ -43,9 +42,9 @@ public class MerchandiseService : IMerchandiseService
         return _merchandiseRepository.DeleteMerchandiseById(id);
     }
 
-    public bool UpdateMerch(int id, MerchandiseUpdateDto merchandiseUpdateDto)
+    public bool UpdateMerchandise(int id, MerchandiseUpdateDto merchandiseUpdateDto)
     {
-        return _merchandiseRepository.UpdateMerch(id, merchandiseUpdateDto);
+        return _merchandiseRepository.UpdateMerchandise(id, merchandiseUpdateDto);
     }
 
     public List<string>? GetSizesByCategoryId(int categoryId)
@@ -69,13 +68,36 @@ public class MerchandiseService : IMerchandiseService
         return _merchandiseRepository.GetBrands();
     }
 
-    public int AddCategoryToDb(CategoryCreateDto categoryCreateDto)
+    public InsertResult AddCategoryToDb(CategoryCreateDto categoryCreateDto)
     {
-        return _merchandiseRepository.AddCategoryToDb(categoryCreateDto);
+        int result = _merchandiseRepository.AddCategoryToDb(categoryCreateDto);
+
+        if (result > 0)  // valid category ID returned
+        {
+            return InsertResult.Success;
+        }
+        if (result == -1)
+        {
+            return InsertResult.AlreadyExists;
+        }
+
+        return InsertResult.Error;
     }
 
-    public int AddThemeToDb(ThemeCreateDto themeCreateDto)
+    public InsertResult AddThemeToDb(ThemeCreateDto themeCreateDto)
     {
-        return _merchandiseRepository.AddThemeToDb(themeCreateDto);
+        int result = _merchandiseRepository.AddThemeToDb(themeCreateDto);
+
+        if (result > 0)  // valid theme ID returned
+        {
+            return InsertResult.Success;
+        }
+        if (result == -1)
+        {
+            return InsertResult.AlreadyExists;
+        }
+
+        return InsertResult.Error;
     }
+
 }

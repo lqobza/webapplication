@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using System.Data.SqlClient;
+using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Models;
 using WebApplication1.Models.Enums;
 using WebApplication1.Models.Repositories;
@@ -20,16 +21,20 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
         _ratingRepository = ratingRepository;
     }
 
-    public bool Exists(int categoryId, string name, int brandId)
+    public bool MerchandiseExists(int categoryId, string name, int brandId)
     {
         using var command = new SqlCommand("[dbo].[CheckMerchExistence]");
+        command.CommandType = CommandType.StoredProcedure;
         
         command.Parameters.Add("categoryId", SqlDbType.Int).Value = categoryId;
         command.Parameters.Add("name", SqlDbType.NVarChar, 255).Value = name;
         command.Parameters.Add("brandId", SqlDbType.Int).Value = brandId;
+        
+        var existsParam = new SqlParameter("@exists", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+        command.Parameters.Add(existsParam);
 
-        var count = ExecuteScalar(command);
-        return count > 0;
+        ExecuteScalar(command);
+        return (bool)existsParam.Value;
     }
 
     public List<MerchandiseDto> GetAllMerchandise()
@@ -39,6 +44,8 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
         
         connection.Open();
         using var command = new SqlCommand("[dbo].[GetAllMerchandise]", connection);
+        command.CommandType = CommandType.StoredProcedure;
+        
         using var reader = command.ExecuteReader();
         
         while (reader.Read())
@@ -74,31 +81,14 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
 
     public List<MerchandiseDto> GetMerchandiseBySize(string size)
     {
-        var query = @"
-            SELECT 
-                m.id, 
-                m.category_id, 
-                c.name as CategoryName,
-                m.name, 
-                m.price, 
-                m.description, 
-                m.brand_id, 
-                b.name as BrandName
-            FROM 
-                Merch m
-                JOIN 
-            Brand b ON m.brand_id = b.id
-            JOIN 
-                Category c ON m.category_id = c.id
-            WHERE m.id IN (SELECT merch_id FROM MerchSize WHERE size = @size)";
-
         var merchList = new List<MerchandiseDto>();
         using var connection = CreateConnection();
         
         connection.Open();
-        using var command = new SqlCommand(query, connection);
-        
+        using var command = new SqlCommand("[dbo].[GetMerchandiseBySize]", connection);
+        command.CommandType = CommandType.StoredProcedure;
         command.Parameters.Add(new SqlParameter("@size", SqlDbType.NVarChar, 255) { Value = size });
+        
         using var reader = command.ExecuteReader();
         
         while (reader.Read())
@@ -171,100 +161,83 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
         return merchList;
     }
 
-    public InsertResult InsertMerch(MerchandiseCreateDto merchandise)
+    public InsertResult InsertMerchandise(MerchandiseCreateDto merchandise)
     {
-        var insertMerchCommandText = "INSERT INTO Merch (category_id, name, price, description, brand_id) " +
-                                     "OUTPUT INSERTED.ID " +
-                                     "VALUES (@categoryId, @name, @price, @description, @brandId);";
+        using var insertMerchandiseCommand = new SqlCommand("[dbo].[InsertMerchandise]");
+        insertMerchandiseCommand.CommandType = CommandType.StoredProcedure;
 
-        using var insertMerchCommand = new SqlCommand(insertMerchCommandText);
-        
-        insertMerchCommand.Parameters.Add("categoryId", SqlDbType.Int).Value = merchandise.CategoryId;
-        insertMerchCommand.Parameters.Add("name", SqlDbType.NVarChar, 255).Value = merchandise.Name;
-        insertMerchCommand.Parameters.Add("price", SqlDbType.Int).Value = merchandise.Price;
-        insertMerchCommand.Parameters.Add("description", SqlDbType.NVarChar, 255).Value = merchandise.Description;
-        insertMerchCommand.Parameters.Add("brandId", SqlDbType.Int).Value = merchandise.BrandId;
+        insertMerchandiseCommand.Parameters.Add("categoryId", SqlDbType.Int).Value = merchandise.CategoryId;
+        insertMerchandiseCommand.Parameters.Add("name", SqlDbType.NVarChar, 255).Value = merchandise.Name;
+        insertMerchandiseCommand.Parameters.Add("price", SqlDbType.Decimal).Value = merchandise.Price;
+        insertMerchandiseCommand.Parameters.Add("description", SqlDbType.NVarChar, 255).Value = merchandise.Description;
+        insertMerchandiseCommand.Parameters.Add("brandId", SqlDbType.Int).Value = merchandise.BrandId;
 
-        var merchId = ExecuteScalar(insertMerchCommand);
 
-        if (merchandise.Sizes != null && merchandise.Sizes.Any())
+        if (merchandise.Sizes != null)
+        {
+            //TODO: ez a rész nem jó
+            var sizesTable = new DataTable();
+            sizesTable.Columns.Add("Size", typeof(string));
+            sizesTable.Columns.Add("InStock", typeof(int));
             foreach (var sizeDto in merchandise.Sizes)
             {
-                var sizeValue = sizeDto.Size;
-                var insertMerchSizeCommandText = "INSERT INTO MerchSize (merch_id, size, instock) " +
-                                                 "VALUES (@merchId, @size, @instock);";
-
-                using var insertMerchSizeCommand = new SqlCommand(insertMerchSizeCommandText);
-                
-                insertMerchSizeCommand.Parameters.Add("merchId", SqlDbType.Int).Value = merchId;
-                insertMerchSizeCommand.Parameters.Add("size", SqlDbType.NVarChar, 255).Value =
-                    sizeValue ?? (object)DBNull.Value;
-                insertMerchSizeCommand.Parameters.Add("instock", SqlDbType.Int).Value = sizeDto.InStock;
-
-                if (ExecuteNonQuery(insertMerchSizeCommand) != 1) return InsertResult.Error;
+                sizesTable.Rows.Add(sizeDto.Size, sizeDto.InStock);
             }
+            var sizesParam = insertMerchandiseCommand.Parameters.AddWithValue("sizes", sizesTable);
+            sizesParam.SqlDbType = SqlDbType.Structured;
+            sizesParam.TypeName = "dbo.MerchSizeType";
+        }
 
-        if (merchandise.ThemeIds != null && merchandise.ThemeIds.Any())
+        if (merchandise.ThemeIds != null)
+        {
+            // Add Themes Table-Valued Parameter if available
+            var themesTable = new DataTable();
+            themesTable.Columns.Add("ThemeId", typeof(int));
             foreach (var themeId in merchandise.ThemeIds)
             {
-                var insertMerchThemeCommandText = "INSERT INTO MerchTheme (merch_id, theme_id) " +
-                                                  "VALUES (@merchId, @themeId);";
-
-                using var insertMerchThemeCommand = new SqlCommand(insertMerchThemeCommandText);
-                
-                insertMerchThemeCommand.Parameters.Add("merchId", SqlDbType.Int).Value = merchId;
-                insertMerchThemeCommand.Parameters.Add("themeId", SqlDbType.Int).Value = themeId;
-
-                if (ExecuteNonQuery(insertMerchThemeCommand) != 1) return InsertResult.Error;
+                themesTable.Rows.Add(themeId);
             }
+            var themesParam = insertMerchandiseCommand.Parameters.AddWithValue("themes", themesTable);
+            themesParam.SqlDbType = SqlDbType.Structured;
+            themesParam.TypeName = "dbo.MerchThemeType";
+        }
 
-        return InsertResult.Success;
+        var result = ExecuteScalar(insertMerchandiseCommand);
+
+        return result is int ? InsertResult.Success : InsertResult.Error;
     }
 
 
     public bool DeleteMerchandiseById(int id)
     {
-        var deleteMerchSizeCommandText = "DELETE FROM MerchSize WHERE merch_id = @id;";
-        var deleteMerchThemeCommandText = "DELETE FROM MerchTheme WHERE merch_id = @id;";
-        var deleteMerchCommandText = "DELETE FROM Merch WHERE id = @id;";
-
-        using var deleteMerchSizeCommand = new SqlCommand(deleteMerchSizeCommandText);
-        
-        deleteMerchSizeCommand.Parameters.Add("id", SqlDbType.Int).Value = id;
-        ExecuteNonQuery(deleteMerchSizeCommand);
-
-        using var deleteMerchThemeCommand = new SqlCommand(deleteMerchThemeCommandText);
-        
-        deleteMerchThemeCommand.Parameters.Add("id", SqlDbType.Int).Value = id;
-        ExecuteNonQuery(deleteMerchThemeCommand);
-
-        using var deleteMerchCommand = new SqlCommand(deleteMerchCommandText);
-        
-        deleteMerchCommand.Parameters.Add("id", SqlDbType.Int).Value = id;
-        return ExecuteNonQuery(deleteMerchCommand) == 1;
+        using var command = new SqlCommand("[dbo].[DeleteMerchandiseById]");
+        command.CommandType = CommandType.StoredProcedure;
+        command.Parameters.Add("id", SqlDbType.Int).Value = id;
+        return ExecuteNonQuery(command) == 1;
     }
 
-    public bool UpdateMerch(int id, MerchandiseUpdateDto merchandiseUpdateDto)
+    public bool UpdateMerchandise(int id, MerchandiseUpdateDto merchandiseUpdateDto)
     {
         var updateFields = new List<string>();
-        var command = new SqlCommand();
-
+        var command = new SqlCommand("[dbo].[UpdateMerchandise]");
+        command.CommandType = CommandType.StoredProcedure;
+        
         if (merchandiseUpdateDto.Price.HasValue)
         {
+            Console.WriteLine("Price value " + merchandiseUpdateDto.Price.Value);
             updateFields.Add("price = @Price");
             command.Parameters.Add("@Price", SqlDbType.Int).Value = merchandiseUpdateDto.Price.Value;
         }
 
         if (!string.IsNullOrEmpty(merchandiseUpdateDto.Description))
         {
+            Console.WriteLine("Description value " + merchandiseUpdateDto.Description);
             updateFields.Add("description = @Description");
             command.Parameters.Add("@Description", SqlDbType.NVarChar, 255).Value = merchandiseUpdateDto.Description;
         }
 
         if (!updateFields.Any()) throw new ArgumentException("No fields to update.");
 
-        var updateMerchQuery = $"UPDATE Merch SET {string.Join(", ", updateFields)} WHERE id = @Id";
-        command.CommandText = updateMerchQuery;
         command.Parameters.Add("@Id", SqlDbType.Int).Value = id;
 
         using var connection = CreateConnection();
@@ -301,10 +274,10 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
     public List<CategoryDto> GetCategories()
     {
         var categories = new List<CategoryDto>();
-        var query = "SELECT id, name FROM Category";
 
         using var connection = CreateConnection();
-        using var command = new SqlCommand(query, connection);
+        using var command = new SqlCommand("[dbo].[GetCategories]", connection);
+        command.CommandType = CommandType.StoredProcedure;
         
         connection.Open();
         using var reader = command.ExecuteReader();
@@ -322,10 +295,10 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
     public List<ThemeDto> GetThemes()
     {
         var themes = new List<ThemeDto>();
-        var query = "SELECT id, name FROM Theme";
 
         using var connection = CreateConnection();
-        using var command = new SqlCommand(query, connection);
+        using var command = new SqlCommand("[dbo].[GetThemes]", connection);
+        command.CommandType = CommandType.StoredProcedure;
         
         connection.Open();
         using var reader = command.ExecuteReader();
@@ -343,10 +316,10 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
     public List<BrandDto> GetBrands()
     {
         var brands = new List<BrandDto>();
-        var query = "SELECT id, name FROM Brand";
 
         using var connection = CreateConnection();
-        using var command = new SqlCommand(query, connection);
+        using var command = new SqlCommand("[dbo].[GetBrands]", connection);
+        command.CommandType = CommandType.StoredProcedure;
         
         connection.Open();
         using var reader = command.ExecuteReader();
@@ -363,44 +336,51 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
 
     public int AddCategoryToDb(CategoryCreateDto categoryCreateDto)
     {
-        var query = "INSERT INTO Category (name) OUTPUT INSERTED.ID VALUES (@name)";
-
         try
         {
             using var connection = CreateConnection();
-            using var command = new SqlCommand(query, connection);
-            
+            using var command = new SqlCommand("[dbo].[InsertCategory]", connection);
+            command.CommandType = CommandType.StoredProcedure;
+
             command.Parameters.Add(new SqlParameter("@name", SqlDbType.NVarChar, 255)
                 { Value = categoryCreateDto.Name });
 
             connection.Open();
             return (int)command.ExecuteScalar();
         }
-        catch (SqlException ex) when (ex.Number == 2627 || ex.Number == 2601) // Handle unique constraint violation
+        catch (SqlException ex)
         {
-            throw new InvalidOperationException("A category with the same name already exists.");
+            if (ex.Message.Contains("already exists"))
+            {
+                return -1;
+            }
+            throw;
         }
     }
 
     public int AddThemeToDb(ThemeCreateDto themeCreateDto)
     {
-        var query = "INSERT INTO Theme (name) OUTPUT INSERTED.ID VALUES (@name)";
-
         try
         {
             using var connection = CreateConnection();
-            using var command = new SqlCommand(query, connection);
-            
+            using var command = new SqlCommand("[dbo].[InsertTheme]", connection);
+            command.CommandType = CommandType.StoredProcedure;
+        
             command.Parameters.Add(new SqlParameter("@name", SqlDbType.NVarChar, 255)
                 { Value = themeCreateDto.Name });
 
             connection.Open();
             return (int)command.ExecuteScalar();
         }
-        catch (SqlException ex) when (ex.Number == 2627 || ex.Number == 2601)
+        catch (SqlException ex)
         {
-            throw new InvalidOperationException("A theme with the same name already exists.");
+            if (ex.Message.Contains("already exists"))
+            {
+                return -1;
+            }
+            throw;
         }
+        
     }
 
     private int ExecuteNonQuery(SqlCommand dbCommand)
@@ -419,26 +399,25 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
             dbTransaction.Commit();
             return rowsAffected;
         }
-        catch (SqlException ex)
+        catch (Exception ex)
         {
             _logger.LogError(ex, "A database error occurred while executing non-query.");
-            dbTransaction.Rollback();
-            throw;
-        }
-        catch (Exception ex) //todo: talán lehet esetleg a db kezelje a hibát, aztán akkor elég lenne 1 catch és jönne a megfelelő a hibaüzenet
-        {
-            _logger.LogError(ex, "An unexpected error occurred while executing non-query.");
+            //dbTransaction.Rollback();
             throw;
         }
     }
 
-    private int ExecuteScalar(SqlCommand command)
+    private object ExecuteScalar(SqlCommand command)
     {
+        if (command == null)
+        {
+            throw new ArgumentNullException(nameof(command));
+        }
+
         using var connection = CreateConnection();
-        
         command.Connection = connection;
-        connection.Open();
-        return (int)command.ExecuteScalar();
+        command.Connection.Open();
+        return command.ExecuteScalar();
     }
 
 

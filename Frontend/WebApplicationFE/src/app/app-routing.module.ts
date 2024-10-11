@@ -4,13 +4,15 @@ import { MerchandiseListComponent } from './components/merchandise-list/merchand
 import { MerchandiseDetailComponent } from './components/merchandise-detail/merchandise-detail.component';
 import { MerchandiseCreateComponent } from './components/merchandise-create/merchandise-create.component';
 import { MerchandiseUpdateComponent } from './components/merchandise-update/merchandise-update.component';
+import { CustomDesignPreviewComponent } from './components/custom-design-preview/custom-design-preview.component';
 
 const routes: Routes = [
   { path: '', redirectTo: '/merchandise', pathMatch: 'full' },
   { path: 'merchandise', component: MerchandiseListComponent },
   { path: 'merchandise/:id', component: MerchandiseDetailComponent },
   { path: 'create', component: MerchandiseCreateComponent },
-  { path: 'update/:id', component: MerchandiseUpdateComponent }
+  { path: 'update/:id', component: MerchandiseUpdateComponent },
+  { path: 'render-image-test', component: CustomDesignPreviewComponent }
 ];
 
 @NgModule({

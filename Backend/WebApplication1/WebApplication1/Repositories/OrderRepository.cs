@@ -49,7 +49,7 @@ public class OrderRepository : BaseRepository, IOrderRepository
         command.Parameters.AddWithValue("@merchId", item.MerchId);
         command.Parameters.AddWithValue("@size", item.Size);
         command.Parameters.AddWithValue("@quantity", item.Quantity);
-        command.Parameters.AddWithValue("@price", item.Price); //TODO: price should be queried (only during insert in case price changes later the customer should still get the order for the price that was displayed during the purchase) and calculated on backend site based on the ordered items in theory this should be working like this, test it
+        command.Parameters.AddWithValue("@price", item.Price);
 
         command.ExecuteNonQuery();
     }
@@ -64,12 +64,9 @@ public class OrderRepository : BaseRepository, IOrderRepository
         
         using var command = new SqlCommand(query, connection, transaction);
         
-        command.Parameters.AddWithValue("@merchId",
-            item.MerchId); //TODO: rewrite these in this format: command.Parameters.Add(new SqlParameter("@id", SqlDbType.Int) { Value = id });
-        command.Parameters.AddWithValue("@size",
-            item.Size); //TODO: rewrite these in this format: command.Parameters.Add(new SqlParameter("@id", SqlDbType.Int) { Value = id });
-        command.Parameters.AddWithValue("@quantity",
-            item.Quantity); //TODO: rewrite these in this format: command.Parameters.Add(new SqlParameter("@id", SqlDbType.Int) { Value = id });
+        command.Parameters.Add(new SqlParameter("@merchId", SqlDbType.Int) { Value = item.MerchId });
+        command.Parameters.Add(new SqlParameter("@size", SqlDbType.NVarChar) { Value = item.Size });
+        command.Parameters.Add(new SqlParameter("@quantity", SqlDbType.Int) { Value = item.Quantity });
 
         var rowsAffected = command.ExecuteNonQuery();
         if (rowsAffected == 0)

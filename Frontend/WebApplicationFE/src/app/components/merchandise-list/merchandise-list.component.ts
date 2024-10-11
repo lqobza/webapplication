@@ -18,7 +18,6 @@ export class MerchandiseListComponent implements OnInit {
   }
 
   loadMerchandise(): void {
-    console.log('Fetching all merchandise');
     this.merchandiseService.getAllMerchandise().subscribe(
       data => {
         console.log('Merchandise data received', data);

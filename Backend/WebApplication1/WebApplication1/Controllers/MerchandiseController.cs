@@ -82,7 +82,7 @@ public class MerchandiseController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        var insertMerchResult = _merchandiseService.InsertMerch(merchandiseCreateDto);
+        var insertMerchResult = _merchandiseService.InsertMerchandise(merchandiseCreateDto);
         if (insertMerchResult == InsertResult.Success)
         {
             _logger.LogInformation("Merchandise inserted successfully: {Merchandise}", merchandiseCreateDto);
@@ -115,7 +115,7 @@ public class MerchandiseController : ControllerBase
 
         _logger.LogWarning("Merchandise not found with id: {Id}", id);
         return
-            NoContent(); //The outcome is the same if the merchandise was already deleted or didn't exist in the first place as if it was deleted -> its not present anymore in the DB
+            NoContent();
     }
 
     //[Authorize(Roles = "Admin")]
@@ -126,7 +126,7 @@ public class MerchandiseController : ControllerBase
 
         try
         {
-            var result = _merchandiseService.UpdateMerch(id, merchandiseUpdateDto);
+            var result = _merchandiseService.UpdateMerchandise(id, merchandiseUpdateDto);
             if (result)
             {
                 _logger.LogInformation("Merchandise updated successfully: {Merchandise}", merchandiseUpdateDto);
@@ -190,39 +190,53 @@ public class MerchandiseController : ControllerBase
     [HttpPost("categories")]
     public IActionResult AddCategoryToDb([FromBody] CategoryCreateDto categoryCreateDto)
     {
-        _logger.LogInformation("AddCategoryToDb endpoint called with data: {categoryCreateDto}", categoryCreateDto);
+        _logger.LogInformation("AddCategoryToDb endpoint called with data: {}", categoryCreateDto.Name);
 
         if (string.IsNullOrWhiteSpace(categoryCreateDto.Name)) return BadRequest("Category name is required.");
+        var insertCategoryResult = _merchandiseService.AddCategoryToDb(categoryCreateDto);
+        
+        if (insertCategoryResult == InsertResult.Success)
+        {
+            _logger.LogInformation("Category inserted successfully: {}", categoryCreateDto.Name);
+            return Ok(new { message = "Category inserted successfully." });
+        }
+        
+        if (insertCategoryResult == InsertResult.AlreadyExists)
+        {
+            _logger.LogWarning("Category already exists: {}", categoryCreateDto.Name);
+            return Conflict(
+                new { message = $"Category {categoryCreateDto.Name} already exists in the database." });
+        }
 
-        try
-        {
-            var categoryId = AddCategoryToDb(categoryCreateDto);
-            return CreatedAtAction(nameof(GetCategories), new { id = categoryId },
-                categoryCreateDto); //TODO valszeg itt szall el a db duplikatum esetben
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        _logger.LogError("Internal server error while inserting category: {}", categoryCreateDto.Name);
+        return StatusCode(StatusCodes.Status500InternalServerError,
+            new { message = "Category insert was unsuccessful due to internal server error." });
     }
     
     //[Authorize(Roles = "Admin")]
     [HttpPost("themes")]
     public IActionResult AddThemeToDb([FromBody] ThemeCreateDto themeCreateDto)
     {
-        _logger.LogInformation("AddThemeToDb endpoint called with data: {themeCreateDto}", themeCreateDto);
+        _logger.LogInformation("AddThemeToDb endpoint called with data: {}", themeCreateDto.Name);
 
         if (string.IsNullOrWhiteSpace(themeCreateDto.Name)) return BadRequest("Theme name is required.");
+        var insertThemeResult = _merchandiseService.AddThemeToDb(themeCreateDto);
+        
+        if (insertThemeResult == InsertResult.Success)
+        {
+            _logger.LogInformation("Theme inserted successfully: {}", themeCreateDto.Name);
+            return Ok(new { message = "Theme inserted successfully." });
+        }
+        
+        if (insertThemeResult == InsertResult.AlreadyExists)
+        {
+            _logger.LogWarning("Theme already exists: {}", themeCreateDto.Name);
+            return Conflict(
+                new { message = $"Theme {themeCreateDto.Name} already exists in the database." });
+        }
 
-        try
-        {
-            var themeId = AddThemeToDb(themeCreateDto);
-            return CreatedAtAction(nameof(GetThemes), new { id = themeId },
-                themeCreateDto); //TODO valszeg itt szall el a db duplikatum esetben
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        _logger.LogError("Internal server error while inserting theme: {}", themeCreateDto.Name);
+        return StatusCode(StatusCodes.Status500InternalServerError,
+            new { message = "Theme insert was unsuccessful due to internal server error." });
     }
 }
