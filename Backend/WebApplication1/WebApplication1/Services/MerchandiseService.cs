@@ -18,6 +18,11 @@ public class MerchandiseService : IMerchandiseService
     {
         return _merchandiseRepository.GetAllMerchandise();
     }
+    
+    public MerchandiseDto? GetMerchandiseById(int id)
+    {
+        return _merchandiseRepository.GetMerchandiseById(id);
+    }
 
     public List<MerchandiseDto> GetMerchandiseBySize(string size)
     {

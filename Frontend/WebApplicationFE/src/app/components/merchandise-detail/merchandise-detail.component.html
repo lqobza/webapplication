@@ -3,7 +3,8 @@
     <p>Category: {{ merchandise.categoryId }}</p>
     <p>Price: {{ merchandise.price }}</p>
     <p>Description: {{ merchandise.description }}</p>
-    <p>Size: {{ merchandise.size }}</p>
     <p>Brand: {{ merchandise.brandId }}</p>
-  </div>
+    </div>
   
+<div *ngIf="!merchandise && isLoading">Loading...</div>
+<div *ngIf="!merchandise && !isLoading && errorMessage">Error: {{ errorMessage }}</div>

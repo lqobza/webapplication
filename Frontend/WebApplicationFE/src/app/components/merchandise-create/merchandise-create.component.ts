@@ -73,8 +73,9 @@ export class MerchandiseCreateComponent {
     if (this.merchandiseForm.valid) {
       const newMerchandise: Merchandise = this.merchandiseForm.value;
   
-      // Add the selected size to the newMerchandise object
-      newMerchandise.size = this.merchandiseForm.get('size')?.value;
+      // add the selected size
+      //TODO rework using the size model
+      //newMerchandise.size = this.merchandiseForm.get('size')?.value;
   
       this.merchandiseService.insertMerchandise(newMerchandise).subscribe(
         () => this.router.navigate(['/merchandise']),

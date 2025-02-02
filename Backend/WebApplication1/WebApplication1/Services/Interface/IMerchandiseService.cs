@@ -6,6 +6,7 @@ namespace WebApplication1.Services.Interface;
 public interface IMerchandiseService
 {
     public List<MerchandiseDto> GetAllMerchandise();
+    public MerchandiseDto? GetMerchandiseById(int id);
     public List<MerchandiseDto> GetMerchandiseBySize(string size);
     public List<MerchandiseDto> GetMerchandiseByCategory(int category);
     public InsertResult InsertMerchandise(MerchandiseCreateDto merchandise);

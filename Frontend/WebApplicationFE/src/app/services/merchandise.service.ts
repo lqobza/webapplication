@@ -18,6 +18,11 @@ export class MerchandiseService {
     return this.http.get<Merchandise[]>(`${this.apiUrl}`);
   }
 
+  getMerchandiseById(merchId: number): Observable<Merchandise> {
+    console.log('Fetching merchandise: ' + merchId);
+    return this.http.get<Merchandise>(`${this.apiUrl}/${merchId}`);
+  }
+
   getCategories(): Observable<Category[]> {
     return this.http.get<Category[]>(`${this.apiUrl}/categories`);
   }

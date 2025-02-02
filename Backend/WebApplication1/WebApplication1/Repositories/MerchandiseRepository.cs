@@ -1,6 +1,5 @@
 ﻿using System.Data;
 using System.Data.SqlClient;
-using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Models;
 using WebApplication1.Models.Enums;
 using WebApplication1.Models.Repositories;
@@ -25,11 +24,11 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
     {
         using var command = new SqlCommand("[dbo].[CheckMerchExistence]");
         command.CommandType = CommandType.StoredProcedure;
-        
+
         command.Parameters.Add("categoryId", SqlDbType.Int).Value = categoryId;
         command.Parameters.Add("name", SqlDbType.NVarChar, 255).Value = name;
         command.Parameters.Add("brandId", SqlDbType.Int).Value = brandId;
-        
+
         var existsParam = new SqlParameter("@exists", SqlDbType.Bit) { Direction = ParameterDirection.Output };
         command.Parameters.Add(existsParam);
 
@@ -41,16 +40,78 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
     {
         var merchList = new List<MerchandiseDto>();
         using var connection = CreateConnection();
-        
         connection.Open();
         using var command = new SqlCommand("[dbo].[GetAllMerchandise]", connection);
         command.CommandType = CommandType.StoredProcedure;
-        
+
         using var reader = command.ExecuteReader();
-        
+
         while (reader.Read())
         {
-            var merchandise = new MerchandiseDto
+            var merchandise = merchList.FirstOrDefault(m => m.Id == (int)reader["id"]);
+
+            if (merchandise == null) // check if merchandise is null
+            {
+                merchandise = new MerchandiseDto
+                {
+                    Id = (int)reader["id"],
+                    CategoryId = (int)reader["category_id"],
+                    CategoryName = (string)reader["CategoryName"],
+                    Name = (string)reader["name"],
+                    Price = (int)reader["price"],
+                    Description = (string)reader["description"],
+                    BrandId = (int)reader["brand_id"],
+                    BrandName = (string)reader["BrandName"],
+                    Themes = new List<ThemeDto>(),
+                    Sizes = new List<MerchSizeDto>()
+                };
+                
+                if (reader["theme_id"] != DBNull.Value)
+                {
+                    merchandise.Themes.Add(new ThemeDto
+                    {
+                        Id = (int)reader["theme_id"],
+                        Name = (string)reader["theme_name"]
+                    });
+                }
+
+                if (reader["size_id"] != DBNull.Value)
+                {
+                    merchandise.Sizes.Add(new MerchSizeDto
+                    {
+                        Id = (int)reader["size_id"],
+                        MerchId = (int)reader["id"],
+                        Size = reader["size_name"] == DBNull.Value ? null : (string)reader["size_name"],
+                        InStock = (int)reader["size_in_stock"]
+                    });
+                }
+                
+                merchList.Add(merchandise);
+            }
+            
+            
+        }
+
+        return merchList;
+    }
+
+
+    public MerchandiseDto? GetMerchandiseById(int id)
+    {
+        MerchandiseDto? merchandise = null;
+
+        using var connection = CreateConnection();
+        connection.Open();
+        using var command = new SqlCommand("[dbo].[GetMerchandiseById]", connection);
+        command.CommandType = CommandType.StoredProcedure;
+        command.Parameters.AddWithValue("@Id", id);
+
+        using var reader = command.ExecuteReader();
+
+        while (reader.Read())
+        {
+            if (merchandise != null) continue;
+            merchandise = new MerchandiseDto
             {
                 Id = (int)reader["id"],
                 CategoryId = (int)reader["category_id"],
@@ -64,18 +125,45 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
                 Themes = new List<ThemeDto>(),
                 Sizes = new List<MerchSizeDto>()
             };
-            merchList.Add(merchandise);
+                
+            if (reader["rating_id"] != DBNull.Value)
+            {
+                merchandise.Ratings.Add(new RatingDto
+                {
+                    Id = (int)reader["rating_id"],
+                    MerchId = id,
+                    Rating = (int)reader["rating_value"],
+                    Description = reader["rating_description"] == DBNull.Value
+                        ? null
+                        : (string)reader["rating_description"],
+                    CreatedAt = (DateTime)reader["rating_created_at"]
+                });
+            }
+
+            if (reader["theme_id"] != DBNull.Value)
+            {
+                merchandise.Themes.Add(new ThemeDto
+                {
+                    Id = (int)reader["theme_id"],
+                    Name = (string)reader["theme_name"]
+                });
+            }
+
+            if (reader["size_id"] != DBNull.Value)
+            {
+                merchandise.Sizes.Add(new MerchSizeDto
+                {
+                    Id = (int)reader["size_id"],
+                    MerchId = id,
+                    Size = reader["size_name"] == DBNull.Value ? null : (string)reader["size_name"],
+                    InStock = (int)reader["size_in_stock"]
+                });
+            }
+            
+            return merchandise;
         }
 
-        // Populate Ratings, Themes, and Sizes for each merchandise
-        foreach (var merchandise in merchList)
-        {
-            merchandise.Ratings = _ratingRepository.GetRatingsForMerchandise(merchandise.Id); //TODO do these steps in the stored procedure to lower db connections
-            merchandise.Themes = GetThemesByMerchId(merchandise.Id);
-            merchandise.Sizes = GetSizesByMerchId(merchandise.Id);
-        }
-
-        return merchList;
+        return merchandise;
     }
 
 
@@ -83,14 +171,14 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
     {
         var merchList = new List<MerchandiseDto>();
         using var connection = CreateConnection();
-        
+
         connection.Open();
         using var command = new SqlCommand("[dbo].[GetMerchandiseBySize]", connection);
         command.CommandType = CommandType.StoredProcedure;
         command.Parameters.Add(new SqlParameter("@size", SqlDbType.NVarChar, 255) { Value = size });
-        
+
         using var reader = command.ExecuteReader();
-        
+
         while (reader.Read())
             merchList.Add(new MerchandiseDto
             {
@@ -122,14 +210,14 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
     {
         using var connection = CreateConnection();
         connection.Open();
-        
+
         using var command = new SqlCommand("[dbo].[GetMerchandiseByCategory]", connection);
         command.CommandType = CommandType.StoredProcedure;
         command.Parameters.Add(new SqlParameter("@categoryId", SqlDbType.Int) { Value = categoryId });
-        
+
         using var reader = command.ExecuteReader();
         var merchList = new List<MerchandiseDto>();
-        
+
         while (reader.Read())
         {
             var merchandise = new MerchandiseDto
@@ -183,6 +271,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
             {
                 sizesTable.Rows.Add(sizeDto.Size, sizeDto.InStock);
             }
+
             var sizesParam = insertMerchandiseCommand.Parameters.AddWithValue("sizes", sizesTable);
             sizesParam.SqlDbType = SqlDbType.Structured;
             sizesParam.TypeName = "dbo.MerchSizeType";
@@ -197,6 +286,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
             {
                 themesTable.Rows.Add(themeId);
             }
+
             var themesParam = insertMerchandiseCommand.Parameters.AddWithValue("themes", themesTable);
             themesParam.SqlDbType = SqlDbType.Structured;
             themesParam.TypeName = "dbo.MerchThemeType";
@@ -221,7 +311,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
         var updateFields = new List<string>();
         var command = new SqlCommand("[dbo].[UpdateMerchandise]");
         command.CommandType = CommandType.StoredProcedure;
-        
+
         if (merchandiseUpdateDto.Price.HasValue)
         {
             Console.WriteLine("Price value " + merchandiseUpdateDto.Price.Value);
@@ -241,7 +331,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
         command.Parameters.Add("@Id", SqlDbType.Int).Value = id;
 
         using var connection = CreateConnection();
-        
+
         command.Connection = connection;
         connection.Open();
         var rowsAffected = command.ExecuteNonQuery();
@@ -278,10 +368,10 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
         using var connection = CreateConnection();
         using var command = new SqlCommand("[dbo].[GetCategories]", connection);
         command.CommandType = CommandType.StoredProcedure;
-        
+
         connection.Open();
         using var reader = command.ExecuteReader();
-        
+
         while (reader.Read())
             categories.Add(new CategoryDto
             {
@@ -299,10 +389,10 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
         using var connection = CreateConnection();
         using var command = new SqlCommand("[dbo].[GetThemes]", connection);
         command.CommandType = CommandType.StoredProcedure;
-        
+
         connection.Open();
         using var reader = command.ExecuteReader();
-        
+
         while (reader.Read())
             themes.Add(new ThemeDto
             {
@@ -320,10 +410,10 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
         using var connection = CreateConnection();
         using var command = new SqlCommand("[dbo].[GetBrands]", connection);
         command.CommandType = CommandType.StoredProcedure;
-        
+
         connection.Open();
         using var reader = command.ExecuteReader();
-        
+
         while (reader.Read())
             brands.Add(new BrandDto
             {
@@ -354,6 +444,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
             {
                 return -1;
             }
+
             throw;
         }
     }
@@ -365,7 +456,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
             using var connection = CreateConnection();
             using var command = new SqlCommand("[dbo].[InsertTheme]", connection);
             command.CommandType = CommandType.StoredProcedure;
-        
+
             command.Parameters.Add(new SqlParameter("@name", SqlDbType.NVarChar, 255)
                 { Value = themeCreateDto.Name });
 
@@ -378,20 +469,20 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
             {
                 return -1;
             }
+
             throw;
         }
-        
     }
 
     private int ExecuteNonQuery(SqlCommand dbCommand)
     {
         using var connection = CreateConnection();
-        
+
         dbCommand.Connection = connection;
         connection.Open();
 
         using var dbTransaction = connection.BeginTransaction();
-        
+
         try
         {
             dbCommand.Transaction = dbTransaction;
@@ -432,13 +523,13 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
 
         var themes = new List<ThemeDto>();
         using var connection = CreateConnection();
-        
+
         connection.Open();
         using var command = new SqlCommand(query, connection);
-        
+
         command.Parameters.Add(new SqlParameter("@merchId", SqlDbType.Int) { Value = merchId });
         using var reader = command.ExecuteReader();
-        
+
         while (reader.Read())
             themes.Add(new ThemeDto
             {
@@ -459,13 +550,13 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
 
         var sizes = new List<MerchSizeDto>();
         using var connection = CreateConnection();
-        
+
         connection.Open();
         using var command = new SqlCommand(query, connection);
-        
+
         command.Parameters.Add(new SqlParameter("@merchId", SqlDbType.Int) { Value = merchId });
         using var reader = command.ExecuteReader();
-        
+
         while (reader.Read())
         {
             var sizeDto = new MerchSizeDto

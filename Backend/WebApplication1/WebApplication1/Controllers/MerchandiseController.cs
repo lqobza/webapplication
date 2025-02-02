@@ -28,12 +28,29 @@ public class MerchandiseController : ControllerBase
 
         if (merchList.Count == 0)
         {
-            _logger.LogInformation("No merchandise found");
-            return NoContent();
+            _logger.LogWarning("No merchandise found");
+            return NotFound(new { message = "No merchandise found." });
         }
 
-        _logger.LogInformation("Returning merchandise list");
+        _logger.LogInformation("Returning merchandise list (count: {Count})", merchList.Count);
         return Ok(merchList);
+    }
+
+    [HttpGet("{id:int}")]
+    public IActionResult GetMerchandiseById(int id)
+    {
+        _logger.LogInformation("GetMerchandiseById endpoint called for ID: {id}", id);
+
+        var merch = _merchandiseService.GetMerchandiseById(id);
+
+        if (merch == null)
+        {
+            _logger.LogWarning("Merchandise not found for ID: {id}", id);
+            return NotFound(new { message = $"Merchandise with ID {id} not found." });
+        }
+
+        _logger.LogInformation("Returning merchandise with ID: {id}", id);
+        return Ok(merch);
     }
 
     [HttpGet("size/{size}")]
@@ -45,8 +62,8 @@ public class MerchandiseController : ControllerBase
 
         if (merchList.Count == 0)
         {
-            _logger.LogInformation("No merchandise found for size: {Size}", size);
-            return NoContent();
+            _logger.LogWarning("No merchandise found for size: {size}", size);
+            return NotFound(new { message = $"No merchandise found for size: {size}", size });
         }
 
         _logger.LogInformation("Returning merchandise list for size: {Size}", size);
@@ -60,16 +77,16 @@ public class MerchandiseController : ControllerBase
 
         var merchList = _merchandiseService.GetMerchandiseByCategory(category);
 
-        if (merchList.Count is 0)
+        if (merchList.Count == 0)
         {
-            _logger.LogInformation("No merchandise found for category: {category}", category);
-            return NoContent();
+            _logger.LogWarning("No merchandise found for category: {category}", category);
+            return NotFound(new { message = $"No merchandise found for category: {category}", category });
         }
 
         _logger.LogInformation("Returning merchandise list for category: {category}", category);
         return Ok(merchList);
     }
-    
+
     //[Authorize(Roles = "Admin")]
     [HttpPost("")]
     public IActionResult InsertMerchandise([FromBody] MerchandiseCreateDto merchandiseCreateDto)
@@ -79,43 +96,45 @@ public class MerchandiseController : ControllerBase
         if (!ModelState.IsValid)
         {
             _logger.LogWarning("Invalid input data: {ModelStateErrors}", ModelState);
-            return BadRequest(ModelState);
+            return BadRequest(ModelState); // Keep returning ModelState for detailed error info
         }
 
         var insertMerchResult = _merchandiseService.InsertMerchandise(merchandiseCreateDto);
-        if (insertMerchResult == InsertResult.Success)
-        {
-            _logger.LogInformation("Merchandise inserted successfully: {Merchandise}", merchandiseCreateDto);
-            return Ok(new { message = "Merchandise inserted successfully." });
-        }
-        if (insertMerchResult == InsertResult.AlreadyExists)
 
+        switch (insertMerchResult)
         {
-            _logger.LogWarning("Merchandise already exists: {Merchandise}", merchandiseCreateDto);
-            return Conflict(
-                new { message = $"Merchandise {merchandiseCreateDto.Name} already exists in the database." });
+            case InsertResult.Success:
+                _logger.LogInformation("Merchandise inserted successfully: {Merchandise}", merchandiseCreateDto);
+                return Ok(new { message = "Merchandise inserted successfully." });
+            case InsertResult.AlreadyExists:
+                _logger.LogWarning("Merchandise already exists: {Merchandise}", merchandiseCreateDto);
+                return Conflict(new { message = $"Merchandise {merchandiseCreateDto.Name} already exists." });
+            case InsertResult.Error:
+            default:
+                _logger.LogError("Internal server error while inserting merchandise: {Merchandise}",
+                    merchandiseCreateDto);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new { message = "Internal server error during merchandise insert." });
         }
-
-        _logger.LogError("Internal server error while inserting merchandise: {Merchandise}", merchandiseCreateDto);
-        return StatusCode(StatusCodes.Status500InternalServerError,
-            new { message = "Merch insert was unsuccessful due to internal server error." });
     }
 
     //[Authorize(Roles = "Admin")]
     [HttpDelete("{id:int}")]
     public IActionResult DeleteMerchandiseById(int id)
     {
-        _logger.LogInformation("DeleteMerchandiseById endpoint called with id: {Id}", id);
-        var isDeleted = _merchandiseService.DeleteMerchandiseById(id);
-        if (isDeleted)
-        {
-            _logger.LogInformation("Merchandise deleted successfully with id: {Id}", id);
-            return NoContent();
-        }
+        _logger.LogInformation("DeleteMerchandiseById endpoint called for ID: {Id}", id);
 
-        _logger.LogWarning("Merchandise not found with id: {Id}", id);
-        return
-            NoContent();
+        var isDeleted = _merchandiseService.DeleteMerchandiseById(id);
+
+        switch (isDeleted)
+        {
+            case true:
+                _logger.LogInformation("Merchandise deleted successfully with ID: {Id}", id);
+                return NoContent();
+            case false:
+                _logger.LogWarning("Merchandise not found with ID: {Id}", id);
+                return NotFound(new { message = $"Merchandise with ID {id} not found." });
+        }
     }
 
     //[Authorize(Roles = "Admin")]
@@ -139,12 +158,13 @@ public class MerchandiseController : ControllerBase
         catch (ArgumentException ex)
         {
             _logger.LogError(ex, "Error in request input: {Merchandise}", merchandiseUpdateDto);
-            return StatusCode(StatusCodes.Status400BadRequest, new { message = "No update values provided" });
+            return BadRequest(new { message = "Invalid update values provided." });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error occurred while updating merchandise: {Merchandise}", merchandiseUpdateDto);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Internal server error." });
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "Internal server error during merchandise update." });
         }
     }
 
@@ -154,9 +174,11 @@ public class MerchandiseController : ControllerBase
         _logger.LogInformation("GetSizesByCategoryId endpoint called with categoryId: {categoryId}", categoryId);
 
         var sizes = _merchandiseService.GetSizesByCategoryId(categoryId);
-        if (sizes == null) return BadRequest("Invalid CategoryId.");
 
-        return Ok(sizes);
+        if (sizes != null && sizes.Count != 0) return Ok(sizes);
+
+        _logger.LogWarning("No sizes found for categoryId: {categoryId}", categoryId);
+        return NotFound(new { message = $"No sizes found for category ID: {categoryId}." });
     }
 
     [HttpGet("categories")]
@@ -165,7 +187,9 @@ public class MerchandiseController : ControllerBase
         _logger.LogInformation("GetCategories endpoint called");
 
         var categories = _merchandiseService.GetCategories();
-        return Ok(categories);
+        if (categories.Count != 0) return Ok(categories);
+        _logger.LogWarning("No categories found.");
+        return NotFound(new { message = "No categories found." });
     }
 
     [HttpGet("themes")]
@@ -174,16 +198,21 @@ public class MerchandiseController : ControllerBase
         _logger.LogInformation("GetThemes endpoint called");
 
         var themes = _merchandiseService.GetThemes();
-        return Ok(themes);
+        if (themes.Count != 0) return Ok(themes);
+        _logger.LogWarning("No themes found.");
+        return NotFound(new { message = "No themes found." });
     }
-    
+
     [HttpGet("brands")]
     public IActionResult GetBrands()
     {
         _logger.LogInformation("GetBrands endpoint called");
 
         var brands = _merchandiseService.GetBrands();
-        return Ok(brands);
+
+        if (brands.Count != 0) return Ok(brands);
+        _logger.LogWarning("No brands found.");
+        return NotFound(new { message = "No brands found." });
     }
 
     //[Authorize(Roles = "Admin")]
@@ -192,51 +221,57 @@ public class MerchandiseController : ControllerBase
     {
         _logger.LogInformation("AddCategoryToDb endpoint called with data: {}", categoryCreateDto.Name);
 
-        if (string.IsNullOrWhiteSpace(categoryCreateDto.Name)) return BadRequest("Category name is required.");
-        var insertCategoryResult = _merchandiseService.AddCategoryToDb(categoryCreateDto);
-        
-        if (insertCategoryResult == InsertResult.Success)
+        if (string.IsNullOrWhiteSpace(categoryCreateDto.Name) || !ModelState.IsValid)
         {
-            _logger.LogInformation("Category inserted successfully: {}", categoryCreateDto.Name);
-            return Ok(new { message = "Category inserted successfully." });
-        }
-        
-        if (insertCategoryResult == InsertResult.AlreadyExists)
-        {
-            _logger.LogWarning("Category already exists: {}", categoryCreateDto.Name);
-            return Conflict(
-                new { message = $"Category {categoryCreateDto.Name} already exists in the database." });
+            return BadRequest(ModelState);
         }
 
-        _logger.LogError("Internal server error while inserting category: {}", categoryCreateDto.Name);
-        return StatusCode(StatusCodes.Status500InternalServerError,
-            new { message = "Category insert was unsuccessful due to internal server error." });
+        var insertCategoryResult = _merchandiseService.AddCategoryToDb(categoryCreateDto);
+
+
+        switch (insertCategoryResult)
+        {
+            case InsertResult.Success:
+                _logger.LogInformation("Category inserted successfully: {}", categoryCreateDto.Name);
+                return Ok(new { message = "Category inserted successfully." });
+            case InsertResult.AlreadyExists:
+                _logger.LogWarning("Category already exists: {}", categoryCreateDto.Name);
+                return Conflict(new { message = $"Category {categoryCreateDto.Name} already exists." });
+            case InsertResult.Error:
+            default:
+                _logger.LogError("Internal server error while inserting category: {}", categoryCreateDto.Name);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new { message = "Internal server error during category insert." });
+        }
     }
-    
+
     //[Authorize(Roles = "Admin")]
     [HttpPost("themes")]
     public IActionResult AddThemeToDb([FromBody] ThemeCreateDto themeCreateDto)
     {
         _logger.LogInformation("AddThemeToDb endpoint called with data: {}", themeCreateDto.Name);
 
-        if (string.IsNullOrWhiteSpace(themeCreateDto.Name)) return BadRequest("Theme name is required.");
-        var insertThemeResult = _merchandiseService.AddThemeToDb(themeCreateDto);
-        
-        if (insertThemeResult == InsertResult.Success)
+        if (string.IsNullOrWhiteSpace(themeCreateDto.Name) || !ModelState.IsValid)
         {
-            _logger.LogInformation("Theme inserted successfully: {}", themeCreateDto.Name);
-            return Ok(new { message = "Theme inserted successfully." });
-        }
-        
-        if (insertThemeResult == InsertResult.AlreadyExists)
-        {
-            _logger.LogWarning("Theme already exists: {}", themeCreateDto.Name);
-            return Conflict(
-                new { message = $"Theme {themeCreateDto.Name} already exists in the database." });
+            return BadRequest(ModelState); // Return BadRequest with ModelState
         }
 
-        _logger.LogError("Internal server error while inserting theme: {}", themeCreateDto.Name);
-        return StatusCode(StatusCodes.Status500InternalServerError,
-            new { message = "Theme insert was unsuccessful due to internal server error." });
+        var insertThemeResult = _merchandiseService.AddThemeToDb(themeCreateDto);
+
+        switch (insertThemeResult)
+        {
+            case InsertResult.Success:
+                _logger.LogInformation("Theme inserted successfully: {}", themeCreateDto.Name);
+                return Ok(new { message = "Theme inserted successfully." });
+            case InsertResult.AlreadyExists:
+                _logger.LogWarning("Theme already exists: {}", themeCreateDto.Name);
+                return Conflict(
+                    new { message = $"Theme {themeCreateDto.Name} already exists in the database." });
+            case InsertResult.Error:
+            default:
+                _logger.LogError("Internal server error while inserting theme: {}", themeCreateDto.Name);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new { message = "Theme insert was unsuccessful due to internal server error." });
+        }
     }
 }

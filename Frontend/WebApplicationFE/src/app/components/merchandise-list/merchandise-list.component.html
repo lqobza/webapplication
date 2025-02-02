@@ -1,9 +1,9 @@
 <div>
-    <h2>Merchandise List</h2>
-    <ul>
-      <li *ngFor="let item of merchandiseList">
-        {{ item.name }} - {{ item.price }}
-      </li>
-    </ul>
-  </div>
-  
+  <h2>Merchandise List</h2>
+
+  <div *ngIf="isLoading">Loading...</div>  <div *ngIf="errorMessage">{{ errorMessage }}</div> <ul *ngIf="merchandiseList.length > 0">  <li *ngFor="let item of merchandiseList" (click)="goToDetails(item.id!)" style="cursor: pointer;">
+      {{ item.name }} - {{ item.price }}
+    </li>
+  </ul>
+  <p *ngIf="merchandiseList.length === 0 && !isLoading && !errorMessage">No merchandise available.</p>
+</div>

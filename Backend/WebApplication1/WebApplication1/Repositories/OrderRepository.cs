@@ -76,7 +76,7 @@ public class OrderRepository : BaseRepository, IOrderRepository
 
     public List<OrderDto> GetAllOrders()
     {
-        var query = @"SELECT * FROM Orders";
+        var query = @"[dbo].[GetOrders]";
 
         var orderList = new List<OrderDto>();
         using var connection = CreateConnection();

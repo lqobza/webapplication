@@ -6,6 +6,7 @@ public interface IMerchandiseRepository
 {
     public bool MerchandiseExists(int categoryId, string name, int brandId);
     public List<MerchandiseDto> GetAllMerchandise();
+    public MerchandiseDto? GetMerchandiseById(int id);
     public List<MerchandiseDto> GetMerchandiseBySize(string size);
     public List<MerchandiseDto> GetMerchandiseByCategory(int category);
     public InsertResult InsertMerchandise(MerchandiseCreateDto merchandise);
