@@ -3,7 +3,6 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using WebApplication1.Models.Repositories;
 using WebApplication1.Repositories;
 using WebApplication1.Repositories.Interface;
 using WebApplication1.Services;

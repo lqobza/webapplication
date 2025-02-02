@@ -1,0 +1,104 @@
+/* General Styles */
+body {
+    font-family: sans-serif; /* Choose a suitable font */
+    line-height: 1.6;
+    color: #333; /* Dark gray text color */
+    margin: 20px; /* Add some margin to the body */
+    background-color: #f8f8f8; /* Light gray background */
+  }
+  
+  h2, h3 {
+    font-weight: 600; /* Slightly bolder headings */
+    margin-bottom: 10px;
+  }
+  
+  p {
+    margin-bottom: 10px;
+  }
+  
+  ul {
+    list-style: disc;
+    margin-left: 20px;
+    margin-bottom: 10px;
+  }
+  
+  /* Merchandise Details Section */
+  .merchandise-details {
+    border: 1px solid #ddd; /* Light gray border */
+    padding: 20px;
+    background-color: #fff; /* White background for the details section */
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    border-radius: 8px;  /* Rounded corners */
+  }
+  
+  .merchandise-details h2 {
+    color: #555; /* Slightly darker heading color */
+    margin-top: 0; /* Remove top margin from the main heading */
+  }
+  
+  .merchandise-details h3 {
+    color: #777; /* Slightly darker heading color */
+    border-bottom: 1px solid #eee; /* Add a separator line */
+    padding-bottom: 5px;
+  }
+  
+  .in-stock {
+    color: green; /* Make "In Stock" green */
+    font-weight: bold;
+  }
+  
+  .out-of-stock {
+    color: red; /* Make "Out of Stock" red */
+    font-weight: bold;
+  }
+  
+  /* Quantity and Add to Cart */
+  .quantity-section {
+    margin-top: 20px;
+    display: flex;  /* Use flexbox to align items */
+    align-items: center;
+  }
+  
+  .quantity-section label {
+    margin-right: 10px;
+  }
+  
+  .quantity-section input[type="number"] {
+    padding: 5px;
+    border: 1px solid #ccc;
+    width: 60px;
+    margin-right: 10px;
+  }
+  
+  .quantity-section button:disabled {
+    background-color: #ccc; /* Gray background */
+    color: #999; /* Light gray text */
+    cursor: default; /* Default cursor (not a pointer) */
+    border: none; /* Remove any default border */
+    opacity: 0.7; /* Slightly reduce the opacity */
+  }
+  
+  .quantity-section button { /* Existing styles */
+    background-color: #007bff; /* Blue button */
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+
+  .details-header {
+    display: flex;
+    justify-content: space-between; /* Align items to start and end */
+    align-items: center; /* Vertically center items */
+    margin-bottom: 20px; /* Add some space below the header */
+  }
+  
+  .edit-button {
+    background-color: #007bff; /* Blue button */
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+  }

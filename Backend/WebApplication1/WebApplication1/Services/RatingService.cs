@@ -1,5 +1,4 @@
 ﻿using WebApplication1.Models;
-using WebApplication1.Models.Repositories;
 using WebApplication1.Repositories.Interface;
 using WebApplication1.Services.Interface;
 

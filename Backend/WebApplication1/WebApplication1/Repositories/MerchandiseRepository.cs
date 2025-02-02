@@ -2,7 +2,6 @@
 using System.Data.SqlClient;
 using WebApplication1.Models;
 using WebApplication1.Models.Enums;
-using WebApplication1.Models.Repositories;
 using WebApplication1.Repositories.Interface;
 
 namespace WebApplication1.Repositories;
@@ -65,7 +64,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
                     Themes = new List<ThemeDto>(),
                     Sizes = new List<MerchSizeDto>()
                 };
-                
+
                 if (reader["theme_id"] != DBNull.Value)
                 {
                     merchandise.Themes.Add(new ThemeDto
@@ -85,11 +84,9 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
                         InStock = (int)reader["size_in_stock"]
                     });
                 }
-                
+
                 merchList.Add(merchandise);
             }
-            
-            
         }
 
         return merchList;
@@ -110,8 +107,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
 
         while (reader.Read())
         {
-            if (merchandise != null) continue;
-            merchandise = new MerchandiseDto
+            merchandise ??= new MerchandiseDto
             {
                 Id = (int)reader["id"],
                 CategoryId = (int)reader["category_id"],
@@ -125,47 +121,57 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
                 Themes = new List<ThemeDto>(),
                 Sizes = new List<MerchSizeDto>()
             };
-                
+
             if (reader["rating_id"] != DBNull.Value)
             {
-                merchandise.Ratings.Add(new RatingDto
+                var ratingId = (int)reader["rating_id"];
+                if (merchandise.Ratings != null &&
+                    merchandise.Ratings.All(r => r.Id != ratingId)) // Check BEFORE adding
                 {
-                    Id = (int)reader["rating_id"],
-                    MerchId = id,
-                    Rating = (int)reader["rating_value"],
-                    Description = reader["rating_description"] == DBNull.Value
-                        ? null
-                        : (string)reader["rating_description"],
-                    CreatedAt = (DateTime)reader["rating_created_at"]
-                });
+                    merchandise.Ratings.Add(new RatingDto
+                    {
+                        Id = ratingId,
+                        MerchId = id,
+                        Rating = (int)reader["rating_value"],
+                        Description = reader["rating_description"] == DBNull.Value
+                            ? null
+                            : (string)reader["rating_description"],
+                        CreatedAt = (DateTime)reader["rating_created_at"]
+                    });
+                }
             }
 
             if (reader["theme_id"] != DBNull.Value)
             {
-                merchandise.Themes.Add(new ThemeDto
+                var themeId = (int)reader["theme_id"];
+                if (merchandise.Themes != null && merchandise.Themes.All(t => t.Id != themeId)) // Check BEFORE adding
                 {
-                    Id = (int)reader["theme_id"],
-                    Name = (string)reader["theme_name"]
-                });
+                    merchandise.Themes.Add(new ThemeDto
+                    {
+                        Id = themeId,
+                        Name = (string)reader["theme_name"]
+                    });
+                }
             }
 
             if (reader["size_id"] != DBNull.Value)
             {
-                merchandise.Sizes.Add(new MerchSizeDto
+                var sizeId = (int)reader["size_id"];
+                if (merchandise.Sizes != null && merchandise.Sizes.All(s => s.Id != sizeId)) // Check BEFORE adding
                 {
-                    Id = (int)reader["size_id"],
-                    MerchId = id,
-                    Size = reader["size_name"] == DBNull.Value ? null : (string)reader["size_name"],
-                    InStock = (int)reader["size_in_stock"]
-                });
+                    merchandise.Sizes.Add(new MerchSizeDto
+                    {
+                        Id = sizeId,
+                        MerchId = id,
+                        Size = reader["size_name"] == DBNull.Value ? null : (string)reader["size_name"],
+                        InStock = (int)reader["size_in_stock"]
+                    });
+                }
             }
-            
-            return merchandise;
         }
 
         return merchandise;
     }
-
 
     public List<MerchandiseDto> GetMerchandiseBySize(string size)
     {

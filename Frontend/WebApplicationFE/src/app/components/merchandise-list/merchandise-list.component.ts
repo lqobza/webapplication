@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { MerchandiseService } from '../../services/merchandise.service';
 import { Merchandise } from '../../models/merchandise.model';
-import { Router } from '@angular/router'; // Import the Router
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-merchandise-list',

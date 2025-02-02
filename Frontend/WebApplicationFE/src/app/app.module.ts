@@ -7,6 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { AppComponent } from './app.component';
 import { HttpClientModule } from '@angular/common/http';
 import { ReactiveFormsModule } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 
 import { MerchandiseListComponent } from './components/merchandise-list/merchandise-list.component';
 import { MerchandiseDetailComponent } from './components/merchandise-detail/merchandise-detail.component';
@@ -34,7 +35,8 @@ import { CustomDesignPreviewComponent } from './components/custom-design-preview
     BrowserAnimationsModule,
     MatToolbarModule,
     MatButtonModule,
-    MatIconModule
+    MatIconModule,
+    FormsModule
   ],
   providers: [],
   bootstrap: [AppComponent]

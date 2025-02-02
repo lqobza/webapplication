@@ -1,9 +1,22 @@
-<div>
+<div class="merchandise-list-container">
   <h2>Merchandise List</h2>
 
-  <div *ngIf="isLoading">Loading...</div>  <div *ngIf="errorMessage">{{ errorMessage }}</div> <ul *ngIf="merchandiseList.length > 0">  <li *ngFor="let item of merchandiseList" (click)="goToDetails(item.id!)" style="cursor: pointer;">
-      {{ item.name }} - {{ item.price }}
+  <div *ngIf="isLoading" class="loading">Loading...</div>
+  <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
+
+  <ul *ngIf="merchandiseList.length > 0" class="merchandise-list">
+    <li *ngFor="let item of merchandiseList" (click)="goToDetails(item.id!)" class="merchandise-item">
+      <div class="merchandise-image">
+        <!--<img [src]="item.imageUrl" alt="{{ item.name }} Image" *ngIf="item.imageUrl"> !-->
+        <!--<span *ngIf="!item.imageUrl">No Image</span> !-->
+      </div>
+      <div class="merchandise-details">
+        <h3 class="merchandise-name">{{ item.name }}</h3>
+        <p class="merchandise-price">Price: ${{ item.price }}</p>
+        <p class="merchandise-description">{{ item.description }}</p> </div>
     </li>
   </ul>
-  <p *ngIf="merchandiseList.length === 0 && !isLoading && !errorMessage">No merchandise available.</p>
+  <p *ngIf="merchandiseList.length === 0 && !isLoading && !errorMessage" class="no-merchandise">
+    No merchandise available.
+  </p>
 </div>
