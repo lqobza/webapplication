@@ -18,9 +18,29 @@ export class MerchandiseService {
     return this.http.get<Merchandise[]>(`${this.apiUrl}`);
   }
 
+  insertMerchandise(merchandise: Merchandise): Observable<any> {
+    return this.http.post(`${this.apiUrl}`, merchandise);
+  }
+
   getMerchandiseById(merchId: number): Observable<Merchandise> {
     console.log('Fetching merchandise: ' + merchId);
     return this.http.get<Merchandise>(`${this.apiUrl}/${merchId}`);
+  }
+
+  deleteMerchandiseById(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${id}`);
+  }
+
+  updateMerchandise(id: number, merchandise: Partial<Merchandise>): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/${id}`, merchandise);
+  }
+
+  getMerchandiseBySize(size: string): Observable<Merchandise[]> {
+    return this.http.get<Merchandise[]>(`${this.apiUrl}/size/${size}`);
+  }
+
+  getMerchandiseByCategory(category: number): Observable<Merchandise[]> {
+    return this.http.get<Merchandise[]>(`${this.apiUrl}/category/${category}`);
   }
 
   getCategories(): Observable<Category[]> {
@@ -33,25 +53,5 @@ export class MerchandiseService {
 
   getBrands(): Observable<Brand[]> {
     return this.http.get<Brand[]>(`${this.apiUrl}/brands`);
-  }
-
-  getMerchandiseBySize(size: string): Observable<Merchandise[]> {
-    return this.http.get<Merchandise[]>(`${this.apiUrl}/size/${size}`);
-  }
-
-  getMerchandiseByCategory(category: number): Observable<Merchandise[]> {
-    return this.http.get<Merchandise[]>(`${this.apiUrl}/category/${category}`);
-  }
-
-  insertMerchandise(merchandise: Merchandise): Observable<any> {
-    return this.http.post(`${this.apiUrl}`, merchandise);
-  }
-
-  deleteMerchandiseById(id: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/${id}`);
-  }
-
-  updateMerchandise(id: number, merchandise: Partial<Merchandise>): Observable<any> {
-    return this.http.patch(`${this.apiUrl}/${id}`, merchandise);
   }
 }

@@ -70,23 +70,6 @@ body {
     margin-right: 10px;
   }
   
-  .quantity-section button:disabled {
-    background-color: #ccc; /* Gray background */
-    color: #999; /* Light gray text */
-    cursor: default; /* Default cursor (not a pointer) */
-    border: none; /* Remove any default border */
-    opacity: 0.7; /* Slightly reduce the opacity */
-  }
-  
-  .quantity-section button { /* Existing styles */
-    background-color: #007bff; /* Blue button */
-    color: white;
-    padding: 8px 15px;
-    border: none;
-    cursor: pointer;
-    border-radius: 4px;
-  }
-
   .details-header {
     display: flex;
     justify-content: space-between; /* Align items to start and end */
@@ -94,11 +77,75 @@ body {
     margin-bottom: 20px; /* Add some space below the header */
   }
   
-  .edit-button {
-    background-color: #007bff; /* Blue button */
+  .edit-button, .ratings-section button, .quantity-section button {
+    background-color: #007bff;
     color: white;
     padding: 8px 15px;
     border: none;
     cursor: pointer;
     border-radius: 4px;
+    transition: background-color 0.3s ease;
+  }
+
+  .edit-button:hover, .ratings-section button:hover, .quantity-section button:hover {
+    background-color: #0056b3;
+  }
+
+  .ratings-section button:disabled, .quantity-section button:disabled {
+    background-color: #ccc;
+    color: #666;
+    cursor: not-allowed;
+  }
+
+  .ratings-section {
+    margin-top: 20px;
+    border-top: 1px solid #eee; /* Add a separator line */
+    padding-top: 20px;
+  }
+
+  .ratings-section h3, .ratings-section h4 {
+    margin-bottom: 10px;
+  }
+
+  .ratings-section ul {
+    list-style: disc;
+    margin-left: 20px;
+    margin-bottom: 10px;
+  }
+
+  .ratings-section textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+    resize: vertical; /* Allow vertical resizing */
+  }
+
+  .rating-stars {
+    display: inline-flex; /* Arrange stars horizontally */
+  }
+
+  .rating-stars span {
+    cursor: default; /* Make stars non-clickable in display */
+    color: #ccc; /* Default star color */
+  }
+
+  .rating-stars span.active {
+    color: gold; /* Active star color */
+  }
+
+  .rating-selector {
+    display: inline-flex; /* Arrange stars horizontally */
+    margin-bottom: 10px;
+  }
+
+  .rating-selector span {
+    cursor: pointer; /* Make stars clickable in selector */
+    color: #ccc; /* Default star color */
+    font-size: 1.2em; /* Slightly larger stars */
+    margin-right: 5px; /* Add spacing between stars */
+  }
+
+  .rating-selector span.active {
+    color: gold; /* Active star color */
   }

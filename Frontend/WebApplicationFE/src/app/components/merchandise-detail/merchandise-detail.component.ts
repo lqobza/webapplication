@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Merchandise } from '../../models/merchandise.model';
 import { MerchandiseService } from '../../services/merchandise.service';
+import { RatingService } from '../../services/rating.service';
 import { Router } from '@angular/router';
 
 @Component({
@@ -18,41 +19,42 @@ export class MerchandiseDetailComponent implements OnInit {
   quantity: number = 1;
   hasMultipleSizes: boolean = false;
   isAddToCartDisabled: boolean = false;
+  newRatingText: string = '';
+  newRating: number = 0;
 
   constructor(
     private route: ActivatedRoute,
     private merchandiseService: MerchandiseService,
+    private ratingService: RatingService,
     private router: Router
   ) { }
 
   ngOnInit(): void {
-    console.log('MerchandiseDetailComponent initialized');
     this.loadMerchandise();
   }
 
   loadMerchandise(): void {
     this.isLoading = true;
     this.errorMessage = undefined;
-  
+
     this.route.paramMap.subscribe(params => {
       const merchId = Number(params.get('id'));
-  
+
       if (isNaN(merchId)) {
         this.errorMessage = "Invalid Merchandise ID";
         this.isLoading = false;
         return;
       }
-  
+
       this.merchandiseService.getMerchandiseById(merchId).subscribe({
         next: (data) => {
           this.merchandise = data;
-          console.log('Merchandise data received', data);
           this.isLoading = false;
-  
+
           if (this.merchandise && this.merchandise.sizes) {
             const validSizes = this.merchandise.sizes.filter(s => s.size !== null);
             this.hasMultipleSizes = validSizes.length > 1;
-  
+
             if (validSizes.length > 0) {
               this.selectedSize = validSizes[0].size;
               this.inStock = this.getInStock(this.selectedSize);
@@ -60,7 +62,7 @@ export class MerchandiseDetailComponent implements OnInit {
               this.selectedSize = undefined;
               this.inStock = this.merchandise.sizes[0]?.inStock;
             }
-  
+
             this.quantity = 1;
           } else {
             this.selectedSize = undefined;
@@ -79,7 +81,6 @@ export class MerchandiseDetailComponent implements OnInit {
     });
   }
   
-
   onSizeChange(): void {
     this.inStock = this.getInStock(this.selectedSize);
     this.quantity = 1;
@@ -91,20 +92,19 @@ export class MerchandiseDetailComponent implements OnInit {
 
   get isAddToCartEnabled(): boolean {
     if (!this.merchandise) return false;
-  
+
     // If multiple sizes exist, check selected size
     if (this.hasMultipleSizes) {
       return !!this.selectedSize && !!this.merchandise.sizes?.find(s => s.size === this.selectedSize)?.inStock;
     }
-  
+
     // If only one size exists and size is null, check its stock
     if (this.merchandise.sizes?.length === 1) {
       return this.merchandise.sizes[0]?.inStock > 0;
     }
-  
+
     return false;
   }
-  
 
   isOutOfStock(): boolean {
     const inStock = this.getInStock(this.selectedSize);
@@ -122,7 +122,6 @@ export class MerchandiseDetailComponent implements OnInit {
     } else {
       this.isAddToCartDisabled = false; // Re-enable if quantity is valid
     }
-
   }
 
   get maxQuantity(): number {
@@ -130,12 +129,12 @@ export class MerchandiseDetailComponent implements OnInit {
       const inStock = this.getInStock(this.selectedSize);
       return inStock && inStock > 0 ? inStock : 1;
     }
-  
+
     // If only one size exists and size is null, use its inStock value
     if (this.merchandise?.sizes?.length === 1) {
       return this.merchandise.sizes[0]?.inStock > 0 ? this.merchandise.sizes[0].inStock : 1;
     }
-  
+
     return 1;
   }
 
@@ -151,14 +150,14 @@ export class MerchandiseDetailComponent implements OnInit {
     if (!this.merchandise || !this.quantity) {
       return;
     }
-  
+
     let selectedMerchSize = this.merchandise.sizes?.find(s => s.size === this.selectedSize);
-  
+
     // If only one size exists and size is null, use it
     if (!this.hasMultipleSizes && this.merchandise.sizes?.length === 1) {
       selectedMerchSize = this.merchandise.sizes[0];
     }
-  
+
     if (selectedMerchSize) {
       console.log('Adding to cart:', {
         merchandiseId: this.merchandise.id,
@@ -168,5 +167,40 @@ export class MerchandiseDetailComponent implements OnInit {
       });
       // Call your cart service here
     }
+  }
+
+  setNewRating(rating: number) {
+    this.newRating = rating;
+  }
+  
+  addRating() {
+    if (!this.merchandise?.id || !this.newRatingText.trim() || this.newRating <= 0) return;
+  
+    const newRating = {
+      rating: this.newRating,
+      description: this.newRatingText.trim(),
+      merchId: this.merchandise.id
+    };
+  
+    this.merchandise.ratings = this.merchandise.ratings || [];
+    this.merchandise.ratings.push(newRating); // Optimistic update
+  
+    this.ratingService.insertRating(newRating).subscribe({
+      next: () => {
+        console.log("Rating added successfully!");
+        this.refreshRatings();
+        this.newRatingText = '';
+        this.newRating = 0;
+      },
+      error: (error) => console.error("Error adding rating:", error)
+    });
+  }
+
+  refreshRatings() {
+    if (!this.merchandise?.id) return;
+    this.merchandiseService.getMerchandiseById(this.merchandise.id).subscribe({
+      next: (data) => this.merchandise!.ratings = data.ratings,
+      error: (error) => console.error("Error refreshing ratings:", error)
+    });
   }
 }
