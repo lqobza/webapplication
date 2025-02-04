@@ -16,6 +16,7 @@ import { MerchandiseUpdateComponent } from './components/merchandise-update/merc
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NavbarComponent } from './components/navbar/navbar.component';
 import { CustomDesignPreviewComponent } from './components/custom-design-preview/custom-design-preview.component';
+import { CartComponent } from './components/cart/cart.component';
 
 @NgModule({
   declarations: [
@@ -25,7 +26,8 @@ import { CustomDesignPreviewComponent } from './components/custom-design-preview
     MerchandiseCreateComponent,
     MerchandiseUpdateComponent,
     NavbarComponent,
-    CustomDesignPreviewComponent
+    CustomDesignPreviewComponent,
+    CartComponent
   ],
   imports: [
     BrowserModule,

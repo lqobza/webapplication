@@ -5,6 +5,7 @@ import { MerchandiseDetailComponent } from './components/merchandise-detail/merc
 import { MerchandiseCreateComponent } from './components/merchandise-create/merchandise-create.component';
 import { MerchandiseUpdateComponent } from './components/merchandise-update/merchandise-update.component';
 import { CustomDesignPreviewComponent } from './components/custom-design-preview/custom-design-preview.component';
+import { CartComponent } from './components/cart/cart.component';
 
 const routes: Routes = [
   { path: '', redirectTo: '/merchandise', pathMatch: 'full' },
@@ -12,7 +13,8 @@ const routes: Routes = [
   { path: 'merchandise/:id', component: MerchandiseDetailComponent },
   { path: 'create', component: MerchandiseCreateComponent },
   { path: 'update/:id', component: MerchandiseUpdateComponent },
-  { path: 'render-image-test', component: CustomDesignPreviewComponent }
+  { path: 'render-image-test', component: CustomDesignPreviewComponent },
+  { path: 'cart', component: CartComponent }
 ];
 
 @NgModule({

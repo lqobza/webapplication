@@ -3,6 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { Merchandise } from '../../models/merchandise.model';
 import { MerchandiseService } from '../../services/merchandise.service';
 import { RatingService } from '../../services/rating.service';
+import { CartService } from '../../services/cart.service';
 import { Router } from '@angular/router';
 
 @Component({
@@ -26,6 +27,7 @@ export class MerchandiseDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private merchandiseService: MerchandiseService,
     private ratingService: RatingService,
+    private cartService: CartService,
     private router: Router
   ) { }
 
@@ -159,13 +161,13 @@ export class MerchandiseDetailComponent implements OnInit {
     }
 
     if (selectedMerchSize) {
-      console.log('Adding to cart:', {
-        merchandiseId: this.merchandise.id,
+      this.cartService.addToCart({
+        merchandiseId: this.merchandise.id!,
         size: selectedMerchSize.size ?? 'One Size',
-        quantity: this.quantity,
-        price: this.merchandise.price
+        quantity: this.quantity
       });
-      // Call your cart service here
+      
+
     }
   }
 

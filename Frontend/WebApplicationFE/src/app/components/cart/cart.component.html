@@ -1,0 +1,53 @@
+<div class="cart-container" *ngIf="!isLoading; else loading">
+    <div *ngIf="errorMessage" class="error-message">
+      {{ errorMessage }}
+    </div>
+  
+    <ng-container *ngIf="cartItems.length > 0; else emptyCart">
+      <h2>Shopping Cart</h2>
+      <ul>
+        <li *ngFor="let item of cartItems; let i = index" class="cart-item">
+          <img
+            [src]="getImageUrl(item)"
+            class="cart-item-image"
+          />
+          <div class="cart-item-details">
+            <p>Size: {{ item.size }}</p>
+            <div class="quantity-controls">
+              <input
+                type="number"
+                [value]="item.quantity"
+                (change)="updateQuantity(i, $any($event.target).value)"
+                min="1"
+                max="100"
+                aria-label="Quantity"
+              />
+            </div>
+            <p>Price: ${{ getItemPrice(item) }}</p>
+          </div>
+          <button
+            class="remove-button"
+            (click)="removeItem(item)"
+            aria-label="Remove item"
+          >
+            <span class="material-icons">delete</span>
+          </button>
+        </li>
+      </ul>
+      <div class="cart-total">
+        <h3>Total: ${{ totalPrice }}</h3>
+        <button (click)="clearCart()">Clear Cart</button>
+        <button class="checkout-button">Proceed to Checkout</button>
+      </div>
+    </ng-container>
+  
+    <ng-template #emptyCart>
+      <p>Your cart is empty.</p>
+    </ng-template>
+  </div>
+  
+  <ng-template #loading>
+    <div class="loading-message">
+      <p>Loading your cart...</p>
+    </div>
+  </ng-template>
