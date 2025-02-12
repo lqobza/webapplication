@@ -5,7 +5,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { AppComponent } from './app.component';
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { ReactiveFormsModule } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
 
@@ -18,29 +18,22 @@ import { NavbarComponent } from './components/navbar/navbar.component';
 import { CustomDesignPreviewComponent } from './components/custom-design-preview/custom-design-preview.component';
 import { CartComponent } from './components/cart/cart.component';
 
-@NgModule({
-  declarations: [
-    AppComponent,
-    MerchandiseListComponent,
-    MerchandiseDetailComponent,
-    MerchandiseCreateComponent,
-    MerchandiseUpdateComponent,
-    NavbarComponent,
-    CustomDesignPreviewComponent,
-    CartComponent
-  ],
-  imports: [
-    BrowserModule,
-    AppRoutingModule,
-    HttpClientModule,
-    ReactiveFormsModule,
-    BrowserAnimationsModule,
-    MatToolbarModule,
-    MatButtonModule,
-    MatIconModule,
-    FormsModule
-  ],
-  providers: [],
-  bootstrap: [AppComponent]
-})
+@NgModule({ declarations: [
+        AppComponent,
+        MerchandiseListComponent,
+        MerchandiseDetailComponent,
+        MerchandiseCreateComponent,
+        MerchandiseUpdateComponent,
+        NavbarComponent,
+        CustomDesignPreviewComponent,
+        CartComponent
+    ],
+    bootstrap: [AppComponent], imports: [BrowserModule,
+        AppRoutingModule,
+        ReactiveFormsModule,
+        BrowserAnimationsModule,
+        MatToolbarModule,
+        MatButtonModule,
+        MatIconModule,
+        FormsModule], providers: [provideHttpClient(withInterceptorsFromDi())] })
 export class AppModule { }
