@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using WebApplication1.Models;
+using WebApplication1.Models.DTOs;
 using WebApplication1.Utils;
 
 namespace WebApplication1.Services;

@@ -36,9 +36,30 @@
     </ul>
     <div class="cart-total">
       <h3>Total: ${{ totalPrice }}</h3>
+      <div class="customer-details">
+        <h4>Customer Details</h4>
+        <input
+          type="text"
+          [(ngModel)]="customerName"
+          placeholder="Name"
+          required
+        />
+        <input
+          type="email"
+          [(ngModel)]="customerEmail"
+          placeholder="Email"
+          required
+        />
+        <input
+          type="text"
+          [(ngModel)]="customerAddress"
+          placeholder="Address"
+          required
+        />
+      </div>
       <div class="cart-actions">
         <button class="clear-cart-button" (click)="clearCart()">Clear Cart</button>
-        <button class="create-order-button">Create order</button>
+        <button class="create-order-button" (click)="createOrder()">Create Order</button>
       </div>
     </div>
   </ng-container>

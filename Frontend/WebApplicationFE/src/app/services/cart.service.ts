@@ -3,6 +3,8 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { CartItem } from '../models/cartitem.model';
 import { MerchandiseService } from './merchandise.service';
 import { Merchandise } from '../models/merchandise.model';
+import { HttpClient } from '@angular/common/http';
+import { OrderDto } from '../models/order.model';
 
 @Injectable({
   providedIn: 'root',
@@ -12,7 +14,7 @@ export class CartService {
   private cartItems$ = new BehaviorSubject<CartItem[]>([]);
   private merchandiseDetails: Map<number, Merchandise> = new Map();
 
-  constructor(private merchandiseService: MerchandiseService) {
+  constructor(private merchandiseService: MerchandiseService, private http: HttpClient) {
     this.loadCartFromStorage();
   }
 
@@ -136,5 +138,27 @@ export class CartService {
   private saveCart(): void {
     localStorage.setItem('cartItems', JSON.stringify(this.cartItems));
     this.cartItems$.next(this.cartItems); // Emit the updated cart items
+  }
+
+  getItemPrice(item: CartItem): number {
+    const merch = this.getMerchandiseDetails(item.merchandiseId);
+    return merch ? merch.price * item.quantity : 0;
+  }
+
+  createOrder(customerName: string, customerEmail: string, customerAddress: string): Observable<any> {
+    const orderCreateDto = {
+      customerName,
+      customerEmail,
+      customerAddress,
+      items: this.cartItems.map((item) => ({
+        merchId: item.merchandiseId,
+        size: item.size,
+        quantity: item.quantity,
+        price: this.getItemPrice(item), // Calculate price for each item
+      })),
+    };
+
+    console.log('Creating order:', orderCreateDto);
+    return this.http.post('/api/order/orders', orderCreateDto);
   }
 }

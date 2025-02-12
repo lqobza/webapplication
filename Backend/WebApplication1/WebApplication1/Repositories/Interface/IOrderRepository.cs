@@ -1,13 +1,13 @@
-﻿using System.Data.SqlClient;
-using WebApplication1.Models;
+﻿using WebApplication1.Models;
+using WebApplication1.Models.DTOs;
 
 namespace WebApplication1.Repositories.Interface;
 
 public interface IOrderRepository
 {
-    public int InsertOrder(SqlConnection connection, SqlTransaction transaction, OrderCreateDto orderCreateDto);
-    public void InsertOrderItem(SqlConnection connection, SqlTransaction transaction, int orderId, OrderItemDto item);
-    public void UpdateStock(SqlConnection connection, SqlTransaction transaction, OrderItemDto item);
-    public List<OrderDto> GetAllOrders();
-    public OrderDto? GetOrderById(int id);
+    Task<int> InsertOrderAsync(OrderCreateDto orderCreateDto, decimal totalAmount);
+    Task InsertOrderItemAsync(int orderId, OrderItemDto item);
+    Task UpdateStockAsync(OrderItemDto item);
+    Task<List<OrderDto>> GetAllOrdersAsync();
+    Task<OrderDto?> GetOrderByIdAsync(int id);
 }

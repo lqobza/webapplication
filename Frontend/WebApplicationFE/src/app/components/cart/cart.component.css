@@ -67,7 +67,7 @@
 }
 
 .cart-total {
-  text-align: right;
+  text-align: left;
   margin-top: 20px;
   padding-top: 20px;
   border-top: 2px solid #eee;
@@ -131,4 +131,28 @@
   font-size: 1.2em;
   color: #666;
   padding: 20px;
+}
+
+.customer-details {
+  margin-top: 20px;
+}
+
+.customer-details h4 {
+  margin-bottom: 10px;
+  font-size: 16px;
+  color: #333;
+}
+
+.customer-details input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.customer-details input:focus {
+  border-color: #28a745;
+  outline: none;
 }

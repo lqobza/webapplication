@@ -1,4 +1,5 @@
 ﻿using WebApplication1.Models;
+using WebApplication1.Models.DTOs;
 using WebApplication1.Models.Enums;
 using WebApplication1.Repositories.Interface;
 using WebApplication1.Services.Interface;
@@ -14,9 +15,9 @@ public class MerchandiseService : IMerchandiseService
         _merchandiseRepository = merchandiseRepository;
     }
 
-    public List<MerchandiseDto> GetAllMerchandise()
+    public PaginatedResponse<MerchandiseDto> GetAllMerchandise(int page = 1, int pageSize = 10)
     {
-        return _merchandiseRepository.GetAllMerchandise();
+        return _merchandiseRepository.GetAllMerchandise(page, pageSize);
     }
     
     public MerchandiseDto? GetMerchandiseById(int id)
@@ -26,6 +27,13 @@ public class MerchandiseService : IMerchandiseService
 
     public List<MerchandiseDto> GetMerchandiseBySize(string size)
     {
+        if (string.IsNullOrWhiteSpace(size))
+        {
+            throw new ArgumentException("Size cannot be empty");
+        }
+
+        size = size.Trim().ToUpper();
+        
         return _merchandiseRepository.GetMerchandiseBySize(size);
     }
 
@@ -49,6 +57,11 @@ public class MerchandiseService : IMerchandiseService
 
     public bool UpdateMerchandise(int id, MerchandiseUpdateDto merchandiseUpdateDto)
     {
+        if (id <= 0)
+        {
+            throw new ArgumentException("Invalid merchandise ID");
+        }
+
         return _merchandiseRepository.UpdateMerchandise(id, merchandiseUpdateDto);
     }
 

@@ -7,15 +7,38 @@
   <ul *ngIf="merchandiseList.length > 0" class="merchandise-list">
     <li *ngFor="let item of merchandiseList" (click)="goToDetails(item.id!)" class="merchandise-item">
       <div class="merchandise-image">
-        <!--<img [src]="item.imageUrl" alt="{{ item.name }} Image" *ngIf="item.imageUrl"> !-->
-        <!--<span *ngIf="!item.imageUrl">No Image</span> !-->
+        <img src="assets/images/placeholder.png" alt="{{ item.name }} Image">
       </div>
       <div class="merchandise-details">
         <h3 class="merchandise-name">{{ item.name }}</h3>
         <p class="merchandise-price">Price: ${{ item.price }}</p>
-        <p class="merchandise-description">{{ item.description }}</p> </div>
+        <p class="merchandise-description">{{ item.description }}</p>
+      </div>
     </li>
   </ul>
+
+  <div *ngIf="paginationInfo && merchandiseList.length > 0" class="pagination-controls">
+    <button 
+      [disabled]="currentPage === 1" 
+      (click)="changePage(currentPage - 1)"
+      class="pagination-button"
+    >
+      Previous
+    </button>
+    
+    <span class="pagination-info">
+      Page {{ currentPage }} of {{ paginationInfo.totalPages }}
+    </span>
+
+    <button 
+      [disabled]="!paginationInfo.hasNextPage" 
+      (click)="changePage(currentPage + 1)"
+      class="pagination-button"
+    >
+      Next
+    </button>
+  </div>
+
   <p *ngIf="merchandiseList.length === 0 && !isLoading && !errorMessage" class="no-merchandise">
     No merchandise available.
   </p>

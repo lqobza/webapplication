@@ -164,7 +164,8 @@ export class MerchandiseDetailComponent implements OnInit {
       this.cartService.addToCart({
         merchandiseId: this.merchandise.id!,
         size: selectedMerchSize.size ?? 'One Size',
-        quantity: this.quantity
+        quantity: this.quantity,
+        price: this.merchandise.price
       });
       
 

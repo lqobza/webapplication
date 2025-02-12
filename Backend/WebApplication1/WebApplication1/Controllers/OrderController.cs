@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using WebApplication1.Models;
+using WebApplication1.Models.DTOs;
 using WebApplication1.Models.Enums;
 using WebApplication1.Services.Interface;
 
@@ -18,13 +20,13 @@ public class OrderController : ControllerBase
         _logger = logger;
     }
 
-    //[Authorize(Roles = "Admin")]
+    // Get all orders
     [HttpGet("orders")]
-    public IActionResult GetAllOrders()
+    public async Task<IActionResult> GetAllOrders()
     {
         _logger.LogInformation("GetAllOrders endpoint called");
 
-        var orderList = _orderService.GetAllOrders();
+        var orderList = await _orderService.GetAllOrdersAsync();
 
         if (orderList.Count == 0)
         {
@@ -36,44 +38,62 @@ public class OrderController : ControllerBase
         return Ok(orderList);
     }
 
+    // Get order by ID
     [HttpGet("orders/{id:int}")]
-    public IActionResult GetOrderById(int id)
+    public async Task<IActionResult> GetOrderById(int id)
     {
         _logger.LogInformation("GetOrderById endpoint called");
 
-        var order = _orderService.GetOrderById(id);
+        var order = await _orderService.GetOrderByIdAsync(id);
 
         if (order == null)
         {
             _logger.LogInformation("Order not found");
-            return NoContent();
+            return NotFound(new { message = "Order not found" });
         }
 
         _logger.LogInformation("Returning order: {id}", id);
         return Ok(order);
     }
 
-    //[Authorize(Roles = "Admin")]
+    // Create a new order
     [HttpPost("orders")]
-    public IActionResult CreateOrder([FromBody] OrderCreateDto orderCreateDto)
+    public async Task<IActionResult> CreateOrder([FromBody] OrderCreateDto orderCreateDto)
     {
         _logger.LogInformation("CreateOrder endpoint called");
+        
+        // Serialize the orderCreateDto object to JSON for detailed logging
+        var orderCreateDtoJson = JsonConvert.SerializeObject(orderCreateDto, Formatting.Indented);
+        _logger.LogInformation("Received OrderCreateDto: {OrderCreateDto}", orderCreateDtoJson);
 
-        var insertResult = _orderService.CreateOrder(orderCreateDto);
+        if (!ModelState.IsValid)
+        {
+            _logger.LogWarning("Invalid input data: {ModelStateErrors}", ModelState);
+            return BadRequest(ModelState); // Keep returning ModelState for detailed error info
+        }
+        
+        if (!ModelState.IsValid)
+        {
+            _logger.LogWarning("Invalid model state for order creation");
+            return BadRequest(ModelState);
+        }
+
+        var insertResult = await _orderService.CreateOrderAsync(orderCreateDto);
+
         if (insertResult == InsertResult.Success)
         {
-            _logger.LogInformation("Merchandise inserted successfully: {Order}", orderCreateDto);
+            _logger.LogInformation("Order created successfully: {Order}", orderCreateDtoJson);
             return Ok(new { message = "Order created successfully" });
         }
 
         if (insertResult == InsertResult.Error)
         {
-            _logger.LogError("Internal server error while inserting order: {Order}", orderCreateDto);
+            _logger.LogError("Internal server error while creating order: {Order}", orderCreateDtoJson);
             return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Order insert was unsuccessful due to internal server error" });
+                new { message = "Order creation failed due to internal server error" });
         }
 
-        _logger.LogError("Error during order insert, this point shouldn't have been reached");
+        _logger.LogError("Unexpected error during order creation");
         return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Internal server error" });
     }
 }

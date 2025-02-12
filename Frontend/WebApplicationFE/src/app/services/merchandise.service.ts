@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { Merchandise } from '../models/merchandise.model';
 import { Category } from '../models/category.model';
 import { Brand } from '../models/brand.model';
+import { PaginatedResponse } from '../models/paginated-response.model';
 
 @Injectable({
   providedIn: 'root'
@@ -13,9 +14,8 @@ export class MerchandiseService {
 
   constructor(private http: HttpClient) { }
 
-  getAllMerchandise(): Observable<Merchandise[]> {
-    console.log('Fetching all merchandise');
-    return this.http.get<Merchandise[]>(`${this.apiUrl}`);
+  getAllMerchandise(page: number = 1, pageSize: number = 10): Observable<PaginatedResponse<Merchandise>> {
+    return this.http.get<PaginatedResponse<Merchandise>>(`${this.apiUrl}?page=${page}&pageSize=${pageSize}`);
   }
 
   insertMerchandise(merchandise: Merchandise): Observable<any> {

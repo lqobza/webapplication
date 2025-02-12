@@ -13,6 +13,11 @@ export class CartComponent implements OnInit {
   isLoading: boolean = true;
   errorMessage: string | null = null;
 
+  // Customer details for the order
+  customerName: string = '';
+  customerEmail: string = '';
+  customerAddress: string = '';
+
   constructor(private cartService: CartService) {}
 
   ngOnInit(): void {
@@ -87,5 +92,25 @@ export class CartComponent implements OnInit {
    */
   updateTotalPrice(): void {
     this.totalPrice = this.cartService.getTotalPrice();
+  }
+
+  createOrder(): void {
+    if (!this.customerName || !this.customerEmail || !this.customerAddress) {
+      this.errorMessage = 'Please fill in all customer details.';
+      return;
+    }
+
+    this.cartService.createOrder(this.customerName, this.customerEmail, this.customerAddress).subscribe({
+      next: () => {
+        alert('Order created successfully!');
+        this.cartService.clearCart(); // Clear the cart after successful order creation
+        this.cartItems = []; // Update the UI
+        this.totalPrice = 0; // Reset the total price
+      },
+      error: (error) => {
+        this.errorMessage = 'Failed to create order. Please try again later.';
+        console.error('Error creating order:', error);
+      },
+    });
   }
 }

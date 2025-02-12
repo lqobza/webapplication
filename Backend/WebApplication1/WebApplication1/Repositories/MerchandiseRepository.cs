@@ -1,6 +1,7 @@
 ﻿using System.Data;
 using System.Data.SqlClient;
 using WebApplication1.Models;
+using WebApplication1.Models.DTOs;
 using WebApplication1.Models.Enums;
 using WebApplication1.Repositories.Interface;
 
@@ -35,21 +36,27 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
         return (bool)existsParam.Value;
     }
 
-    public List<MerchandiseDto> GetAllMerchandise()
+    public PaginatedResponse<MerchandiseDto> GetAllMerchandise(int page = 1, int pageSize = 10)
     {
         var merchList = new List<MerchandiseDto>();
+        int totalCount = 0;
+
         using var connection = CreateConnection();
         connection.Open();
+        
         using var command = new SqlCommand("[dbo].[GetAllMerchandise]", connection);
         command.CommandType = CommandType.StoredProcedure;
+        command.Parameters.AddWithValue("@PageNumber", page);
+        command.Parameters.AddWithValue("@PageSize", pageSize);
 
         using var reader = command.ExecuteReader();
 
         while (reader.Read())
         {
+            totalCount = (int)reader["TotalCount"]; // Get total count from first row
             var merchandise = merchList.FirstOrDefault(m => m.Id == (int)reader["id"]);
 
-            if (merchandise == null) // check if merchandise is null
+            if (merchandise == null)
             {
                 merchandise = new MerchandiseDto
                 {
@@ -89,7 +96,16 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
             }
         }
 
-        return merchList;
+        return new PaginatedResponse<MerchandiseDto>
+        {
+            Items = merchList,
+            TotalCount = totalCount,
+            PageNumber = page,
+            PageSize = pageSize,
+            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+            HasNextPage = (page * pageSize) < totalCount,
+            HasPreviousPage = page > 1
+        };
     }
 
 

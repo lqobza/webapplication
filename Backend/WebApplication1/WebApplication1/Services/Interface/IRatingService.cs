@@ -1,4 +1,5 @@
 ﻿using WebApplication1.Models;
+using WebApplication1.Models.DTOs;
 
 namespace WebApplication1.Services.Interface;
 

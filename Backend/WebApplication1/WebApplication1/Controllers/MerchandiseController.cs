@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WebApplication1.Models;
+using WebApplication1.Models.DTOs;
 using WebApplication1.Models.Enums;
 using WebApplication1.Services.Interface;
 
@@ -20,20 +20,26 @@ public class MerchandiseController : ControllerBase
     }
 
     [HttpGet]
-    public IActionResult GetAllMerchandise()
+    public IActionResult GetAllMerchandise([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        _logger.LogInformation("GetAllMerchandise endpoint called");
+        _logger.LogInformation("GetAllMerchandise endpoint called with page: {Page}, pageSize: {PageSize}", page, pageSize);
 
-        var merchList = _merchandiseService.GetAllMerchandise();
+        if (page < 1 || pageSize < 1)
+        {
+            return BadRequest(new { message = "Page and pageSize must be greater than 0" });
+        }
 
-        if (merchList.Count == 0)
+        var result = _merchandiseService.GetAllMerchandise(page, pageSize);
+
+        if (result.Items.Count == 0)
         {
             _logger.LogWarning("No merchandise found");
             return NotFound(new { message = "No merchandise found." });
         }
 
-        _logger.LogInformation("Returning merchandise list (count: {Count})", merchList.Count);
-        return Ok(merchList);
+        _logger.LogInformation("Returning merchandise list (count: {Count}, total: {Total})", 
+            result.Items.Count, result.TotalCount);
+        return Ok(result);
     }
 
     [HttpGet("{id:int}")]
@@ -56,6 +62,14 @@ public class MerchandiseController : ControllerBase
     [HttpGet("size/{size}")]
     public IActionResult GetMerchandiseBySize(string size)
     {
+        if (string.IsNullOrWhiteSpace(size))
+        {
+            return BadRequest(new { message = "Size cannot be empty" });
+        }
+
+        // Normalize size to uppercase for consistency
+        size = size.Trim().ToUpper();
+        
         _logger.LogInformation("GetMerchandiseBySize endpoint called with size: {Size}", size);
 
         var merchList = _merchandiseService.GetMerchandiseBySize(size);
@@ -86,9 +100,9 @@ public class MerchandiseController : ControllerBase
         _logger.LogInformation("Returning merchandise list for category: {category}", category);
         return Ok(merchList);
     }
-
-    //[Authorize(Roles = "Admin")]
+    
     [HttpPost("")]
+    [Authorize(Roles = "Admin")]
     public IActionResult InsertMerchandise([FromBody] MerchandiseCreateDto merchandiseCreateDto)
     {
         _logger.LogInformation("InsertMerchandise endpoint called with data: {Merchandise}", merchandiseCreateDto);
@@ -117,9 +131,9 @@ public class MerchandiseController : ControllerBase
                     new { message = "Internal server error during merchandise insert." });
         }
     }
-
-    //[Authorize(Roles = "Admin")]
+    
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Admin")]
     public IActionResult DeleteMerchandiseById(int id)
     {
         _logger.LogInformation("DeleteMerchandiseById endpoint called for ID: {Id}", id);
@@ -136,11 +150,16 @@ public class MerchandiseController : ControllerBase
                 return NotFound(new { message = $"Merchandise with ID {id} not found." });
         }
     }
-
-    //[Authorize(Roles = "Admin")]
+    
     [HttpPatch("{id:int}")]
+    [Authorize(Roles = "Admin")]
     public IActionResult UpdateMerchandise(int id, [FromBody] MerchandiseUpdateDto merchandiseUpdateDto)
     {
+        if (id <= 0)
+        {
+            return BadRequest(new { message = "Invalid merchandise ID" });
+        }
+
         _logger.LogInformation("UpdateMerchandise endpoint called with data: {Merchandise}", merchandiseUpdateDto);
 
         try
@@ -214,9 +233,9 @@ public class MerchandiseController : ControllerBase
         _logger.LogWarning("No brands found.");
         return NotFound(new { message = "No brands found." });
     }
-
-    //[Authorize(Roles = "Admin")]
+    
     [HttpPost("categories")]
+    [Authorize(Roles = "Admin")]
     public IActionResult AddCategoryToDb([FromBody] CategoryCreateDto categoryCreateDto)
     {
         _logger.LogInformation("AddCategoryToDb endpoint called with data: {}", categoryCreateDto.Name);
@@ -244,9 +263,9 @@ public class MerchandiseController : ControllerBase
                     new { message = "Internal server error during category insert." });
         }
     }
-
-    //[Authorize(Roles = "Admin")]
+    
     [HttpPost("themes")]
+    [Authorize(Roles = "Admin")]
     public IActionResult AddThemeToDb([FromBody] ThemeCreateDto themeCreateDto)
     {
         _logger.LogInformation("AddThemeToDb endpoint called with data: {}", themeCreateDto.Name);

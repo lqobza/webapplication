@@ -1,90 +1,92 @@
 ﻿using System.Data;
 using System.Data.SqlClient;
 using WebApplication1.Models;
+using WebApplication1.Models.DTOs;
 using WebApplication1.Repositories.Interface;
 
 namespace WebApplication1.Repositories;
 
-public class OrderRepository : BaseRepository, IOrderRepository
+public class OrderRepository : IOrderRepository
 {
-    private readonly ILogger<OrderRepository> _logger;
+    private readonly string? _connectionString;
 
-    public OrderRepository(IConfiguration configuration, ILogger<OrderRepository> logger)
-        : base(configuration)
+    public OrderRepository(IConfiguration configuration)
     {
-        _logger = logger;
+        _connectionString = configuration.GetConnectionString("DefaultConnection");
     }
 
-    public int InsertOrder(SqlConnection connection, SqlTransaction transaction, OrderCreateDto orderCreateDto)
+    public async Task<int> InsertOrderAsync(OrderCreateDto orderCreateDto, decimal totalAmount)
     {
         var query = @"
             INSERT INTO Orders (order_date, total_amount, customer_name, customer_email, customer_address)
             OUTPUT INSERTED.ID
             VALUES (GETDATE(), @totalAmount, @customerName, @customerEmail, @customerAddress)";
 
-        using var command = new SqlCommand(query, connection, transaction);
-        
-        var totalAmount = orderCreateDto.Items.Sum(i => i.Price * i.Quantity);
+        await using var connection = new SqlConnection(_connectionString);
+        await using var command = new SqlCommand(query, connection);
 
         command.Parameters.AddWithValue("@totalAmount", totalAmount);
         command.Parameters.AddWithValue("@customerName", orderCreateDto.CustomerName);
         command.Parameters.AddWithValue("@customerEmail", orderCreateDto.CustomerEmail);
         command.Parameters.AddWithValue("@customerAddress", orderCreateDto.CustomerAddress);
 
-        return (int)command.ExecuteScalar();
+        await connection.OpenAsync();
+        return (int)await command.ExecuteScalarAsync();
     }
 
-    public void InsertOrderItem(SqlConnection connection, SqlTransaction transaction, int orderId, OrderItemDto item)
+    public async Task InsertOrderItemAsync(int orderId, OrderItemDto item)
     {
         var query = @"
         INSERT INTO OrderItems (order_id, merch_id, size, quantity, price)
         VALUES (@orderId, @merchId, @size, @quantity, @price)";
 
+        await using var connection = new SqlConnection(_connectionString);
+        await using var command = new SqlCommand(query, connection);
 
-        connection.Open();
-        using var command = new SqlCommand(query, connection, transaction);
-        
         command.Parameters.AddWithValue("@orderId", orderId);
         command.Parameters.AddWithValue("@merchId", item.MerchId);
         command.Parameters.AddWithValue("@size", item.Size);
         command.Parameters.AddWithValue("@quantity", item.Quantity);
         command.Parameters.AddWithValue("@price", item.Price);
 
-        command.ExecuteNonQuery();
+        await connection.OpenAsync();
+        await command.ExecuteNonQueryAsync();
     }
 
-
-    public void UpdateStock(SqlConnection connection, SqlTransaction transaction, OrderItemDto item)
+    public async Task UpdateStockAsync(OrderItemDto item)
     {
         var query = @"
             UPDATE MerchSize
             SET instock = instock - @quantity
             WHERE merch_id = @merchId AND size = @size AND instock >= @quantity";
-        
-        using var command = new SqlCommand(query, connection, transaction);
-        
-        command.Parameters.Add(new SqlParameter("@merchId", SqlDbType.Int) { Value = item.MerchId });
-        command.Parameters.Add(new SqlParameter("@size", SqlDbType.NVarChar) { Value = item.Size });
-        command.Parameters.Add(new SqlParameter("@quantity", SqlDbType.Int) { Value = item.Quantity });
 
-        var rowsAffected = command.ExecuteNonQuery();
+        await using var connection = new SqlConnection(_connectionString);
+        await using var command = new SqlCommand(query, connection);
+
+        command.Parameters.AddWithValue("@merchId", item.MerchId);
+        command.Parameters.AddWithValue("@size", item.Size);
+        command.Parameters.AddWithValue("@quantity", item.Quantity);
+
+        await connection.OpenAsync();
+        var rowsAffected = await command.ExecuteNonQueryAsync();
+
         if (rowsAffected == 0)
             throw new InvalidOperationException("Insufficient stock for merch ID " + item.MerchId +
-                                                " with size " + item.Size);
+                                               " with size " + item.Size);
     }
 
-    public List<OrderDto> GetAllOrders()
+    public async Task<List<OrderDto>> GetAllOrdersAsync()
     {
-        var query = @"[dbo].[GetOrders]";
+        var query = @"SELECT * FROM Orders";
 
         var orderList = new List<OrderDto>();
-        using var connection = CreateConnection();
-        
-        connection.Open();
-        using var command = new SqlCommand(query, connection);
-        using var reader = command.ExecuteReader();
-        
-        while (reader.Read())
+        await using var connection = new SqlConnection(_connectionString);
+        await using var command = new SqlCommand(query, connection);
+
+        await connection.OpenAsync();
+        await using var reader = await command.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
         {
             var order = new OrderDto
             {
@@ -94,31 +96,27 @@ public class OrderRepository : BaseRepository, IOrderRepository
                 CustomerName = (string)reader["customer_name"],
                 CustomerEmail = (string)reader["customer_email"],
                 CustomerAddress = (string)reader["customer_address"],
-                Items = new List<OrderItemDto>()
+                Items = await GetOrderItemsByIdAsync((int)reader["id"])
             };
             orderList.Add(order);
         }
 
-        // Populate Items for each order
-        foreach (var order in orderList) order.Items = GetOrderItemsById(order.Id);
-
         return orderList;
     }
 
-    public OrderDto? GetOrderById(int id)
+    public async Task<OrderDto?> GetOrderByIdAsync(int id)
     {
         var query = @"SELECT * FROM Orders WHERE id = @id";
 
-        using var connection = CreateConnection();
-        
-        connection.Open();
-        using var command = new SqlCommand(query, connection);
-        
-        command.Parameters.Add(new SqlParameter("@id", SqlDbType.Int) { Value = id });
+        await using var connection = new SqlConnection(_connectionString);
+        await using var command = new SqlCommand(query, connection);
 
-        using var reader = command.ExecuteReader();
-        
-        if (reader.Read())
+        command.Parameters.AddWithValue("@id", id);
+
+        await connection.OpenAsync();
+        await using var reader = await command.ExecuteReaderAsync();
+
+        if (await reader.ReadAsync())
         {
             var order = new OrderDto
             {
@@ -128,30 +126,29 @@ public class OrderRepository : BaseRepository, IOrderRepository
                 CustomerName = (string)reader["customer_name"],
                 CustomerEmail = (string)reader["customer_email"],
                 CustomerAddress = (string)reader["customer_address"],
-                Items = GetOrderItemsById(id)
+                Items = await GetOrderItemsByIdAsync((int)reader["id"])
             };
 
-            //order.Items = GetOrderItemsById(id);
             return order;
         }
-                    
+
         return null;
     }
 
-    private List<OrderItemDto> GetOrderItemsById(int orderId)
+    private async Task<List<OrderItemDto>> GetOrderItemsByIdAsync(int orderId)
     {
         var query = @"SELECT * FROM OrderItems WHERE order_id = @orderId";
 
         var orderItemList = new List<OrderItemDto>();
-        using var connection = CreateConnection();
-        
-        connection.Open();
-        using var command = new SqlCommand(query, connection);
-        
-        command.Parameters.Add(new SqlParameter("@orderId", SqlDbType.Int) { Value = orderId });
-        using var reader = command.ExecuteReader();
-        
-        while (reader.Read())
+        await using var connection = new SqlConnection(_connectionString);
+        await using var command = new SqlCommand(query, connection);
+
+        command.Parameters.AddWithValue("@orderId", orderId);
+
+        await connection.OpenAsync();
+        await using var reader = await command.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
         {
             var orderItem = new OrderItemDto
             {

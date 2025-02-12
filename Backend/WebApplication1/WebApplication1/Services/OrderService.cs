@@ -1,57 +1,54 @@
 ﻿using WebApplication1.Models;
+using WebApplication1.Models.DTOs;
 using WebApplication1.Models.Enums;
-using WebApplication1.Repositories;
 using WebApplication1.Repositories.Interface;
 using WebApplication1.Services.Interface;
 
 namespace WebApplication1.Services;
 
-public class OrderService : BaseRepository, IOrderService
+public class OrderService : IOrderService
 {
     private readonly IOrderRepository _orderRepository;
 
-    public OrderService(IConfiguration configuration, IOrderRepository orderRepository)
-        : base(configuration)
+    public OrderService(IOrderRepository orderRepository)
     {
         _orderRepository = orderRepository;
     }
 
-    public InsertResult CreateOrder(OrderCreateDto orderCreateDto)
+    public async Task<InsertResult> CreateOrderAsync(OrderCreateDto orderCreateDto)
     {
-        using var connection = CreateConnection();
-        
-        connection.Open();
-        using var transaction = connection.BeginTransaction();
-        
         try
         {
-            // Insert the order
-            var orderId = _orderRepository.InsertOrder(connection, transaction, orderCreateDto);
+            // Calculate total amount
+            var totalAmount = orderCreateDto.Items.Sum(i => i.Price * i.Quantity);
 
-            // Insert the order items and update instock values
+            // Insert the order
+            var orderId = await _orderRepository.InsertOrderAsync(orderCreateDto, totalAmount);
+
+            // Insert order items and update stock
             foreach (var item in orderCreateDto.Items)
             {
-                _orderRepository.InsertOrderItem(connection, transaction, orderId, item);
-                _orderRepository.UpdateStock(connection, transaction, item);
+                await _orderRepository.InsertOrderItemAsync(orderId, item);
+                await _orderRepository.UpdateStockAsync(item);
             }
 
-            transaction.Commit();
             return InsertResult.Success;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            transaction.Rollback();
+            // Log the exception
+            Console.WriteLine($"Error creating order: {ex.Message}");
             return InsertResult.Error;
         }
     }
 
-    public List<OrderDto> GetAllOrders()
+    public async Task<List<OrderDto>> GetAllOrdersAsync()
     {
-        return _orderRepository.GetAllOrders();
+        return await _orderRepository.GetAllOrdersAsync();
     }
 
-    public OrderDto? GetOrderById(int id)
+    public async Task<OrderDto?> GetOrderByIdAsync(int id)
     {
-        return _orderRepository.GetOrderById(id);
+        return await _orderRepository.GetOrderByIdAsync(id);
     }
 }
