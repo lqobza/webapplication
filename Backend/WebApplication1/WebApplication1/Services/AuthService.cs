@@ -8,10 +8,11 @@ using Microsoft.IdentityModel.Tokens;
 using WebApplication1.Models;
 using WebApplication1.Models.DTOs;
 using WebApplication1.Utils;
+using WebApplication1.Services.Interface;
 
 namespace WebApplication1.Services;
 
-public class AuthService
+public class AuthService : IAuthService
 {
     private readonly IConfiguration _configuration;
     private readonly ApplicationDbContext _context;
@@ -31,15 +32,22 @@ public class AuthService
             throw new ArgumentException("User already exists.");
         }
 
-        // Hash the password
-        var passwordHash = HashPassword(registerDto.Password);
+        // Generate salt and hash the password
+        byte[] salt = new byte[128 / 8];
+        using (var rng = RandomNumberGenerator.Create())
+        {
+            rng.GetBytes(salt);
+        }
+        var saltString = Convert.ToBase64String(salt);
+        var passwordHash = HashPassword(registerDto.Password, salt);
 
         // Create the user
         var user = new ApplicationUser
         {
             Username = registerDto.Username,
             Email = registerDto.Email,
-            PasswordHash = passwordHash
+            PasswordHash = passwordHash,
+            PasswordSalt = saltString
         };
 
         // Save the user to the database
@@ -50,14 +58,27 @@ public class AuthService
         return GenerateJwtToken(user);
     }
 
-    private string HashPassword(string password)
+    public async Task<string> LoginAsync(LoginDto loginDto)
     {
-        byte[] salt = new byte[128 / 8];
-        using (var rng = RandomNumberGenerator.Create())
+        var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == loginDto.Email);
+        if (user == null)
         {
-            rng.GetBytes(salt);
+            throw new ArgumentException("Invalid email or password.");
         }
 
+        var salt = Convert.FromBase64String(user.PasswordSalt);
+        var passwordHash = HashPassword(loginDto.Password, salt);
+
+        if (passwordHash != user.PasswordHash)
+        {
+            throw new ArgumentException("Invalid email or password.");
+        }
+
+        return GenerateJwtToken(user);
+    }
+
+    private string HashPassword(string password, byte[] salt)
+    {
         string hashed = Convert.ToBase64String(KeyDerivation.Pbkdf2(
             password: password,
             salt: salt,

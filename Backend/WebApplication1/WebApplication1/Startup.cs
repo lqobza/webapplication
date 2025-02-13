@@ -17,7 +17,14 @@ public class Startup
 
     public Startup(IConfiguration configuration)
     {
-        _configuration = configuration;
+        var builder = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", optional: true)
+            .AddEnvironmentVariables()
+            .AddUserSecrets<Startup>(optional: true);
+
+        _configuration = builder.Build();
     }
 
     public void ConfigureServices(IServiceCollection services)
@@ -80,6 +87,7 @@ public class Startup
             {
                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
             });
+        services.AddScoped<IAuthService, AuthService>();
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
     }
 

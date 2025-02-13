@@ -31,7 +31,12 @@ public class OrderRepository : IOrderRepository
         command.Parameters.AddWithValue("@customerAddress", orderCreateDto.CustomerAddress);
 
         await connection.OpenAsync();
-        return (int)await command.ExecuteScalarAsync();
+        var result = await command.ExecuteScalarAsync();
+        if (result == null)
+        {
+            throw new InvalidOperationException("Failed to get the inserted order ID");
+        }
+        return (int)result;
     }
 
     public async Task InsertOrderItemAsync(int orderId, OrderItemDto item)
