@@ -36,39 +36,23 @@ export class CartComponent implements OnInit {
     });
   }
 
-  /**
-   * Get the image URL for a cart item.
-   */
   getImageUrl(item: CartItem): string {
     const merch = this.cartService.getMerchandiseDetails(item.merchandiseId);
     return merch?.imageUrl || 'assets/default-image.png'; // Fallback image
   }
 
-  /**
-   * Get the total price for a cart item.
-   */
   getItemPrice(item: CartItem): number {
-    const merch = this.cartService.getMerchandiseDetails(item.merchandiseId);
-    return merch ? merch.price * item.quantity : 0;
+    return item.price * item.quantity;
   }
 
-  /**
-   * Remove an item from the cart.
-   */
   removeItem(item: CartItem): void {
     this.cartService.removeItem(item);
   }
 
-  /**
-   * Clear the entire cart.
-   */
   clearCart(): void {
     this.cartService.clearCart();
   }
 
-  /**
-   * Update the quantity of a cart item.
-   */
   updateQuantity(index: number, quantity: number | string): void {
     let newQuantity = typeof quantity === 'string' ? parseInt(quantity, 10) : quantity;
 

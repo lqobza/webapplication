@@ -126,12 +126,7 @@ export class CartService {
    */
   getTotalPrice(): number {
     return this.cartItems.reduce((sum, item) => {
-      const merch = this.merchandiseDetails.get(item.merchandiseId);
-      if (!merch) {
-        console.warn(`Merchandise details not found for ID: ${item.merchandiseId}`);
-        return sum;
-      }
-      return sum + (merch.price * item.quantity);
+      return sum + (item.price * item.quantity);
     }, 0);
   }
 
@@ -160,8 +155,8 @@ export class CartService {
   }
 
   getItemPrice(item: CartItem): number {
-    const merch = this.getMerchandiseDetails(item.merchandiseId);
-    return merch ? merch.price * item.quantity : 0;
+    // Use the price stored in the CartItem
+    return item.price * item.quantity;
   }
 
   createOrder(customerName: string, customerEmail: string, customerAddress: string): Observable<any> {
