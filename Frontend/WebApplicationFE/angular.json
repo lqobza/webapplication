@@ -58,17 +58,16 @@
           "defaultConfiguration": "production"
         },
         "serve": {
-          "options": {
-            "browserTarget": "crud:build",
-            "proxyConfig": "proxy.conf.json"
-          },
           "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "buildTarget": "WebApplicationFE:build"
+          },
           "configurations": {
             "production": {
-              "browserTarget": "WebApplicationFE:build:production"
+              "buildTarget": "WebApplicationFE:build:production"
             },
             "development": {
-              "browserTarget": "WebApplicationFE:build:development"
+              "buildTarget": "WebApplicationFE:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -76,7 +75,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "WebApplicationFE:build"
+            "buildTarget": "WebApplicationFE:build"
           }
         },
         "test": {
