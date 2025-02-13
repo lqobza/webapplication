@@ -1,151 +1,220 @@
 /* General Styles */
 body {
-    font-family: sans-serif; /* Choose a suitable font */
-    line-height: 1.6;
-    color: #333; /* Dark gray text color */
-    margin: 20px; /* Add some margin to the body */
-    background-color: #f8f8f8; /* Light gray background */
-  }
-  
-  h2, h3 {
-    font-weight: 600; /* Slightly bolder headings */
-    margin-bottom: 10px;
-  }
-  
-  p {
-    margin-bottom: 10px;
-  }
-  
-  ul {
-    list-style: disc;
-    margin-left: 20px;
-    margin-bottom: 10px;
-  }
-  
-  /* Merchandise Details Section */
-  .merchandise-details {
-    border: 1px solid #ddd; /* Light gray border */
-    padding: 20px;
-    background-color: #fff; /* White background for the details section */
-    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow */
-    border-radius: 8px;  /* Rounded corners */
-  }
-  
-  .merchandise-details h2 {
-    color: #555; /* Slightly darker heading color */
-    margin-top: 0; /* Remove top margin from the main heading */
-  }
-  
-  .merchandise-details h3 {
-    color: #777; /* Slightly darker heading color */
-    border-bottom: 1px solid #eee; /* Add a separator line */
-    padding-bottom: 5px;
-  }
-  
-  .in-stock {
-    color: green; /* Make "In Stock" green */
-    font-weight: bold;
-  }
-  
-  .out-of-stock {
-    color: red; /* Make "Out of Stock" red */
-    font-weight: bold;
-  }
-  
-  /* Quantity and Add to Cart */
-  .quantity-section {
-    margin-top: 20px;
-    display: flex;  /* Use flexbox to align items */
-    align-items: center;
-  }
-  
-  .quantity-section label {
-    margin-right: 10px;
-  }
-  
-  .quantity-section input[type="number"] {
-    padding: 5px;
-    border: 1px solid #ccc;
-    width: 60px;
-    margin-right: 10px;
-  }
-  
-  .details-header {
-    display: flex;
-    justify-content: space-between; /* Align items to start and end */
-    align-items: center; /* Vertically center items */
-    margin-bottom: 20px; /* Add some space below the header */
-  }
-  
-  .edit-button, .ratings-section button, .quantity-section button {
-    background-color: #007bff;
-    color: white;
-    padding: 8px 15px;
-    border: none;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: background-color 0.3s ease;
-  }
+  font-family: 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.6;
+  color: #2c3e50;
+  margin: 0;
+  background-color: #f9fafb;
+}
 
-  .edit-button:hover, .ratings-section button:hover, .quantity-section button:hover {
-    background-color: #0056b3;
-  }
+/* Merchandise Details Section */
+.merchandise-details {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #fff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+}
 
-  .ratings-section button:disabled, .quantity-section button:disabled {
-    background-color: #ccc;
-    color: #666;
-    cursor: not-allowed;
-  }
+.details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e2e8f0;
+}
 
-  .ratings-section {
-    margin-top: 20px;
-    border-top: 1px solid #eee; /* Add a separator line */
-    padding-top: 20px;
-  }
+.details-header h2 {
+  font-size: 2rem;
+  color: #1a202c;
+  margin: 0;
+}
 
-  .ratings-section h3, .ratings-section h4 {
-    margin-bottom: 10px;
-  }
+.merchandise-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
 
-  .ratings-section ul {
-    list-style: disc;
-    margin-left: 20px;
-    margin-bottom: 10px;
-  }
+.merchandise-info p {
+  margin: 0.5rem 0;
+  font-size: 1.1rem;
+}
 
-  .ratings-section textarea {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ccc;
-    margin-bottom: 10px;
-    resize: vertical; /* Allow vertical resizing */
-  }
+.price {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #2563eb;
+}
 
-  .rating-stars {
-    display: inline-flex; /* Arrange stars horizontally */
-  }
+/* Buttons */
+.edit-button, 
+.ratings-section button, 
+.quantity-section button {
+  background-color: #2563eb;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
 
-  .rating-stars span {
-    cursor: default; /* Make stars non-clickable in display */
-    color: #ccc; /* Default star color */
-  }
+.edit-button:hover, 
+.ratings-section button:hover, 
+.quantity-section button:hover {
+  background-color: #1d4ed8;
+  transform: translateY(-1px);
+}
 
-  .rating-stars span.active {
-    color: gold; /* Active star color */
-  }
+.edit-button:active, 
+.ratings-section button:active, 
+.quantity-section button:active {
+  transform: translateY(0);
+}
 
-  .rating-selector {
-    display: inline-flex; /* Arrange stars horizontally */
-    margin-bottom: 10px;
-  }
+/* Stock Status */
+.in-stock {
+  color: #059669;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
 
-  .rating-selector span {
-    cursor: pointer; /* Make stars clickable in selector */
-    color: #ccc; /* Default star color */
-    font-size: 1.2em; /* Slightly larger stars */
-    margin-right: 5px; /* Add spacing between stars */
-  }
+.out-of-stock {
+  color: #dc2626;
+  font-weight: 600;
+}
 
-  .rating-selector span.active {
-    color: gold; /* Active star color */
-  }
+/* Size and Quantity Section */
+.size-quantity-section {
+  background-color: #f8fafc;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin: 1.5rem 0;
+}
+
+select {
+  padding: 0.5rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  width: 200px;
+}
+
+.quantity-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.quantity-section input[type="number"] {
+  padding: 0.5rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  width: 80px;
+  font-size: 1rem;
+}
+
+/* Ratings Section */
+.ratings-section {
+  margin-top: 2rem;
+  padding: 2rem;
+  background-color: #fff;
+  border-radius: 8px;
+}
+
+.ratings-section h3 {
+  font-size: 1.25rem;
+  color: #1a202c;
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+.rating-item {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 1rem 0;
+}
+
+.rating-stars {
+  margin-bottom: 0.5rem;
+}
+
+.rating-stars span {
+  color: #d1d5db;
+  font-size: 1.1rem;
+}
+
+.rating-stars span.active {
+  color: #fbbf24;
+}
+
+.rating-selector {
+  margin: 0.5rem 0;
+}
+
+.rating-selector span {
+  cursor: pointer;
+  color: #d1d5db;
+  font-size: 1.5rem;
+  margin-right: 0.25rem;
+}
+
+.rating-selector span:hover,
+.rating-selector span.active {
+  color: #fbbf24;
+}
+
+textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  margin: 0.5rem 0 1rem;
+  resize: vertical;
+  min-height: 100px;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px #2563eb;
+}
+
+.ratings-section button {
+  background-color: #1a73e8;
+  padding: 0.5rem 1.5rem;
+  font-size: 0.875rem;
+}
+
+/* Add some spacing between reviews and the review form */
+.ratings-section > h3:nth-of-type(2) {
+  margin-top: 3rem;
+}
+
+/* Loading State */
+.loading-state {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+  color: #6b7280;
+}
+
+/* Error State */
+.error-state {
+  text-align: center;
+  padding: 2rem;
+  color: #dc2626;
+  background-color: #fee2e2;
+  border-radius: 8px;
+  margin: 2rem auto;
+  max-width: 600px;
+}

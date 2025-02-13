@@ -1,14 +1,24 @@
-<div *ngIf="!merchandise && isLoading">Loading...</div>
-<div *ngIf="!merchandise &&!isLoading && errorMessage">Error: {{ errorMessage }}</div>
+<div class="loading-state" *ngIf="!merchandise && isLoading">
+  Loading...
+</div>
+
+<div class="error-state" *ngIf="!merchandise && !isLoading && errorMessage">
+  Error: {{ errorMessage }}
+</div>
 
 <div class="merchandise-details" *ngIf="merchandise">
   <div class="details-header">
     <h2>{{ merchandise.name }}</h2>
-    <button (click)="goToUpdatePage(merchandise.id)" class="edit-button">Edit</button>
+    <button (click)="goToUpdatePage(merchandise.id)" class="edit-button">
+      Edit Details
+    </button>
   </div>
-  <p>Price: {{ merchandise.price }}</p>
-  <p>Description: {{ merchandise.description }}</p>
-  <p>Brand: {{ merchandise.brandName }}</p>
+
+  <div class="merchandise-info">
+    <p class="price">{{ merchandise.price | currency }}</p>
+    <p>{{ merchandise.description }}</p>
+    <p><strong>Brand:</strong> {{ merchandise.brandName }}</p>
+  </div>
 
   <div *ngIf="merchandise.themes && merchandise.themes.length > 0">
     <h3>Themes</h3>
@@ -19,8 +29,8 @@
     </ul>
   </div>
 
-  <div *ngIf="merchandise.sizes && merchandise.sizes.length > 0">
-    <h3 *ngIf="hasMultipleSizes">Sizes</h3>
+  <div class="size-quantity-section" *ngIf="merchandise.sizes && merchandise.sizes.length > 0">
+    <h3 *ngIf="hasMultipleSizes">Select Size</h3>
 
     <select *ngIf="hasMultipleSizes" [(ngModel)]="selectedSize" (change)="onSizeChange()">
       <option *ngFor="let size of merchandise.sizes" [ngValue]="size.size">
@@ -29,46 +39,52 @@
     </select>
 
     <div class="in-stock" *ngIf="!hasMultipleSizes && merchandise.sizes.length === 1">
-      In Stock: {{ inStock }}
+      <span>In Stock:</span> {{ inStock }}
     </div>
 
     <div class="in-stock" *ngIf="selectedSize && hasMultipleSizes">
-      In Stock: {{ getInStock(selectedSize) }}
+      <span>In Stock:</span> {{ getInStock(selectedSize) }}
     </div>
 
     <div class="quantity-section" *ngIf="(selectedSize || merchandise.sizes.length === 1) && isAddToCartEnabled">
       <label for="quantity">Quantity:</label>
       <input type="number" id="quantity" name="quantity" [(ngModel)]="quantity"
              min="1" [max]="maxQuantity" (change)="onQuantityChange()">
-      <button (click)="addToCart()" [disabled]="isAddToCartDisabled">Add to Cart</button>
+      <button (click)="addToCart()" [disabled]="isAddToCartDisabled">
+        Add to Cart
+      </button>
     </div>
 
     <div class="out-of-stock" *ngIf="(selectedSize || merchandise.sizes.length === 1) && isOutOfStock()">
-      <p>Out of stock</p>
+      <p>Currently Out of Stock</p>
     </div>
   </div>
 
   <div class="ratings-section">
-    <h3>Ratings</h3>
+    <h3>Customer Reviews</h3>
     <div *ngIf="merchandise.ratings && merchandise.ratings.length > 0">
-      <ul>
-        <li *ngFor="let rating of merchandise.ratings">
-          <div class="rating-stars">
-            <span *ngFor="let i of [1,2,3,4,5]" [class.active]="i <= rating.rating">★</span>
-          </div>
-          <p>{{ rating.description }}</p>
-        </li>
-      </ul>
+      <div class="rating-item" *ngFor="let rating of merchandise.ratings">
+        <div class="rating-stars">
+          <span *ngFor="let i of [1,2,3,4,5]" [class.active]="i <= rating.rating">★</span>
+        </div>
+        <p>{{ rating.description }}</p>
+      </div>
     </div>
     <div *ngIf="!merchandise.ratings || merchandise.ratings.length === 0">
-      <p>No ratings yet.</p>
+      <p>No reviews yet. Be the first to review this item!</p>
     </div>
   
-    <h4>Add Your Rating</h4>
+    <h3>Write a Review</h3>
     <div class="rating-selector">
-      <span *ngFor="let i of [1,2,3,4,5]" (click)="setNewRating(i)" [class.active]="i <= newRating">★</span>
+      <span *ngFor="let i of [1,2,3,4,5]" 
+            (click)="setNewRating(i)" 
+            [class.active]="i <= newRating">★</span>
     </div>
-    <textarea [(ngModel)]="newRatingText" placeholder="Write your review here..."></textarea>
-    <button (click)="addRating()" [disabled]="!newRating || !newRatingText.trim()">Submit Rating</button> 
+    <textarea [(ngModel)]="newRatingText" 
+              placeholder="Share your thoughts about this product..."></textarea>
+    <button (click)="addRating()" 
+            [disabled]="!newRating || !newRatingText.trim()">
+      Submit Review
+    </button>
   </div>
 </div>
