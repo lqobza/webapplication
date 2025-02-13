@@ -21,22 +21,18 @@ export class CartComponent implements OnInit {
   constructor(private cartService: CartService) {}
 
   ngOnInit(): void {
+    this.isLoading = true;
     this.cartService.getCartItems().subscribe({
       next: (items: CartItem[]) => {
-        this.cartItems = items; // Assign the emitted array to cartItems
-        this.updateTotalPrice(); // Update total price after loading items
+        this.cartItems = items;
+        this.updateTotalPrice();
         this.isLoading = false;
       },
       error: (error) => {
         this.errorMessage = 'Failed to load cart items. Please try again later.';
         this.isLoading = false;
+        console.error('Error loading cart:', error);
       },
-    });
-
-    // Listen for changes to the cart items
-    this.cartService.getCartItems().subscribe((items) => {
-      this.cartItems = items;
-      this.updateTotalPrice(); // Update total price whenever cart items change
     });
   }
 

@@ -21,14 +21,15 @@ export class CartService {
   /**
    * Load cart items from localStorage on initialization.
    */
-  private loadCartFromStorage(): void {
+  private async loadCartFromStorage(): Promise<void> {
     const storedCartItems = localStorage.getItem('cartItems');
     if (storedCartItems) {
       this.cartItems = JSON.parse(storedCartItems);
-      this.cartItems$.next(this.cartItems);
-      this.fetchMerchandiseDetails().catch((error) => {
+      // First fetch merchandise details, then emit cart items
+      await this.fetchMerchandiseDetails().catch((error) => {
         console.error('Failed to fetch merchandise details:', error);
       });
+      this.cartItems$.next(this.cartItems);
     }
   }
 
@@ -114,7 +115,11 @@ export class CartService {
   getTotalPrice(): number {
     return this.cartItems.reduce((sum, item) => {
       const merch = this.merchandiseDetails.get(item.merchandiseId);
-      return sum + (merch ? merch.price * item.quantity : 0);
+      if (!merch) {
+        console.warn(`Merchandise details not found for ID: ${item.merchandiseId}`);
+        return sum;
+      }
+      return sum + (merch.price * item.quantity);
     }, 0);
   }
 

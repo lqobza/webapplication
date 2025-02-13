@@ -1,0 +1,733 @@
+﻿-- Error handling
+IF OBJECT_ID(N'[dbo].[RaiseCustomError]', N'P') IS NOT NULL
+    DROP PROCEDURE [dbo].[RaiseCustomError];
+GO
+CREATE PROCEDURE [dbo].[RaiseCustomError]
+@ErrorMessage NVARCHAR(4000) = NULL
+AS
+BEGIN
+    DECLARE @MSG NVARCHAR(4000),
+        @RC INT,
+        @PR NVARCHAR(126),
+        @LN INT;
+
+    SELECT  @MSG = ISNULL(@ErrorMessage, ERROR_MESSAGE()),
+            @RC = ERROR_NUMBER(),
+            @PR = ERROR_PROCEDURE(),
+            @LN = ERROR_LINE();
+
+    RAISERROR (N'Database Error: %d, Procedure: %s, Line: %d, Text: %s',
+        11, 1, @RC, @PR, @LN, @MSG) WITH LOG, NOWAIT;
+END
+GO
+
+-- Create a User-Defined Table Type for Sizes
+IF EXISTS (SELECT * FROM sys.types WHERE name = 'MerchSizeType' AND is_user_defined = 1)
+    DROP TYPE [dbo].[MerchSizeType];
+GO
+CREATE TYPE dbo.MerchSizeType AS TABLE
+(
+    Size NVARCHAR(255),
+    InStock INT
+);
+
+-- Create a User-Defined Table Type for Themes
+IF EXISTS (SELECT * FROM sys.types WHERE name = 'MerchThemeType' AND is_user_defined = 1)
+    DROP TYPE [dbo].[MerchThemeType];
+GO
+CREATE TYPE dbo.MerchThemeType AS TABLE
+(
+    ThemeId INT
+);
+
+--Exists SP:
+SET NOCOUNT ON;
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+IF @@ERROR <> 0
+    SET NOEXEC ON;
+GO
+
+IF OBJECT_ID(N'[dbo].[CheckMerchExistence]', N'P') IS NOT NULL
+    DROP PROCEDURE [dbo].[CheckMerchExistence];
+GO
+
+CREATE PROC [dbo].[CheckMerchExistence]
+(
+    @categoryId INT,
+    @name NVARCHAR(255),
+    @brandId INT,
+    @exists BIT OUTPUT
+)
+AS
+BEGIN TRY
+    IF @categoryId IS NULL OR @name IS NULL OR @brandId IS NULL
+        EXEC dbo.RaiseCustomError N'All parameters must be provided';
+
+    IF NOT EXISTS (SELECT 1 FROM Category WHERE id = @categoryId)
+        EXEC dbo.RaiseCustomError N'Invalid category ID';
+
+    IF NOT EXISTS (SELECT 1 FROM Brand WHERE id = @brandId)
+        EXEC dbo.RaiseCustomError N'Invalid brand ID';
+
+    IF LEN(TRIM(@name)) = 0
+        EXEC dbo.RaiseCustomError N'Name cannot be empty';
+
+    SET @exists = 0;  -- Default to false
+
+    IF EXISTS (
+        SELECT 1
+        FROM Merch
+        WHERE category_id = @categoryId
+          AND name = @name
+          AND brand_id = @brandId
+    )
+        BEGIN
+            SET @exists = 1;  -- Set to true if the record exists
+        END
+END TRY
+BEGIN CATCH
+    EXEC dbo.RaiseCustomError;
+END CATCH
+GO
+
+--!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+--GetAllMerchandise stored procedure:
+SET NOCOUNT ON;
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+-- Drop the existing stored procedure if it exists
+IF OBJECT_ID(N'[dbo].[GetAllMerchandise]', N'P') IS NOT NULL
+    DROP PROCEDURE [dbo].[GetAllMerchandise];
+GO
+
+CREATE PROC [dbo].[GetAllMerchandise]
+    @PageNumber int = 1,
+    @PageSize int = 10
+AS
+BEGIN TRY
+    -- Parameter validation
+    IF @PageNumber < 1 OR @PageSize < 1
+        EXEC dbo.RaiseCustomError N'PageNumber and PageSize must be greater than 0';
+
+    -- Get total count for metadata
+    DECLARE @TotalCount int = (SELECT COUNT(DISTINCT m.id) FROM Merch m);
+
+    -- Return empty result set with metadata if no records
+    IF @TotalCount = 0
+        BEGIN
+            SELECT  NULL as id,
+                    NULL as category_id,
+                    NULL as CategoryName,
+                    NULL as name,
+                    NULL as price,
+                    NULL as description,
+                    NULL as brand_id,
+                    NULL as BrandName,
+                    NULL as theme_id,
+                    NULL as theme_name,
+                    NULL as size_id,
+                    NULL as size_name,
+                    NULL as size_in_stock,
+                    0 as TotalCount
+            WHERE 1 = 0;
+            RETURN;
+        END;
+
+    -- Get paginated merchandise with all their data
+    WITH PaginatedMerch AS (
+        SELECT DISTINCT m.id
+        FROM Merch m
+        ORDER BY m.id
+        OFFSET ((@PageNumber - 1) * @PageSize) ROWS
+            FETCH NEXT @PageSize ROWS ONLY
+    )
+    SELECT
+        m.id,
+        m.category_id,
+        c.name AS CategoryName,
+        m.name,
+        m.price,
+        m.description,
+        m.brand_id,
+        b.name AS BrandName,
+        t.id AS theme_id,
+        t.name AS theme_name,
+        ms.id AS size_id,
+        ms.size AS size_name,
+        ms.instock AS size_in_stock,
+        @TotalCount AS TotalCount
+    FROM PaginatedMerch pm
+             INNER JOIN Merch m ON pm.id = m.id
+             INNER JOIN Category c ON m.category_id = c.id
+             INNER JOIN Brand b ON m.brand_id = b.id
+             LEFT JOIN MerchTheme mt ON m.id = mt.merch_id
+             LEFT JOIN Theme t ON mt.theme_id = t.id
+             LEFT JOIN MerchSize ms ON m.id = ms.merch_id
+    ORDER BY m.id;
+END TRY
+BEGIN CATCH
+    EXEC dbo.RaiseCustomError;
+END CATCH;
+GO
+
+------------------------------------
+--2024.09.21
+--!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+--GetMerchandiseBySize SP
+SET NOCOUNT ON;
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+IF OBJECT_ID(N'[dbo].[GetMerchandiseBySize]', N'P') IS NOT NULL
+    DROP PROCEDURE [dbo].[GetMerchandiseBySize];
+GO
+CREATE PROCEDURE [dbo].[GetMerchandiseBySize]
+@size NVARCHAR(255)
+AS
+BEGIN TRY
+    IF @size IS NULL OR LEN(TRIM(@size)) = 0
+        EXEC dbo.RaiseCustomError N'Size parameter cannot be null or empty';
+
+    IF NOT EXISTS (SELECT 1 FROM MerchSize WHERE size = @size)
+        BEGIN
+            -- Return empty result set with same schema
+            SELECT
+                NULL as id,
+                NULL as category_id,
+                NULL as CategoryName,
+                NULL as name,
+                NULL as price,
+                NULL as description,
+                NULL as brand_id,
+                NULL as BrandName
+            WHERE 1 = 0;
+            RETURN;
+        END
+
+    SELECT DISTINCT
+        m.id,
+        m.category_id,
+        c.name as CategoryName,
+        m.name,
+        m.price,
+        m.description,
+        m.brand_id,
+        b.name as BrandName
+    FROM Merch m
+             INNER JOIN Brand b ON m.brand_id = b.id
+             INNER JOIN Category c ON m.category_id = c.id
+             INNER JOIN MerchSize ms ON m.id = ms.merch_id
+    WHERE ms.size = @size
+    ORDER BY m.name;
+END TRY
+BEGIN CATCH
+    EXEC dbo.RaiseCustomError;
+END CATCH
+GO
+
+-----------------------------------------
+--2024.09.22
+--GetMerchandiseByCategory SP
+SET NOCOUNT ON;
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+IF OBJECT_ID(N'[dbo].[GetMerchandiseByCategory]', N'P') IS NOT NULL
+    DROP PROCEDURE [dbo].[GetMerchandiseByCategory];
+GO
+
+CREATE PROCEDURE [dbo].[GetMerchandiseByCategory]
+(
+    @CategoryId INT,
+    @PageNumber INT = 1,
+    @PageSize INT = 10
+)
+AS
+BEGIN TRY
+    IF @CategoryId IS NULL
+        EXEC dbo.RaiseCustomError N'Category ID cannot be null';
+
+    IF NOT EXISTS (SELECT 1 FROM Category WHERE id = @CategoryId)
+        EXEC dbo.RaiseCustomError N'Category with specified ID does not exist';
+
+    IF @PageNumber < 1 OR @PageSize < 1
+        EXEC dbo.RaiseCustomError N'PageNumber and PageSize must be greater than 0';
+
+    DECLARE @TotalCount INT = (
+        SELECT COUNT(*)
+        FROM Merch
+        WHERE category_id = @CategoryId
+    );
+
+    -- Return empty result if no records found
+    IF @TotalCount = 0
+        BEGIN
+            SELECT
+                NULL as id,
+                NULL as category_id,
+                NULL as CategoryName,
+                NULL as name,
+                NULL as price,
+                NULL as description,
+                NULL as brand_id,
+                NULL as BrandName,
+                0 as TotalCount
+            WHERE 1 = 0;
+            RETURN;
+        END
+
+    SELECT
+        m.id,
+        m.category_id,
+        c.name AS CategoryName,
+        m.name,
+        m.price,
+        m.description,
+        m.brand_id,
+        b.name AS BrandName,
+        @TotalCount as TotalCount
+    FROM Merch m
+             INNER JOIN Brand b ON m.brand_id = b.id
+             INNER JOIN Category c ON m.category_id = c.id
+    WHERE m.category_id = @CategoryId
+    ORDER BY m.name
+    OFFSET ((@PageNumber - 1) * @PageSize) ROWS
+        FETCH NEXT @PageSize ROWS ONLY;
+END TRY
+BEGIN CATCH
+    EXEC dbo.RaiseCustomError;
+END CATCH
+GO
+
+--InsertMerchandise
+IF OBJECT_ID(N'[dbo].[InsertMerchandise]', N'P') IS NOT NULL
+    DROP PROCEDURE [dbo].[InsertMerchandise];
+GO
+CREATE PROCEDURE [dbo].[InsertMerchandise]
+(
+    @categoryId INT,
+    @name NVARCHAR(MAX),
+    @price DECIMAL(10, 2),
+    @description NVARCHAR(MAX),
+    @brandId INT,
+    @sizes dbo.MerchSizeType READONLY,
+    @themes dbo.MerchThemeType READONLY
+)
+AS
+BEGIN TRY
+    -- Validate inputs
+    IF @price <= 0
+        EXEC dbo.RaiseCustomError N'Price must be greater than 0';
+
+    IF NOT EXISTS (SELECT 1 FROM Category WHERE id = @categoryId)
+        EXEC dbo.RaiseCustomError N'Invalid category ID';
+
+    IF NOT EXISTS (SELECT 1 FROM Brand WHERE id = @brandId)
+        EXEC dbo.RaiseCustomError N'Invalid brand ID';
+
+    -- Validate themes if provided
+    IF EXISTS (
+        SELECT 1 FROM @themes t
+                          LEFT JOIN Theme th ON t.ThemeId = th.id
+        WHERE th.id IS NULL
+    )
+        EXEC dbo.RaiseCustomError N'One or more invalid theme IDs provided';
+
+    SET NOCOUNT ON;
+
+    -- Start a transaction
+    BEGIN TRANSACTION;
+
+    -- Declare table variable to store new merchandise ID
+    DECLARE @newMerchId TABLE (ID INT);
+
+    -- Insert into Merch and capture the new ID
+    INSERT INTO Merch (category_id, name, price, description, brand_id)
+    OUTPUT INSERTED.ID INTO @newMerchId
+    VALUES (@categoryId, @name, @price, @description, @brandId);
+
+    -- Insert into MerchSize if sizes are provided
+    IF EXISTS (SELECT 1 FROM @sizes)
+        BEGIN
+            INSERT INTO MerchSize (merch_id, size, instock)
+            SELECT (SELECT ID FROM @newMerchId), Size, InStock
+            FROM @sizes;
+        END
+
+    -- Insert into MerchTheme if themes are provided
+    IF EXISTS (SELECT 1 FROM @themes)
+        BEGIN
+            INSERT INTO MerchTheme (merch_id, theme_id)
+            SELECT (SELECT ID FROM @newMerchId), ThemeId
+            FROM @themes;
+        END
+
+    -- Commit the transaction if all inserts succeed
+    COMMIT TRANSACTION;
+
+    RETURN 0; -- Indicate successful execution
+END TRY
+BEGIN CATCH
+    -- Rollback the transaction in case of an error
+    IF @@TRANCOUNT > 0
+        BEGIN
+            ROLLBACK TRANSACTION;
+        END
+
+    -- Handle errors
+    EXEC dbo.RaiseCustomError;
+END CATCH
+GO
+
+--DeleteMerchandiseById
+IF OBJECT_ID(N'[dbo].[DeleteMerchandiseById]', N'P') IS NOT NULL
+    DROP PROCEDURE [dbo].[DeleteMerchandiseById];
+GO
+CREATE PROCEDURE [dbo].[DeleteMerchandiseById]
+(
+    @id INT
+)
+AS
+BEGIN TRY
+    IF @id IS NULL
+        EXEC dbo.RaiseCustomError N'Merchandise ID cannot be null';
+
+    IF NOT EXISTS (SELECT 1 FROM Merch WHERE id = @id)
+        EXEC dbo.RaiseCustomError N'Merchandise with specified ID does not exist';
+
+    BEGIN TRANSACTION;
+    -- Delete associated data first
+    DELETE FROM MerchSize WHERE merch_id = @id;
+    DELETE FROM MerchTheme WHERE merch_id = @id;
+    DELETE FROM Ratings WHERE merch_id = @id;
+    -- Delete the main merchandise record
+    DELETE FROM Merch WHERE id = @id;
+    COMMIT TRANSACTION;
+
+    SELECT @@ROWCOUNT AS RowsAffected;
+END TRY
+BEGIN CATCH
+    IF @@TRANCOUNT > 0
+        ROLLBACK TRANSACTION;
+    EXEC dbo.RaiseCustomError;
+END CATCH
+GO
+
+
+--UpdateMerchandise
+SET NOCOUNT ON;
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+IF OBJECT_ID(N'[dbo].[UpdateMerchandise]', N'P') IS NOT NULL
+    DROP PROCEDURE [dbo].[UpdateMerchandise];
+GO
+
+CREATE PROCEDURE [dbo].[UpdateMerchandise]
+(
+    @Id INT,
+    @Price DECIMAL(10,2) = NULL,
+    @Description NVARCHAR(255) = NULL
+)
+AS
+BEGIN TRY
+    IF NOT EXISTS (SELECT 1 FROM Merch WHERE id = @Id)
+        EXEC dbo.RaiseCustomError N'Merchandise with specified ID does not exist';
+
+    IF @Price IS NULL AND @Description IS NULL
+        EXEC dbo.RaiseCustomError N'No fields provided to update';
+
+    UPDATE Merch
+    SET price = ISNULL(@Price, price),
+        description = ISNULL(@Description, description)
+    WHERE id = @Id;
+
+    SELECT @@ROWCOUNT AS RowsAffected;
+END TRY
+BEGIN CATCH
+    EXEC dbo.RaiseCustomError;
+END CATCH
+GO
+
+--GetCategories
+SET NOCOUNT ON;
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+IF OBJECT_ID(N'[dbo].[GetCategories]', N'P') IS NOT NULL
+    DROP PROCEDURE [dbo].[GetCategories];
+GO
+
+CREATE PROCEDURE [dbo].[GetCategories]
+(
+    @CategoryId INT = NULL
+)
+AS
+BEGIN TRY
+    SELECT id, name FROM Category WHERE (@CategoryId IS NULL OR id = @CategoryId);
+END TRY
+BEGIN CATCH
+    EXEC dbo.RaiseCustomError;
+END CATCH
+GO
+
+--GetThemes
+SET NOCOUNT ON;
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+IF OBJECT_ID(N'[dbo].[GetThemes]', N'P') IS NOT NULL
+    DROP PROCEDURE [dbo].[GetThemes];
+GO
+
+CREATE PROCEDURE [dbo].[GetThemes]
+AS
+BEGIN TRY
+    SELECT id, name FROM Theme;
+END TRY
+BEGIN CATCH
+    EXEC dbo.RaiseCustomError;
+END CATCH
+GO
+
+--GetBrands
+SET NOCOUNT ON;
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+IF OBJECT_ID(N'[dbo].[GetBrands]', N'P') IS NOT NULL
+    DROP PROCEDURE [dbo].[GetBrands];
+GO
+
+CREATE PROCEDURE [dbo].[GetBrands]
+AS
+BEGIN TRY
+    SELECT id, name FROM Brand;
+END TRY
+BEGIN CATCH
+    EXEC dbo.RaiseCustomError;
+END CATCH
+GO
+
+--AddCategoryToDb
+SET NOCOUNT ON;
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+IF OBJECT_ID(N'[dbo].[InsertCategory]', N'P') IS NOT NULL
+    DROP PROCEDURE [dbo].[InsertCategory];
+GO
+
+CREATE PROCEDURE [dbo].[InsertCategory]
+(
+    @name NVARCHAR(MAX)
+)
+AS
+BEGIN
+    BEGIN TRY
+        DECLARE @categoryId INT;
+        -- Check if the category already exists
+        IF EXISTS (SELECT 1 FROM Category WHERE name = @name)
+            BEGIN
+                -- Category already exists, return appropriate error message
+                RAISERROR (N'Category with name %s already exists.', 11, 1, @name) WITH LOG, NOWAIT;
+            END
+        ELSE
+            BEGIN
+                -- Insert new category and capture the inserted ID
+                INSERT INTO Category (name)
+                VALUES (@name);
+
+                -- Capture the inserted ID using SCOPE_IDENTITY
+                SET @categoryId = SCOPE_IDENTITY();
+
+                -- Return the inserted category ID
+                SELECT @categoryId AS NewCategoryId;
+            END
+    END TRY
+    BEGIN CATCH
+        -- Handle errors here
+        DECLARE @MSG NVARCHAR(4000),
+            @RC INT,
+            @PR NVARCHAR(126),
+            @LN INT;
+        SELECT @MSG = ERROR_MESSAGE(),
+               @RC = ERROR_NUMBER(),
+               @PR = ERROR_PROCEDURE(),
+               @LN = ERROR_LINE();
+        RAISERROR (N'Database Error: %d, Procedure: %s, Line: %d, Text: %s', 11, 1, @RC, @PR, @LN, @MSG) WITH LOG, NOWAIT;
+    END CATCH
+END
+GO
+
+--AddThemeToDb
+SET NOCOUNT ON;
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+IF OBJECT_ID(N'[dbo].[InsertTheme]', N'P') IS NOT NULL
+    DROP PROCEDURE [dbo].[InsertTheme];
+GO
+
+CREATE PROCEDURE [dbo].[InsertTheme]
+(
+    @name NVARCHAR(MAX)
+)
+AS
+BEGIN
+    BEGIN TRY
+        DECLARE @themeId INT;
+        -- Check if the category already exists
+        IF EXISTS (SELECT 1 FROM Theme WHERE name = @name)
+            BEGIN
+                -- Category already exists, return appropriate error message
+                RAISERROR (N'Theme with name %s already exists.', 11, 1, @name) WITH LOG, NOWAIT;
+            END
+        ELSE
+            BEGIN
+                -- Insert new category and capture the inserted ID
+                INSERT INTO Theme (name)
+                VALUES (@name);
+
+                -- Capture the inserted ID using SCOPE_IDENTITY
+                SET @themeId = SCOPE_IDENTITY();
+
+                -- Return the inserted category ID
+                SELECT @themeId AS NewThemeId;
+            END
+    END TRY
+    BEGIN CATCH
+        -- Handle errors here
+        DECLARE @MSG NVARCHAR(4000),
+            @RC INT,
+            @PR NVARCHAR(126),
+            @LN INT;
+        SELECT @MSG = ERROR_MESSAGE(),
+               @RC = ERROR_NUMBER(),
+               @PR = ERROR_PROCEDURE(),
+               @LN = ERROR_LINE();
+        RAISERROR (N'Database Error: %d, Procedure: %s, Line: %d, Text: %s', 11, 1, @RC, @PR, @LN, @MSG) WITH LOG, NOWAIT;
+    END CATCH
+END
+GO
+
+------------------------------
+--GetBrands
+SET NOCOUNT ON;
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+IF OBJECT_ID(N'[dbo].[GetOrders]', N'P') IS NOT NULL
+    DROP PROCEDURE [dbo].[GetOrders];
+GO
+
+CREATE PROCEDURE [dbo].[GetOrders]
+AS
+BEGIN TRY
+    SELECT id, order_date, total_amount, customer_name, customer_email, customer_address FROM Orders;
+END TRY
+BEGIN CATCH
+    -- Handle errors here
+    DECLARE @MSG NVARCHAR(4000),
+        @RC INT,
+        @PR NVARCHAR(126),
+        @LN INT;
+    SELECT @MSG = ERROR_MESSAGE(),
+           @RC = ERROR_NUMBER(),
+           @PR = ERROR_PROCEDURE(),
+           @LN = ERROR_LINE();
+    RAISERROR (N'Database Error: %d, Procedure: %s, Line: %d, Text: %s', 11, 1, @RC, @PR, @LN, @MSG) WITH LOG, NOWAIT;
+END CATCH
+GO
+
+------------------------------
+--2025.02.02
+--GetMerchandiseById stored procedure:
+SET NOCOUNT ON;
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+-- Drop the existing stored procedure if it exists
+IF OBJECT_ID(N'[dbo].[GetMerchandiseById]', N'P') IS NOT NULL
+    DROP PROCEDURE [dbo].[GetMerchandiseById];
+GO
+
+CREATE PROC [dbo].[GetMerchandiseById]
+@Id INT
+AS
+BEGIN TRY
+    IF @Id IS NULL
+        EXEC dbo.RaiseCustomError N'Merchandise ID cannot be null';
+
+    IF NOT EXISTS (SELECT 1 FROM Merch WHERE id = @Id)
+        BEGIN
+            -- Return empty result set with same schema
+            SELECT
+                NULL as id,
+                NULL as category_id,
+                NULL as CategoryName,
+                NULL as name,
+                NULL as price,
+                NULL as description,
+                NULL as brand_id,
+                NULL as BrandName,
+                NULL as rating_id,
+                NULL as rating_value,
+                NULL as rating_description,
+                NULL as rating_created_at,
+                NULL as theme_id,
+                NULL as theme_name,
+                NULL as size_id,
+                NULL as size_name,
+                NULL as size_in_stock
+            WHERE 1 = 0;
+            RETURN;
+        END
+
+    SELECT
+        m.id,
+        m.category_id,
+        c.name AS CategoryName,
+        m.name,
+        m.price,
+        m.description,
+        m.brand_id,
+        b.name AS BrandName,
+        r.id AS rating_id,
+        r.rating AS rating_value,
+        r.description AS rating_description,
+        r.created_at AS rating_created_at,
+        t.id AS theme_id,
+        t.name AS theme_name,
+        ms.id AS size_id,
+        ms.size AS size_name,
+        ms.instock AS size_in_stock
+    FROM Merch m
+             INNER JOIN Category c ON m.category_id = c.id
+             INNER JOIN Brand b ON m.brand_id = b.id
+             LEFT JOIN Ratings r ON m.id = r.merch_id
+             LEFT JOIN MerchTheme mt ON m.id = mt.merch_id
+             LEFT JOIN Theme t ON mt.theme_id = t.id
+             LEFT JOIN MerchSize ms ON m.id = ms.merch_id
+    WHERE m.id = @Id
+    ORDER BY ms.size;
+END TRY
+BEGIN CATCH
+    EXEC dbo.RaiseCustomError;
+END CATCH
+GO
