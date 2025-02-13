@@ -1,5 +1,8 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { AuthGuard } from './guards/auth.guard';
+import { LoginComponent } from './components/login/login.component';
+import { RegisterComponent } from './components/register/register.component';
 import { MerchandiseListComponent } from './components/merchandise-list/merchandise-list.component';
 import { MerchandiseDetailComponent } from './components/merchandise-detail/merchandise-detail.component';
 import { MerchandiseCreateComponent } from './components/merchandise-create/merchandise-create.component';
@@ -14,7 +17,13 @@ const routes: Routes = [
   { path: 'create', component: MerchandiseCreateComponent },
   { path: 'update/:id', component: MerchandiseUpdateComponent },
   { path: 'render-image-test', component: CustomDesignPreviewComponent },
-  { path: 'cart', component: CartComponent }
+  { path: 'login', component: LoginComponent },
+  { path: 'register', component: RegisterComponent },
+  { 
+    path: 'cart', 
+    component: CartComponent,
+    canActivate: [AuthGuard]
+  }
 ];
 
 @NgModule({

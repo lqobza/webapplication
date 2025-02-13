@@ -5,3 +5,138 @@
 span {
     cursor: pointer;
 }
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  background-color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  height: 64px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+}
+
+.brand-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+.brand-link mat-icon {
+  margin-right: 8px;
+  color: #28a745;
+}
+
+.navbar-links {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.navbar-links a {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #666;
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.navbar-links a:hover {
+  background-color: rgba(40, 167, 69, 0.1);
+  color: #28a745;
+}
+
+.navbar-links a.active {
+  color: #28a745;
+  background-color: rgba(40, 167, 69, 0.1);
+}
+
+.navbar-links mat-icon {
+  margin-right: 4px;
+}
+
+.navbar-auth {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-email {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.logout-button {
+  color: #dc3545 !important;
+}
+
+.logout-button:hover {
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+/* Material button overrides */
+.mat-mdc-raised-button {
+  background-color: #28a745 !important;
+}
+
+.mat-mdc-raised-button:hover {
+  background-color: #218838 !important;
+}
+
+.mat-mdc-button {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .user-email {
+    display: none;
+  }
+
+  .navbar-links span,
+  .navbar-auth span {
+    display: none;
+  }
+
+  .navbar-links mat-icon,
+  .navbar-auth mat-icon {
+    margin-right: 0;
+  }
+
+  .navbar-links a,
+  .navbar-auth button {
+    padding: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar {
+    padding: 0 12px;
+  }
+
+  .brand-link span {
+    display: none;
+  }
+}

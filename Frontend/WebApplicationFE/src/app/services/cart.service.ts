@@ -1,10 +1,12 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, EMPTY } from 'rxjs';
 import { CartItem } from '../models/cartitem.model';
 import { MerchandiseService } from './merchandise.service';
 import { Merchandise } from '../models/merchandise.model';
 import { HttpClient } from '@angular/common/http';
 import { OrderDto } from '../models/order.model';
+import { AuthService } from '../services/auth.service';
+import { Router } from '@angular/router';
 
 @Injectable({
   providedIn: 'root',
@@ -14,7 +16,12 @@ export class CartService {
   private cartItems$ = new BehaviorSubject<CartItem[]>([]);
   private merchandiseDetails: Map<number, Merchandise> = new Map();
 
-  constructor(private merchandiseService: MerchandiseService, private http: HttpClient) {
+  constructor(
+    private merchandiseService: MerchandiseService, 
+    private http: HttpClient,
+    private authService: AuthService,
+    private router: Router
+  ) {
     this.loadCartFromStorage();
   }
 
@@ -22,6 +29,11 @@ export class CartService {
    * Load cart items from localStorage on initialization.
    */
   private async loadCartFromStorage(): Promise<void> {
+    if (!this.authService.isLoggedIn()) {
+      this.clearCart();
+      return Promise.resolve();
+    }
+
     const storedCartItems = localStorage.getItem('cartItems');
     if (storedCartItems) {
       this.cartItems = JSON.parse(storedCartItems);
@@ -141,8 +153,10 @@ export class CartService {
    * Save the current cart state to localStorage and emit the updated cart items.
    */
   private saveCart(): void {
-    localStorage.setItem('cartItems', JSON.stringify(this.cartItems));
-    this.cartItems$.next(this.cartItems); // Emit the updated cart items
+    if (this.authService.isLoggedIn()) {
+      localStorage.setItem('cartItems', JSON.stringify(this.cartItems));
+      this.cartItems$.next(this.cartItems); // Emit the updated cart items
+    }
   }
 
   getItemPrice(item: CartItem): number {
@@ -151,6 +165,11 @@ export class CartService {
   }
 
   createOrder(customerName: string, customerEmail: string, customerAddress: string): Observable<any> {
+    if (!this.authService.isLoggedIn()) {
+      this.router.navigate(['/login']);
+      return EMPTY;
+    }
+
     const orderCreateDto = {
       customerName,
       customerEmail,
@@ -159,11 +178,10 @@ export class CartService {
         merchId: item.merchandiseId,
         size: item.size,
         quantity: item.quantity,
-        price: this.getItemPrice(item), // Calculate price for each item
+        price: this.getItemPrice(item),
       })),
     };
 
-    console.log('Creating order:', orderCreateDto);
     return this.http.post('/api/order/orders', orderCreateDto);
   }
 }

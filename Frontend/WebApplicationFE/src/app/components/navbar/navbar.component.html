@@ -1,11 +1,45 @@
-<mat-toolbar color="primary">
-    <span routerLink="merchandise"><mat-icon>store</mat-icon>Merch store</span>
-    
-    <div class="spacer"></div>
+<mat-toolbar class="navbar">
+  <div class="navbar-brand">
+    <a routerLink="/" class="brand-link">
+      <mat-icon>store</mat-icon>
+      <span>My Store</span>
+    </a>
+  </div>
 
-    <a mat-button routerLink="merchandise">Merch list</a>
-    <a mat-button routerLink="create">Create</a>
-    <a mat-button routerLink="render-image-test">Render Image test</a>
-    <a mat-button routerLink="cart">Cart</a>
-    <a mat-raised-button color="accent">Login/Register</a> 
+  <div class="navbar-links">
+    <a mat-button routerLink="/merchandise" routerLinkActive="active">
+      <mat-icon>shopping_bag</mat-icon>
+      <span>Products</span>
+    </a>
+    
+    <ng-container *ngIf="authService.isLoggedIn()">
+      <a mat-button routerLink="/cart" routerLinkActive="active">
+        <mat-icon>shopping_cart</mat-icon>
+        <span>Cart</span>
+      </a>
+    </ng-container>
+  </div>
+
+  <div class="navbar-auth">
+    <ng-container *ngIf="!authService.isLoggedIn(); else loggedIn">
+      <a mat-button routerLink="/login" routerLinkActive="active">
+        <mat-icon>login</mat-icon>
+        <span>Login</span>
+      </a>
+      <a mat-raised-button color="primary" routerLink="/register" routerLinkActive="active">
+        <mat-icon>person_add</mat-icon>
+        <span>Register</span>
+      </a>
+    </ng-container>
+
+    <ng-template #loggedIn>
+      <div class="user-menu">
+        <span class="user-email">{{ userEmail }}</span>
+        <button mat-button (click)="logout()" class="logout-button">
+          <mat-icon>logout</mat-icon>
+          <span>Logout</span>
+        </button>
+      </div>
+    </ng-template>
+  </div>
 </mat-toolbar>
