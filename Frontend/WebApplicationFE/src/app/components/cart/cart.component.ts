@@ -1,11 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { CartService } from '../../services/cart.service';
 import { CartItem } from '../../models/cartitem.model';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-cart',
   templateUrl: './cart.component.html',
   styleUrls: ['./cart.component.css'],
+  standalone: true,
+  imports: [CommonModule, FormsModule]
 })
 export class CartComponent implements OnInit {
   cartItems: CartItem[] = [];

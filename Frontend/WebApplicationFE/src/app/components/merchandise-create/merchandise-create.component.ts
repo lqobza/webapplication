@@ -1,4 +1,6 @@
 import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule } from '@angular/forms';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MerchandiseService } from '../../services/merchandise.service';
 import { Merchandise } from '../../models/merchandise.model';
@@ -9,7 +11,9 @@ import { Brand } from 'src/app/models/brand.model';
 @Component({
   selector: 'app-merchandise-create',
   templateUrl: './merchandise-create.component.html',
-  styleUrls: ['./merchandise-create.component.css']
+  styleUrls: ['./merchandise-create.component.css'],
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule]
 })
 export class MerchandiseCreateComponent {
   merchandiseForm: FormGroup;

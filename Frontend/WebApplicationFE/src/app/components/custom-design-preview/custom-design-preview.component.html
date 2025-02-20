@@ -1,1 +1,81 @@
-<canvas #previewCanvas width="400" height="400"></canvas>
+<div class="custom-design-container">
+  <div class="preview-section">
+    <canvas #designCanvas 
+            width="600" 
+            height="700"
+            (mousedown)="onMouseDown($event)"
+            (mousemove)="onMouseMove($event)"
+            (mouseup)="onMouseUp()"
+            (mouseleave)="onMouseUp()">
+    </canvas>
+    
+    <div class="design-controls">
+      <input #fileInput
+             type="file"
+             accept="image/*"
+             (change)="onFileSelected($event)"
+             class="file-input">
+      
+      <div class="control-group">
+        <div class="scale-control">
+          <label>Design Size:</label>
+          <input type="range"
+                 min="0.5"
+                 max="2"
+                 step="0.1"
+                 [value]="1"
+                 (input)="onScaleChange($event)">
+        </div>
+
+        <div class="rotation-control">
+          <label>Rotation:</label>
+          <input type="range"
+                 min="-180"
+                 max="180"
+                 step="1"
+                 [value]="0"
+                 (input)="onRotationChange($event)">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="customization-section">
+    <div class="color-picker-wrapper">
+      <div class="color-wheel">
+        <div class="selected-color"
+             [style.background]="selectedColor"
+             [(colorPicker)]="selectedColor"
+             [cpPosition]="'right'"
+             [cpPositionOffset]="'50%'"
+             [cpOutputFormat]="'hex'"
+             [cpAlphaChannel]="'disabled'"
+             [cpDialogDisplay]="'popup'"
+             (colorPickerChange)="onColorSelect($event)">
+        </div>
+      </div>
+    </div>
+
+    <div class="size-selector">
+      <h3>Select Size</h3>
+      <div class="size-options">
+        <button *ngFor="let size of availableSizes"
+                [class.selected]="size === selectedSize"
+                (click)="onSizeSelect(size)"
+                class="size-option">
+          {{size}}
+        </button>
+      </div>
+    </div>
+
+    <div class="price-section">
+      <h3>Price: ${{customProduct.price}}</h3>
+    </div>
+
+    <button class="add-to-cart-btn"
+            (click)="addToCart()"
+            [disabled]="!customProduct.designUrl">
+      Add to Cart
+    </button>
+  </div>
+</div>

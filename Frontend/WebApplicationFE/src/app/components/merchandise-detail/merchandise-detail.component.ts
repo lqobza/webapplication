@@ -5,11 +5,15 @@ import { MerchandiseService } from '../../services/merchandise.service';
 import { RatingService } from '../../services/rating.service';
 import { CartService } from '../../services/cart.service';
 import { Router } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-merchandise-detail',
   templateUrl: './merchandise-detail.component.html',
-  styleUrls: ['./merchandise-detail.component.css']
+  styleUrls: ['./merchandise-detail.component.css'],
+  standalone: true,
+  imports: [CommonModule, FormsModule]
 })
 export class MerchandiseDetailComponent implements OnInit {
   merchandise: Merchandise | undefined;

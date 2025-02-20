@@ -2,11 +2,15 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Merchandise } from '../../models/merchandise.model';
 import { MerchandiseService } from '../../services/merchandise.service';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-merchandise-update',
   templateUrl: './merchandise-update.component.html',
-  styleUrls: ['./merchandise-update.component.css']
+  styleUrls: ['./merchandise-update.component.css'],
+  standalone: true,
+  imports: [CommonModule, FormsModule]
 })
 export class MerchandiseUpdateComponent implements OnInit {
   merchandise: Merchandise | undefined;

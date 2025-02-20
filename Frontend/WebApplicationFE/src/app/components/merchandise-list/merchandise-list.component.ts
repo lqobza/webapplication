@@ -3,11 +3,14 @@ import { MerchandiseService } from '../../services/merchandise.service';
 import { Merchandise } from '../../models/merchandise.model';
 import { Router } from '@angular/router';
 import { PaginatedResponse } from '../../models/paginated-response.model';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-merchandise-list',
   templateUrl: './merchandise-list.component.html',
-  styleUrls: ['./merchandise-list.component.css']
+  styleUrls: ['./merchandise-list.component.css'],
+  standalone: true,
+  imports: [CommonModule]
 })
 export class MerchandiseListComponent implements OnInit {
   merchandiseList: Merchandise[] = [];
@@ -15,7 +18,15 @@ export class MerchandiseListComponent implements OnInit {
   errorMessage: string | undefined;
   currentPage = 1;
   pageSize = 6;
-  paginationInfo: PaginatedResponse<Merchandise> | null = null;
+  paginationInfo: PaginatedResponse<Merchandise> = {
+    items: [],
+    totalCount: 0,
+    pageNumber: 1,
+    pageSize: 6,
+    totalPages: 1,
+    hasNextPage: false,
+    hasPreviousPage: false
+  };
 
   constructor(
     private merchandiseService: MerchandiseService,

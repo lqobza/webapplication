@@ -64,14 +64,28 @@ export class CartService {
   /**
    * Add an item to the cart or update its quantity if it already exists.
    */
-  addToCart(item: CartItem): void {
-    const existingItem = this.getCartItem(item.merchandiseId, item.size);
-    if (existingItem) {
-      existingItem.quantity += item.quantity;
+  addToCart(product: any): void {
+    // For custom products, always add as new item
+    if (product.designUrl) {
+      this.cartItems.push({
+        ...product,
+        quantity: 1
+      });
     } else {
-      this.cartItems.push(item);
+      // Existing logic for regular products
+      const existingItem = this.cartItems.find(item => item.merchandiseId === product.merchandiseId);
+      if (existingItem) {
+        existingItem.quantity += 1;
+      } else {
+        this.cartItems.push({
+          ...product,
+          quantity: 1
+        });
+      }
     }
-    this.saveCart();
+    
+    localStorage.setItem('cartItems', JSON.stringify(this.cartItems));
+    this.cartItems$.next(this.cartItems);
   }
 
   /**

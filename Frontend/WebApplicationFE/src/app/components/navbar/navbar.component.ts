@@ -2,11 +2,24 @@ import { Component } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
 import { CartService } from '../../services/cart.service';
+import { RouterModule } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-navbar',
   templateUrl: './navbar.component.html',
-  styleUrls: ['./navbar.component.css']
+  styleUrls: ['./navbar.component.css'],
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterModule,
+    MatToolbarModule,
+    MatButtonModule,
+    MatIconModule
+  ]
 })
 export class NavbarComponent {
   constructor(
