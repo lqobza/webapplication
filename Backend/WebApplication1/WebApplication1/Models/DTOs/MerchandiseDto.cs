@@ -1,6 +1,4 @@
-﻿using WebApplication1.Models.DTOs;
-
-namespace WebApplication1.Models;
+﻿namespace WebApplication1.Models.DTOs;
 
 public class MerchandiseDto
 {
@@ -15,4 +13,5 @@ public class MerchandiseDto
     public List<RatingDto>? Ratings { get; set; }
     public List<ThemeDto>? Themes { get; set; }
     public List<MerchSizeDto>? Sizes { get; set; }
+    public List<MerchandiseImageDto> Images { get; set; } = new();
 }

@@ -593,4 +593,14 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
 
         return sizes;
     }
+
+    public T ExecuteScalar<T>(string sql, params System.Data.SqlClient.SqlParameter[] parameters)
+    {
+        using var connection = CreateConnection();
+        connection.Open();
+        using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddRange(parameters);
+        var result = command.ExecuteScalar();
+        return (T)result;
+    }
 }

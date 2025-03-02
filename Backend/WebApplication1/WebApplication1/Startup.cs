@@ -88,6 +88,8 @@ public class Startup
                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
             });
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IMerchandiseImageRepository, MerchandiseImageRepository>();
+        services.AddScoped<IImageStorageService, FileSystemImageService>();
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
     }
 

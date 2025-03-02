@@ -15,4 +15,10 @@ export interface Merchandise {
   themes?: Theme[]; // depending on merch
   sizes?: Size[]; // depending on merch
   imageUrl?: string; // Mock image URL for now
+  images?: {
+    id: number;
+    imageUrl: string;
+    isPrimary: boolean;
+    merchandiseId: number;
+  }[];
 }

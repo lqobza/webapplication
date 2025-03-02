@@ -1,6 +1,7 @@
 ﻿using WebApplication1.Models;
 using WebApplication1.Models.DTOs;
 using WebApplication1.Models.Enums;
+using Microsoft.Data.SqlClient;
 
 namespace WebApplication1.Repositories.Interface;
 
@@ -20,4 +21,5 @@ public interface IMerchandiseRepository
     public List<BrandDto> GetBrands();
     public int AddCategoryToDb(CategoryCreateDto categoryCreateDto);
     public int AddThemeToDb(ThemeCreateDto themeCreateDto);
+    public T ExecuteScalar<T>(string sql, params System.Data.SqlClient.SqlParameter[] parameters);
 }

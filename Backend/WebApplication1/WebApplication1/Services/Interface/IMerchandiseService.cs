@@ -19,4 +19,8 @@ public interface IMerchandiseService
     public List<BrandDto> GetBrands();
     public InsertResult AddCategoryToDb(CategoryCreateDto categoryCreateDto);
     public InsertResult AddThemeToDb(ThemeCreateDto themeCreateDto);
+    Task<MerchandiseImageDto> AddMerchandiseImage(int merchandiseId, string imageUrl, bool isPrimary = false);
+    Task<bool> DeleteMerchandiseImage(int imageId);
+    Task<bool> SetPrimaryImage(int merchandiseId, int imageId);
+    bool MerchandiseExists(int id);
 }

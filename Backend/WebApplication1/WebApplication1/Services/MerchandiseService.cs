@@ -9,10 +9,13 @@ namespace WebApplication1.Services;
 public class MerchandiseService : IMerchandiseService
 {
     private readonly IMerchandiseRepository _merchandiseRepository;
+    private readonly IMerchandiseImageRepository _imageRepository;
 
-    public MerchandiseService(IMerchandiseRepository merchandiseRepository)
+    public MerchandiseService(IMerchandiseRepository merchandiseRepository, 
+                            IMerchandiseImageRepository imageRepository)
     {
         _merchandiseRepository = merchandiseRepository;
+        _imageRepository = imageRepository;
     }
 
     public PaginatedResponse<MerchandiseDto> GetAllMerchandise(int page = 1, int pageSize = 10)
@@ -118,4 +121,27 @@ public class MerchandiseService : IMerchandiseService
         return InsertResult.Error;
     }
 
+    public async Task<MerchandiseImageDto> AddMerchandiseImage(int merchandiseId, string imageUrl, bool isPrimary = false)
+    {
+        return await _imageRepository.AddImage(merchandiseId, imageUrl, isPrimary);
+    }
+
+    public async Task<bool> DeleteMerchandiseImage(int imageId)
+    {
+        return await _imageRepository.DeleteImage(imageId);
+    }
+
+    public async Task<bool> SetPrimaryImage(int merchandiseId, int imageId)
+    {
+        return await _imageRepository.SetPrimaryImage(merchandiseId, imageId);
+    }
+
+    public bool MerchandiseExists(int id)
+    {
+        // Use raw SQL to check the Merch table directly
+        var sql = "SELECT COUNT(1) FROM Merch WHERE id = @p0";
+        var parameters = new[] { new System.Data.SqlClient.SqlParameter("@p0", id) };
+        var exists = _merchandiseRepository.ExecuteScalar<int>(sql, parameters) > 0;
+        return exists;
+    }
 }

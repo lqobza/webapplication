@@ -13,7 +13,6 @@ public abstract class BaseRepository
 
     protected SqlConnection CreateConnection()
     {
-        var connectionString = _configuration.GetConnectionString("DefaultConnection");
-        return new SqlConnection(connectionString);
+        return new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
     }
 }

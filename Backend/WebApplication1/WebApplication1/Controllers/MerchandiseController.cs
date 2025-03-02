@@ -12,11 +12,13 @@ public class MerchandiseController : ControllerBase
 {
     private readonly ILogger<MerchandiseController> _logger;
     private readonly IMerchandiseService _merchandiseService;
+    private readonly IImageStorageService _imageStorageService;
 
-    public MerchandiseController(IMerchandiseService merchandiseService, ILogger<MerchandiseController> logger)
+    public MerchandiseController(IMerchandiseService merchandiseService, ILogger<MerchandiseController> logger, IImageStorageService imageStorageService)
     {
         _merchandiseService = merchandiseService;
         _logger = logger;
+        _imageStorageService = imageStorageService;
     }
 
     [HttpGet]
@@ -291,6 +293,37 @@ public class MerchandiseController : ControllerBase
                 _logger.LogError("Internal server error while inserting theme: {}", themeCreateDto.Name);
                 return StatusCode(StatusCodes.Status500InternalServerError,
                     new { message = "Theme insert was unsuccessful due to internal server error." });
+        }
+    }
+
+    [HttpPost("{id}/images")]
+    public async Task<IActionResult> UploadImage(int id, IFormFile image)
+    {
+        if (image == null || image.Length == 0)
+            return BadRequest("No image file provided");
+
+        _logger.LogInformation($"Checking if merchandise {id} exists...");
+        if (!_merchandiseService.MerchandiseExists(id))
+        {
+            _logger.LogWarning($"Merchandise with ID {id} not found");
+            return NotFound($"Merchandise with ID {id} not found");
+        }
+
+        try
+        {
+            _logger.LogInformation($"Saving image for merchandise {id}...");
+            var imageUrl = await _imageStorageService.SaveImageAsync(image, id.ToString());
+            _logger.LogInformation($"Image saved with URL: {imageUrl}");
+            
+            var result = await _merchandiseService.AddMerchandiseImage(id, imageUrl);
+            _logger.LogInformation($"Image record created with ID: {result.Id}");
+            
+            return Ok(new { imageUrl });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error uploading image for merchandise {Id}", id);
+            return StatusCode(500, "Error uploading image");
         }
     }
 }

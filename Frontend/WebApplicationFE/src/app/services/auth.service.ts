@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, catchError } from 'rxjs/operators';
+import { ErrorHandlingService } from './error-handling.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,7 +12,10 @@ export class AuthService {
   public currentUser: Observable<any>;
   private apiUrl = 'http://localhost:5214/api/auth';
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private errorHandler: ErrorHandlingService
+  ) {
     this.currentUserSubject = new BehaviorSubject<any>(JSON.parse(localStorage.getItem('currentUser') || 'null'));
     this.currentUser = this.currentUserSubject.asObservable();
   }
@@ -22,12 +26,15 @@ export class AuthService {
 
   login(email: string, password: string) {
     return this.http.post<any>(`${this.apiUrl}/login`, { email, password })
-      .pipe(map(user => {
-        // store user details and jwt token in local storage
-        localStorage.setItem('currentUser', JSON.stringify(user));
-        this.currentUserSubject.next(user);
-        return user;
-      }));
+      .pipe(
+        map(user => {
+          // store user details and jwt token in local storage
+          localStorage.setItem('currentUser', JSON.stringify(user));
+          this.currentUserSubject.next(user);
+          return user;
+        }),
+        catchError(error => this.errorHandler.handleError(error))
+      );
   }
 
   register(username: string, email: string, password: string) {
@@ -35,7 +42,9 @@ export class AuthService {
       username,
       email,
       password
-    });
+    }).pipe(
+      catchError(error => this.errorHandler.handleError(error))
+    );
   }
 
   logout() {

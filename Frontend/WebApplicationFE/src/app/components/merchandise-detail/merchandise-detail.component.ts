@@ -7,6 +7,7 @@ import { CartService } from '../../services/cart.service';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { finalize } from 'rxjs/operators';
 
 @Component({
   selector: 'app-merchandise-detail',
@@ -17,8 +18,8 @@ import { FormsModule } from '@angular/forms';
 })
 export class MerchandiseDetailComponent implements OnInit {
   merchandise: Merchandise | undefined;
-  isLoading = true;
-  errorMessage: string | undefined;
+  isLoading = false;
+  errorMessage: string | null = null;
   selectedSize: string | undefined;
   inStock: number | undefined;
   quantity: number = 1;
@@ -26,6 +27,7 @@ export class MerchandiseDetailComponent implements OnInit {
   isAddToCartDisabled: boolean = false;
   newRatingText: string = '';
   newRating: number = 0;
+  selectedImage: string | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -41,7 +43,7 @@ export class MerchandiseDetailComponent implements OnInit {
 
   loadMerchandise(): void {
     this.isLoading = true;
-    this.errorMessage = undefined;
+    this.errorMessage = null;
 
     this.route.paramMap.subscribe(params => {
       const merchId = Number(params.get('id'));
@@ -52,38 +54,39 @@ export class MerchandiseDetailComponent implements OnInit {
         return;
       }
 
-      this.merchandiseService.getMerchandiseById(merchId).subscribe({
-        next: (data) => {
-          this.merchandise = data;
-          this.isLoading = false;
+      this.merchandiseService.getMerchandiseById(merchId)
+        .pipe(finalize(() => this.isLoading = false))
+        .subscribe({
+          next: (data) => {
+            this.merchandise = data;
 
-          if (this.merchandise && this.merchandise.sizes) {
-            const validSizes = this.merchandise.sizes.filter(s => s.size !== null);
-            this.hasMultipleSizes = validSizes.length > 1;
+            if (this.merchandise && this.merchandise.sizes) {
+              const validSizes = this.merchandise.sizes.filter(s => s.size !== null);
+              this.hasMultipleSizes = validSizes.length > 1;
 
-            if (validSizes.length > 0) {
-              this.selectedSize = validSizes[0].size;
-              this.inStock = this.getInStock(this.selectedSize);
+              if (validSizes.length > 0) {
+                this.selectedSize = validSizes[0].size;
+                this.inStock = this.getInStock(this.selectedSize);
+              } else {
+                this.selectedSize = undefined;
+                this.inStock = this.merchandise.sizes[0]?.inStock;
+              }
+
+              this.quantity = 1;
             } else {
               this.selectedSize = undefined;
-              this.inStock = this.merchandise.sizes[0]?.inStock;
+              this.inStock = undefined;
             }
-
-            this.quantity = 1;
-          } else {
+          },
+          error: (err) => {
+            console.error('Error fetching merchandise', err);
+            this.errorMessage = err.message || "Error fetching merchandise";
+            this.isLoading = false;
+            this.merchandise = undefined;
             this.selectedSize = undefined;
             this.inStock = undefined;
           }
-        },
-        error: (error) => {
-          console.error('Error fetching merchandise', error);
-          this.errorMessage = error.message || "Error fetching merchandise";
-          this.isLoading = false;
-          this.merchandise = undefined;
-          this.selectedSize = undefined;
-          this.inStock = undefined;
-        }
-      });
+        });
     });
   }
   

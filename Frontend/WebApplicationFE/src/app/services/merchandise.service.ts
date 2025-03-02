@@ -54,4 +54,14 @@ export class MerchandiseService {
   getBrands(): Observable<Brand[]> {
     return this.http.get<Brand[]>(`${this.apiUrl}/brands`);
   }
+
+  uploadImage(merchandiseId: number, image: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('image', image);
+    
+    return this.http.post(
+      `${this.apiUrl}/merchandise/${merchandiseId}/images`, 
+      formData
+    );
+  }
 }

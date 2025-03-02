@@ -87,4 +87,21 @@
       Submit Review
     </button>
   </div>
+
+  <div class="merchandise-images" *ngIf="merchandise">
+    <!-- Main image -->
+    <div class="main-image">
+      <img [src]="selectedImage || merchandise!.images?.[0]?.imageUrl" 
+           [alt]="merchandise!.name">
+    </div>
+    
+    <!-- Thumbnail gallery -->
+    <div class="image-thumbnails">
+      <img *ngFor="let img of merchandise.images"
+           [src]="img.imageUrl"
+           [alt]="merchandise.name"
+           (click)="selectedImage = img.imageUrl"
+           [class.active]="selectedImage === img.imageUrl">
+    </div>
+  </div>
 </div>

@@ -63,6 +63,14 @@ CREATE TABLE OrderItems (
     price decimal(10, 2) NOT NULL
 );
 
+CREATE TABLE MerchandiseImages (
+    id int identity(1,1) primary key,
+    merch_id int foreign key references Merch(id) NOT NULL,
+    image_url nvarchar(500) NOT NULL,
+    is_primary bit NOT NULL DEFAULT 0,
+    created_at datetime DEFAULT GETDATE()
+);
+
 -- Create indexes on foreign key columns
 -- Index on Merch.category_id
 CREATE INDEX idx_merch_category_id ON Merch(category_id);
@@ -81,3 +89,6 @@ CREATE INDEX idx_ratings_merch_id ON Ratings(merch_id);
 
 -- Index on MerchSize.merch_id
 CREATE INDEX idx_merchsize_merch_id ON MerchSize(merch_id);
+
+-- Add index for faster lookups
+CREATE INDEX idx_merchimages_merch_id ON MerchandiseImages(merch_id);
