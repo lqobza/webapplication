@@ -1,14 +1,6 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
-using System;
-using System.IO;
-using System.Threading.Tasks;
+using WebApplication1.Services.Interface;
 
-public interface IImageStorageService
-{
-    Task<string> SaveImageAsync(IFormFile file, string merchandiseId);
-    Task DeleteImageAsync(string path);
-}
+namespace WebApplication1.Services;
 
 public class FileSystemImageService : IImageStorageService
 {
@@ -34,8 +26,23 @@ public class FileSystemImageService : IImageStorageService
         return $"/images/merchandise/{merchandiseId}/{fileName}";
     }
 
-    public Task DeleteImageAsync(string path)
+    public async Task DeleteImageAsync(string path)
     {
-        throw new NotImplementedException();
+        // Convert URL path to file system path
+        if (path.StartsWith("/images/merchandise/"))
+        {
+            path = path.Replace("/images/merchandise/", "");
+            var fullPath = Path.Combine(_imageDirectory, path);
+            
+            if (File.Exists(fullPath))
+            {
+                File.Delete(fullPath);
+            }
+        }
     }
-} 
+
+    public string GetImageDirectory()
+    {
+        return _imageDirectory;
+    }
+}

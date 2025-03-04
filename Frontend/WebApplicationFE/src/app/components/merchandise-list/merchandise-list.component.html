@@ -45,7 +45,7 @@
   <ul *ngIf="filteredList.length > 0" class="merchandise-list">
     <li *ngFor="let item of filteredList" (click)="goToDetails(item.id!)" class="merchandise-item">
       <div class="merchandise-image">
-        <img [src]="item.imageUrl || 'assets/images/placeholder.png'" [alt]="item.name + ' Image'">
+        <img [src]="getImageUrl(item)" alt="{{ item.name }}" />
       </div>
       <div class="merchandise-details">
         <h3 class="merchandise-name">{{ item.name }}</h3>

@@ -8,6 +8,7 @@ import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs/operators';
+import { MerchandiseImage } from '../../models/merchandise-image.model';
 
 @Component({
   selector: 'app-merchandise-detail',
@@ -27,7 +28,7 @@ export class MerchandiseDetailComponent implements OnInit {
   isAddToCartDisabled: boolean = false;
   newRatingText: string = '';
   newRating: number = 0;
-  selectedImage: string | null = null;
+  selectedImage: MerchandiseImage | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -77,6 +78,8 @@ export class MerchandiseDetailComponent implements OnInit {
               this.selectedSize = undefined;
               this.inStock = undefined;
             }
+
+            this.loadMerchandiseImages();
           },
           error: (err) => {
             console.error('Error fetching merchandise', err);
@@ -212,5 +215,47 @@ export class MerchandiseDetailComponent implements OnInit {
       next: (data) => this.merchandise!.ratings = data.ratings,
       error: (error) => console.error("Error refreshing ratings:", error)
     });
+  }
+
+  loadMerchandiseImages() {
+    if (this.merchandise && this.merchandise.id) {
+      this.merchandiseService.getMerchandiseImages(this.merchandise.id)
+        .subscribe({
+          next: (images) => {
+            if (this.merchandise) {
+              this.merchandise.images = images;
+              this.selectedImage = null; // Reset selected image
+            }
+          },
+          error: (error) => {
+            console.error('Error loading merchandise images:', error);
+          }
+        });
+    }
+  }
+
+  getPrimaryImageUrl(): string {
+    if (!this.merchandise?.images || this.merchandise.images.length === 0) {
+      return 'assets/images/placeholder.png';
+    }
+    
+    if (this.selectedImage) {
+      return this.getFullImageUrl(this.selectedImage.imageUrl);
+    }
+    
+    const primaryImage = this.merchandise.images.find(img => img.isPrimary);
+    return this.getFullImageUrl(primaryImage ? primaryImage.imageUrl : this.merchandise.images[0].imageUrl);
+  }
+
+  selectImage(image: MerchandiseImage): void {
+    this.selectedImage = image;
+  }
+
+  getFullImageUrl(relativeUrl: string): string {
+    // Convert relative URL to absolute URL pointing to the backend
+    if (relativeUrl && relativeUrl.startsWith('/')) {
+      return `http://localhost:5214${relativeUrl}`;
+    }
+    return relativeUrl;
   }
 }

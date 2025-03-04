@@ -5,6 +5,9 @@ import { Merchandise } from '../models/merchandise.model';
 import { Category } from '../models/category.model';
 import { Brand } from '../models/brand.model';
 import { PaginatedResponse } from '../models/paginated-response.model';
+import { catchError } from 'rxjs/operators';
+import { ErrorHandlingService } from './error-handling.service';
+import { MerchandiseImage } from '../models/merchandise-image.model';
 
 @Injectable({
   providedIn: 'root'
@@ -12,7 +15,7 @@ import { PaginatedResponse } from '../models/paginated-response.model';
 export class MerchandiseService {
   private apiUrl = 'http://localhost:5214/api/merchandise';
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient, private errorHandlingService: ErrorHandlingService) { }
 
   getAllMerchandise(page: number = 1, pageSize: number = 10): Observable<PaginatedResponse<Merchandise>> {
     return this.http.get<PaginatedResponse<Merchandise>>(`${this.apiUrl}?page=${page}&pageSize=${pageSize}`);
@@ -63,5 +66,12 @@ export class MerchandiseService {
       `${this.apiUrl}/merchandise/${merchandiseId}/images`, 
       formData
     );
+  }
+
+  getMerchandiseImages(merchandiseId: number): Observable<MerchandiseImage[]> {
+    return this.http.get<MerchandiseImage[]>(`${this.apiUrl}/images/${merchandiseId}`)
+      .pipe(
+        catchError(this.errorHandlingService.handleError<MerchandiseImage[]>('getMerchandiseImages', []))
+      );
   }
 }

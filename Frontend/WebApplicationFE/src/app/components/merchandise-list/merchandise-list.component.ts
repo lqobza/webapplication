@@ -147,4 +147,18 @@ export class MerchandiseListComponent implements OnInit {
   goToDetails(merchId: number): void {
     this.router.navigate(['/merchandise', merchId]);
   }
+
+  getImageUrl(merchandise: Merchandise): string {
+    if (merchandise.images && merchandise.images.length > 0) {
+      const primaryImage = merchandise.images.find(img => img.isPrimary);
+      const imageUrl = primaryImage ? primaryImage.imageUrl : merchandise.images[0].imageUrl;
+      
+      if (imageUrl && imageUrl.startsWith('/')) {
+        return `http://localhost:5214${imageUrl}`;
+      }
+      return imageUrl;
+    }
+    
+    return 'assets/images/placeholder.png';
+  }
 }

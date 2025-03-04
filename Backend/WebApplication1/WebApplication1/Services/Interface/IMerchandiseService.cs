@@ -1,6 +1,7 @@
 ﻿using WebApplication1.Models;
 using WebApplication1.Models.DTOs;
 using WebApplication1.Models.Enums;
+using Microsoft.AspNetCore.Http;
 
 namespace WebApplication1.Services.Interface;
 
@@ -23,4 +24,6 @@ public interface IMerchandiseService
     Task<bool> DeleteMerchandiseImage(int imageId);
     Task<bool> SetPrimaryImage(int merchandiseId, int imageId);
     bool MerchandiseExists(int id);
+    List<MerchandiseImageDto> GetMerchandiseImages(int merchandiseId);
+    Task<MerchandiseImageDto> UploadMerchandiseImage(int merchandiseId, IFormFile image);
 }

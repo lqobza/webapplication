@@ -4,6 +4,7 @@ using WebApplication1.Models;
 using WebApplication1.Models.DTOs;
 using WebApplication1.Models.Enums;
 using WebApplication1.Repositories.Interface;
+using Dapper;
 
 namespace WebApplication1.Repositories;
 
@@ -92,6 +93,8 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
                     });
                 }
 
+                merchandise.Images = GetImagesForMerchandise(merchandise.Id);
+
                 merchList.Add(merchandise);
             }
         }
@@ -107,7 +110,6 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
             HasPreviousPage = page > 1
         };
     }
-
 
     public MerchandiseDto? GetMerchandiseById(int id)
     {
@@ -184,6 +186,8 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
                     });
                 }
             }
+            
+            merchandise.Images = GetImagesForMerchandise(merchandise.Id);
         }
 
         return merchandise;
@@ -594,7 +598,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
         return sizes;
     }
 
-    public T ExecuteScalar<T>(string sql, params System.Data.SqlClient.SqlParameter[] parameters)
+    public T ExecuteScalar<T>(string sql, params SqlParameter[] parameters)
     {
         using var connection = CreateConnection();
         connection.Open();
@@ -602,5 +606,18 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
         command.Parameters.AddRange(parameters);
         var result = command.ExecuteScalar();
         return (T)result;
+    }
+
+    // Add this method to fetch images for a merchandise item
+    private List<MerchandiseImage> GetImagesForMerchandise(int merchandiseId)
+    {
+        var query = @"
+            SELECT id, MerchId, ImageUrl, IsPrimary, CreatedAt
+            FROM MerchandiseImages
+            WHERE MerchId = @MerchandiseId
+        ";
+
+        using var connection = CreateConnection();
+        return connection.Query<MerchandiseImage>(query, new { MerchandiseId = merchandiseId }).ToList();
     }
 }

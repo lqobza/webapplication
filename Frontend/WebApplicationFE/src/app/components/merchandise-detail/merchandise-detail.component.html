@@ -88,20 +88,14 @@
     </button>
   </div>
 
-  <div class="merchandise-images" *ngIf="merchandise">
-    <!-- Main image -->
-    <div class="main-image">
-      <img [src]="selectedImage || merchandise!.images?.[0]?.imageUrl" 
-           [alt]="merchandise!.name">
+  <div class="merchandise-images" *ngIf="merchandise?.images && merchandise.images.length > 0">
+    <div class="primary-image">
+      <img [src]="getPrimaryImageUrl()" alt="{{ merchandise.name }}" />
     </div>
-    
-    <!-- Thumbnail gallery -->
-    <div class="image-thumbnails">
-      <img *ngFor="let img of merchandise.images"
-           [src]="img.imageUrl"
-           [alt]="merchandise.name"
-           (click)="selectedImage = img.imageUrl"
-           [class.active]="selectedImage === img.imageUrl">
+    <div class="thumbnail-gallery" *ngIf="merchandise.images.length > 1">
+      <div *ngFor="let image of merchandise.images" class="thumbnail" (click)="selectImage(image)">
+        <img [src]="image.imageUrl" alt="{{ merchandise.name }}" />
+      </div>
     </div>
   </div>
 </div>

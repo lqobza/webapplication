@@ -3,6 +3,8 @@ using WebApplication1.Models.DTOs;
 using WebApplication1.Models.Enums;
 using WebApplication1.Repositories.Interface;
 using WebApplication1.Services.Interface;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 
 namespace WebApplication1.Services;
 
@@ -10,12 +12,15 @@ public class MerchandiseService : IMerchandiseService
 {
     private readonly IMerchandiseRepository _merchandiseRepository;
     private readonly IMerchandiseImageRepository _imageRepository;
+    private readonly IImageStorageService _imageStorageService;
 
     public MerchandiseService(IMerchandiseRepository merchandiseRepository, 
-                            IMerchandiseImageRepository imageRepository)
+                            IMerchandiseImageRepository imageRepository,
+                            IImageStorageService imageStorageService)
     {
         _merchandiseRepository = merchandiseRepository;
         _imageRepository = imageRepository;
+        _imageStorageService = imageStorageService;
     }
 
     public PaginatedResponse<MerchandiseDto> GetAllMerchandise(int page = 1, int pageSize = 10)
@@ -136,12 +141,57 @@ public class MerchandiseService : IMerchandiseService
         return await _imageRepository.SetPrimaryImage(merchandiseId, imageId);
     }
 
+    public List<MerchandiseImageDto> GetMerchandiseImages(int merchandiseId)
+    {
+        return _imageRepository.GetMerchandiseImages(merchandiseId);
+    }
+
     public bool MerchandiseExists(int id)
     {
         // Use raw SQL to check the Merch table directly
-        var sql = "SELECT COUNT(1) FROM Merch WHERE id = @p0";
-        var parameters = new[] { new System.Data.SqlClient.SqlParameter("@p0", id) };
+        var sql = "SELECT COUNT(1) FROM Merch WHERE id = @id";
+        var parameters = new[] { new System.Data.SqlClient.SqlParameter("@id", id) };
         var exists = _merchandiseRepository.ExecuteScalar<int>(sql, parameters) > 0;
         return exists;
+    }
+
+    public async Task<MerchandiseImageDto> UploadMerchandiseImage(int merchandiseId, IFormFile image)
+    {
+        if (image == null || image.Length == 0)
+        {
+            throw new ArgumentException("No image file provided");
+        }
+        
+        // Check if merchandise exists
+        if (!MerchandiseExists(merchandiseId))
+        {
+            throw new KeyNotFoundException($"Merchandise with ID {merchandiseId} not found");
+        }
+        
+        try
+        {
+            // Save the image file
+            var imageUrl = await _imageStorageService.SaveImageAsync(image, merchandiseId.ToString());
+            
+            // Add image record to database
+            var imageDto = await _imageRepository.AddImage(merchandiseId, imageUrl);
+            
+            return imageDto;
+        }
+        catch (Exception ex)
+        {
+            // If database operation fails, clean up the saved file
+            if (ex is DbUpdateException && ex.InnerException?.Message.Contains("FOREIGN KEY constraint") == true)
+            {
+                // Try to get the image URL from exception data
+                var imageUrl = ex.Data["ImageUrl"] as string;
+                if (!string.IsNullOrEmpty(imageUrl))
+                {
+                    await _imageStorageService.DeleteImageAsync(imageUrl);
+                }
+            }
+            
+            throw; // Re-throw the exception to be handled by the controller
+        }
     }
 }

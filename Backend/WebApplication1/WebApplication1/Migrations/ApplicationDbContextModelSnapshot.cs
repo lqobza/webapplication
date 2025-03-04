@@ -90,7 +90,7 @@ namespace WebApplication1.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Merchandise");
+                    b.ToTable("Merch");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.MerchandiseImage", b =>

@@ -38,6 +38,7 @@
 
     <ItemGroup>
         <Folder Include="Exceptions\" />
+        <Folder Include="wwwroot\images\merchandise\3\" />
     </ItemGroup>
 
 </Project>

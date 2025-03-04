@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Models.DTOs;
 using WebApplication1.Models.Enums;
 using WebApplication1.Services.Interface;
+using Microsoft.EntityFrameworkCore;
+using WebApplication1.Utils;
 
 namespace WebApplication1.Controllers;
 
@@ -13,12 +15,14 @@ public class MerchandiseController : ControllerBase
     private readonly ILogger<MerchandiseController> _logger;
     private readonly IMerchandiseService _merchandiseService;
     private readonly IImageStorageService _imageStorageService;
+    private readonly ApplicationDbContext _context;
 
-    public MerchandiseController(IMerchandiseService merchandiseService, ILogger<MerchandiseController> logger, IImageStorageService imageStorageService)
+    public MerchandiseController(IMerchandiseService merchandiseService, ILogger<MerchandiseController> logger, IImageStorageService imageStorageService, ApplicationDbContext context)
     {
         _merchandiseService = merchandiseService;
         _logger = logger;
         _imageStorageService = imageStorageService;
+        _context = context;
     }
 
     [HttpGet]
@@ -302,28 +306,71 @@ public class MerchandiseController : ControllerBase
         if (image == null || image.Length == 0)
             return BadRequest("No image file provided");
 
-        _logger.LogInformation($"Checking if merchandise {id} exists...");
-        if (!_merchandiseService.MerchandiseExists(id))
-        {
-            _logger.LogWarning($"Merchandise with ID {id} not found");
-            return NotFound($"Merchandise with ID {id} not found");
-        }
-
+        _logger.LogInformation($"Uploading image for merchandise {id}...");
+        
         try
         {
-            _logger.LogInformation($"Saving image for merchandise {id}...");
-            var imageUrl = await _imageStorageService.SaveImageAsync(image, id.ToString());
-            _logger.LogInformation($"Image saved with URL: {imageUrl}");
+            var result = await _merchandiseService.UploadMerchandiseImage(id, image);
+            _logger.LogInformation($"Image uploaded successfully for merchandise {id}, image ID: {result.Id}");
             
-            var result = await _merchandiseService.AddMerchandiseImage(id, imageUrl);
-            _logger.LogInformation($"Image record created with ID: {result.Id}");
-            
-            return Ok(new { imageUrl });
+            return Ok(new { imageUrl = result.ImageUrl });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex.Message);
+            return NotFound(ex.Message);
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex.Message);
+            return BadRequest(ex.Message);
+        }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Database error uploading image for merchandise {Id}", id);
+            return BadRequest($"Cannot add image to merchandise (ID: {id}): {ex.InnerException?.Message}");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error uploading image for merchandise {Id}", id);
             return StatusCode(500, "Error uploading image");
         }
+    }
+
+    [HttpGet("images/{merchandiseId:int}")]
+    public IActionResult GetMerchandiseImages(int merchandiseId)
+    {
+        _logger.LogInformation("GetMerchandiseImages endpoint called for merchandiseId: {merchandiseId}", merchandiseId);
+        
+        if (!_merchandiseService.MerchandiseExists(merchandiseId))
+        {
+            _logger.LogWarning("Merchandise not found with ID: {Id}", merchandiseId);
+            return NotFound(new { message = $"Merchandise with ID {merchandiseId} not found." });
+        }
+        
+        var images = _merchandiseService.GetMerchandiseImages(merchandiseId);
+        
+        if (images.Count == 0)
+        {
+            _logger.LogWarning("No images found for merchandise ID: {Id}", merchandiseId);
+            return NotFound(new { message = $"No images found for merchandise with ID {merchandiseId}." });
+        }
+        
+        _logger.LogInformation("Returning {Count} images for merchandise ID: {Id}", images.Count, merchandiseId);
+        return Ok(images);
+    }
+
+    [HttpGet("image/{merchandiseId}/{fileName}")]
+    public IActionResult GetImage(int merchandiseId, string fileName)
+    {
+        var imagePath = Path.Combine(_imageStorageService.GetImageDirectory(), merchandiseId.ToString(), fileName);
+        
+        if (!System.IO.File.Exists(imagePath))
+        {
+            return NotFound();
+        }
+        
+        var imageFileStream = System.IO.File.OpenRead(imagePath);
+        return File(imageFileStream, "image/jpeg"); // Adjust content type as needed
     }
 }

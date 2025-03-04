@@ -33,7 +33,7 @@ export class AuthService {
           this.currentUserSubject.next(user);
           return user;
         }),
-        catchError(error => this.errorHandler.handleError(error))
+        catchError(this.errorHandler.handleError('login'))
       );
   }
 
@@ -43,7 +43,7 @@ export class AuthService {
       email,
       password
     }).pipe(
-      catchError(error => this.errorHandler.handleError(error))
+      catchError(this.errorHandler.handleError('register'))
     );
   }
 

@@ -1,21 +1,21 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Models;
 using WebApplication1.Models.DTOs;
 using WebApplication1.Repositories.Interface;
 using WebApplication1.Utils;
+using System.Data.SqlClient;
 
 namespace WebApplication1.Repositories
 {
     public class MerchandiseImageRepository : IMerchandiseImageRepository
     {
         private readonly ApplicationDbContext _context;
+        private readonly ILogger<MerchandiseImageRepository> _logger;
 
-        public MerchandiseImageRepository(ApplicationDbContext context)
+        public MerchandiseImageRepository(ApplicationDbContext context, ILogger<MerchandiseImageRepository> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         public async Task<List<MerchandiseImageDto>> GetImagesForMerchandise(int merchandiseId)
@@ -36,36 +36,57 @@ namespace WebApplication1.Repositories
 
         public async Task<MerchandiseImageDto> AddImage(int merchandiseId, string imageUrl, bool isPrimary = false)
         {
-            if (isPrimary)
+            try
             {
-                // Reset any existing primary image
-                var existingPrimary = await _context.MerchandiseImages
-                    .Where(mi => mi.MerchId == merchandiseId && mi.IsPrimary)
-                    .FirstOrDefaultAsync();
+                // First verify the merchandise exists using direct SQL
+                var sql = "SELECT COUNT(1) FROM Merch WHERE id = @id";
+                var parameter = new Microsoft.Data.SqlClient.SqlParameter("@id", merchandiseId);
+                var count = await _context.Database.ExecuteSqlRawAsync(sql, parameter);
                 
-                if (existingPrimary != null)
+                if (count == 0)
                 {
-                    existingPrimary.IsPrimary = false;
+                    throw new KeyNotFoundException($"Merchandise with ID {merchandiseId} does not exist");
                 }
+
+                if (isPrimary)
+                {
+                    // Reset any existing primary image
+                    var existingPrimary = await _context.MerchandiseImages
+                        .Where(mi => mi.MerchId == merchandiseId && mi.IsPrimary)
+                        .FirstOrDefaultAsync();
+                    
+                    if (existingPrimary != null)
+                    {
+                        existingPrimary.IsPrimary = false;
+                    }
+                }
+
+                var image = new MerchandiseImage
+                {
+                    MerchId = merchandiseId,
+                    ImageUrl = imageUrl,
+                    IsPrimary = isPrimary,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.MerchandiseImages.Add(image);
+                await _context.SaveChangesAsync();
+
+                return new MerchandiseImageDto
+                {
+                    Id = image.Id,
+                    ImageUrl = image.ImageUrl,
+                    IsPrimary = image.IsPrimary,
+                    MerchandiseId = image.MerchId,
+                    CreatedAt = image.CreatedAt
+                };
             }
-
-            var image = new MerchandiseImage
+            catch (Exception ex)
             {
-                MerchId = merchandiseId,
-                ImageUrl = imageUrl,
-                IsPrimary = isPrimary
-            };
-
-            _context.MerchandiseImages.Add(image);
-            await _context.SaveChangesAsync();
-
-            return new MerchandiseImageDto
-            {
-                Id = image.Id,
-                ImageUrl = image.ImageUrl,
-                IsPrimary = image.IsPrimary,
-                MerchandiseId = image.MerchId
-            };
+                // Store the image URL in the exception data for cleanup
+                ex.Data["ImageUrl"] = imageUrl;
+                throw;
+            }
         }
 
         public async Task<bool> DeleteImage(int imageId)
@@ -97,6 +118,40 @@ namespace WebApplication1.Repositories
             newPrimary.IsPrimary = true;
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public List<MerchandiseImageDto> GetMerchandiseImages(int merchandiseId)
+        {
+            try
+            {
+                var images = _context.MerchandiseImages
+                    .Where(mi => mi.MerchId == merchandiseId)
+                    .AsQueryable()
+                    .Select(mi => new MerchandiseImageDto
+                    {
+                        Id = mi.Id,
+                        MerchandiseId = mi.MerchId,
+                        ImageUrl = mi.ImageUrl,
+                        IsPrimary = mi.IsPrimary
+                    })
+                    .ToList();
+                    
+                return images;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving images for merchandise {MerchandiseId}", merchandiseId);
+                return new List<MerchandiseImageDto>();
+            }
+        }
+
+        public bool MerchandiseExists(int id)
+        {
+            // Use raw SQL to check the correct table directly
+            var sql = "SELECT COUNT(1) FROM Merch WHERE id = @id";
+            var parameter = new SqlParameter("@id", id);
+            var exists = _context.Database.ExecuteSqlRaw(sql, parameter) > 0;
+            return exists;
         }
     }
 } 

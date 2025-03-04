@@ -41,6 +41,7 @@ export class MerchandiseUpdateComponent implements OnInit {
 
   loadMerchandise(merchId: number): void {
     this.isLoading = true;
+    console.log("Loading merchandise for update: " + merchId);
     this.merchandiseService.getMerchandiseById(merchId).subscribe({
       next: (data) => {
         this.merchandise = { ...data }; // Deep copy using spread syntax!
