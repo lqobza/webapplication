@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using WebApplication1.Models;
 using WebApplication1.Models.DTOs;
 using WebApplication1.Models.Enums;
 using WebApplication1.Services.Interface;
@@ -20,7 +19,6 @@ public class OrderController : ControllerBase
         _logger = logger;
     }
 
-    // Get all orders
     [HttpGet("orders")]
     public async Task<IActionResult> GetAllOrders()
     {
@@ -38,7 +36,6 @@ public class OrderController : ControllerBase
         return Ok(orderList);
     }
 
-    // Get order by ID
     [HttpGet("orders/{id:int}")]
     public async Task<IActionResult> GetOrderById(int id)
     {
@@ -56,20 +53,18 @@ public class OrderController : ControllerBase
         return Ok(order);
     }
 
-    // Create a new order
-    [HttpPost("orders")]
+    [HttpPost("create")]
     public async Task<IActionResult> CreateOrder([FromBody] OrderCreateDto orderCreateDto)
     {
         _logger.LogInformation("CreateOrder endpoint called");
         
-        // Serialize the orderCreateDto object to JSON for detailed logging
         var orderCreateDtoJson = JsonConvert.SerializeObject(orderCreateDto, Formatting.Indented);
         _logger.LogInformation("Received OrderCreateDto: {OrderCreateDto}", orderCreateDtoJson);
 
         if (!ModelState.IsValid)
         {
             _logger.LogWarning("Invalid input data: {ModelStateErrors}", ModelState);
-            return BadRequest(ModelState); // Keep returning ModelState for detailed error info
+            return BadRequest(ModelState);
         }
         
         if (!ModelState.IsValid)
@@ -95,5 +90,40 @@ public class OrderController : ControllerBase
 
         _logger.LogError("Unexpected error during order creation");
         return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Internal server error" });
+    }
+
+    [HttpPost("{id}/cancel")]
+    public async Task<IActionResult> CancelOrder(int id)
+    {
+        try
+        {
+            _logger.LogInformation("CancelOrder endpoint called for order {OrderId}", id);
+            
+            // First check if the order exists
+            var order = await _orderService.GetOrderByIdAsync(id);
+            if (order == null)
+            {
+                _logger.LogWarning("Order with ID {OrderId} not found", id);
+                return NotFound($"Order with ID {id} not found");
+            }
+
+            // Check if the order can be cancelled (only Created or Processing orders can be cancelled)
+            if (order.Status != "Created" && order.Status != "Processing")
+            {
+                _logger.LogWarning("Cannot cancel order {OrderId} with status '{Status}'", id, order.Status);
+                return BadRequest($"Cannot cancel order with status '{order.Status}'");
+            }
+
+            // Update the order status to Cancelled
+            await _orderService.UpdateOrderStatusAsync(id, "Cancelled");
+            _logger.LogInformation("Order {OrderId} cancelled successfully", id);
+
+            return Ok(new { message = "Order cancelled successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error cancelling order {OrderId}", id);
+            return StatusCode(500, "An error occurred while cancelling the order");
+        }
     }
 }

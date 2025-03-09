@@ -31,12 +31,13 @@ public class Startup
     {
         services.AddCors(options =>
         {
-            options.AddPolicy("AllowAllOrigins",
+            options.AddPolicy("AllowAngularApp",
                 builder =>
                 {
                     builder.WithOrigins("http://localhost:4200")
                         .AllowAnyMethod()
-                        .AllowAnyHeader();
+                        .AllowAnyHeader()
+                        .AllowCredentials();
                 });
         });
         
@@ -95,7 +96,7 @@ public class Startup
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
-        app.UseCors("AllowAllOrigins");
+        app.UseCors("AllowAngularApp");
 
         // Configure the HTTP request pipeline.
         if (env.IsDevelopment())

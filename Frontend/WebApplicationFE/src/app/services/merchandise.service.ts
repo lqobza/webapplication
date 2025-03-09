@@ -8,12 +8,13 @@ import { PaginatedResponse } from '../models/paginated-response.model';
 import { catchError } from 'rxjs/operators';
 import { ErrorHandlingService } from './error-handling.service';
 import { MerchandiseImage } from '../models/merchandise-image.model';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class MerchandiseService {
-  private apiUrl = 'http://localhost:5214/api/merchandise';
+  private apiUrl = `${environment.apiUrl}/api/merchandise`;
 
   constructor(private http: HttpClient, private errorHandlingService: ErrorHandlingService) { }
 
@@ -69,6 +70,7 @@ export class MerchandiseService {
   }
 
   getMerchandiseImages(merchandiseId: number): Observable<MerchandiseImage[]> {
+    console.log(`[MerchandiseService] Fetching images for merchandise ID: ${merchandiseId}`);
     return this.http.get<MerchandiseImage[]>(`${this.apiUrl}/images/${merchandiseId}`)
       .pipe(
         catchError(this.errorHandlingService.handleError<MerchandiseImage[]>('getMerchandiseImages', []))

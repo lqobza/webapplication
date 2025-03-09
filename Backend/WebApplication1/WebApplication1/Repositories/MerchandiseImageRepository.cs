@@ -144,14 +144,5 @@ namespace WebApplication1.Repositories
                 return new List<MerchandiseImageDto>();
             }
         }
-
-        public bool MerchandiseExists(int id)
-        {
-            // Use raw SQL to check the correct table directly
-            var sql = "SELECT COUNT(1) FROM Merch WHERE id = @id";
-            var parameter = new SqlParameter("@id", id);
-            var exists = _context.Database.ExecuteSqlRaw(sql, parameter) > 0;
-            return exists;
-        }
     }
 } 

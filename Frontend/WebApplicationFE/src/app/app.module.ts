@@ -12,6 +12,7 @@ import { MerchandiseDetailComponent } from './components/merchandise-detail/merc
 import { MerchandiseCreateComponent } from './components/merchandise-create/merchandise-create.component';
 import { MerchandiseUpdateComponent } from './components/merchandise-update/merchandise-update.component';
 import { CartComponent } from './components/cart/cart.component';
+import { OrderListComponent } from './components/order-list/order-list.component';
 
 const routes: Routes = [
   { path: '', component: MerchandiseListComponent },
@@ -23,6 +24,7 @@ const routes: Routes = [
   { path: 'merchandise/:id', component: MerchandiseDetailComponent },
   { path: 'merchandise/:id/edit', component: MerchandiseUpdateComponent },
   { path: 'cart', component: CartComponent },
+  { path: 'orders', component: OrderListComponent },
   { path: '**', redirectTo: '' }
 ];
 

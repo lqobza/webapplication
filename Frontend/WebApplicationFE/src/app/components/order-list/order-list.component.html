@@ -1,0 +1,69 @@
+<div class="orders-container">
+  <h1 class="page-title">My Orders</h1>
+
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Loading your orders...</p>
+  </div>
+
+  <div *ngIf="error" class="error-container">
+    <mat-icon color="warn">error</mat-icon>
+    <p>{{ error }}</p>
+    <button mat-raised-button color="primary" (click)="fetchOrders()">Try Again</button>
+  </div>
+
+  <div *ngIf="!loading && !error && orders.length === 0" class="empty-state">
+    <mat-icon class="empty-icon">receipt_long</mat-icon>
+    <h2>No Orders Found</h2>
+    <p>You haven't placed any orders yet.</p>
+    <button mat-raised-button color="primary" routerLink="/merchandise">Browse Products</button>
+  </div>
+
+  <div *ngIf="!loading && !error && orders.length > 0" class="orders-list">
+    <mat-card *ngFor="let order of orders" class="order-card">
+      <mat-card-header>
+        <mat-card-title>Order #{{ order.id }}</mat-card-title>
+        <mat-card-subtitle>
+          <span>Placed on {{ formatDate(order.orderDate) }}</span>
+        </mat-card-subtitle>
+        <div class="order-status">
+          <span [ngClass]="getOrderStatusClass(order.status)">{{ order.status }}</span>
+        </div>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <div class="order-items">
+          <div *ngFor="let item of order.items" class="order-item">
+            <div class="item-image">
+              <img *ngIf="item.imageUrl" [src]="item.imageUrl" alt="{{ item.merchandiseName || item.name || 'Product Image' }}">
+              <img *ngIf="!item.imageUrl" [src]="'/assets/images/placeholder.png'" alt="{{ item.merchandiseName || item.name || 'Product Image' }}">
+            </div>
+            <div class="item-details">
+              <h3>{{ item.merchandiseName || item.name || 'Product #' + item.merchId }}</h3>
+              <p>Size: {{ item.size }}</p>
+              <p>Quantity: {{ item.quantity }}</p>
+              <p>Price: ${{ item.price.toFixed(2) }}</p>
+            </div>
+          </div>
+        </div>
+        
+        <mat-divider></mat-divider>
+        
+        <div class="order-summary">
+          <p>Shipping Address: {{ order.customerAddress }}</p>
+          <p class="total-amount">Total: <strong>${{ order.totalAmount.toFixed(2) }}</strong></p>
+        </div>
+      </mat-card-content>
+      
+      <mat-card-actions align="end">
+        <button mat-button color="primary">
+          <mat-icon>visibility</mat-icon> View Details
+        </button>
+        <button mat-button *ngIf="order.status === orderStatuses.Created || order.status === orderStatuses.Processing" 
+                color="warn" (click)="confirmCancelOrder(order.id)">
+          <mat-icon>cancel</mat-icon> Cancel Order
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+</div>

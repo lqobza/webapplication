@@ -1,4 +1,5 @@
 ﻿using System.Data.SqlClient;
+using System.Security.Cryptography;
 using WebApplication1.Models.DTOs;
 using WebApplication1.Repositories.Interface;
 
@@ -16,9 +17,9 @@ public class OrderRepository : IOrderRepository
     public async Task<int> InsertOrderAsync(OrderCreateDto orderCreateDto, decimal totalAmount)
     {
         var query = @"
-            INSERT INTO Orders (order_date, total_amount, customer_name, customer_email, customer_address)
+            INSERT INTO Orders (order_date, total_amount, customer_name, customer_email, customer_address, status)
             OUTPUT INSERTED.ID
-            VALUES (GETDATE(), @totalAmount, @customerName, @customerEmail, @customerAddress)";
+            VALUES (GETDATE(), @totalAmount, @customerName, @customerEmail, @customerAddress, @status)";
 
         await using var connection = new SqlConnection(_connectionString);
         await using var command = new SqlCommand(query, connection);
@@ -27,6 +28,7 @@ public class OrderRepository : IOrderRepository
         command.Parameters.AddWithValue("@customerName", orderCreateDto.CustomerName);
         command.Parameters.AddWithValue("@customerEmail", orderCreateDto.CustomerEmail);
         command.Parameters.AddWithValue("@customerAddress", orderCreateDto.CustomerAddress);
+        command.Parameters.AddWithValue("@status", "Created");
 
         await connection.OpenAsync();
         var result = await command.ExecuteScalarAsync();
@@ -99,6 +101,7 @@ public class OrderRepository : IOrderRepository
                 CustomerName = (string)reader["customer_name"],
                 CustomerEmail = (string)reader["customer_email"],
                 CustomerAddress = (string)reader["customer_address"],
+                Status = reader["status"] != DBNull.Value ? (string)reader["status"] : "Created",
                 Items = await GetOrderItemsByIdAsync((int)reader["id"])
             };
             orderList.Add(order);
@@ -129,6 +132,7 @@ public class OrderRepository : IOrderRepository
                 CustomerName = (string)reader["customer_name"],
                 CustomerEmail = (string)reader["customer_email"],
                 CustomerAddress = (string)reader["customer_address"],
+                Status = reader["status"] != DBNull.Value ? (string)reader["status"] : "Created",
                 Items = await GetOrderItemsByIdAsync((int)reader["id"])
             };
 
@@ -140,7 +144,17 @@ public class OrderRepository : IOrderRepository
 
     private async Task<List<OrderItemDto>> GetOrderItemsByIdAsync(int orderId)
     {
-        var query = @"SELECT * FROM OrderItems WHERE order_id = @orderId";
+        var query = @"
+            SELECT oi.*, m.name as merchandise_name
+            FROM OrderItems oi
+            LEFT JOIN Merchandise m ON oi.merch_id = m.id
+            WHERE oi.order_id = @orderId";
+        query = @"
+                SELECT oi.*, m.name as merchandise_name, mi.ImageUrl as image_url
+                FROM OrderItems oi
+                LEFT JOIN Merch m ON oi.merch_id = m.id
+                LEFT JOIN MerchandiseImages mi ON oi.merch_id = mi.MerchId
+                WHERE oi.order_id = @orderId";
 
         var orderItemList = new List<OrderItemDto>();
         await using var connection = new SqlConnection(_connectionString);
@@ -160,11 +174,29 @@ public class OrderRepository : IOrderRepository
                 MerchId = (int)reader["merch_id"],
                 Size = (string)reader["size"],
                 Quantity = (int)reader["quantity"],
-                Price = (decimal)reader["price"]
+                Price = (decimal)reader["price"],
+                MerchandiseName =
+                    reader["merchandise_name"] != DBNull.Value ? (string)reader["merchandise_name"] : null,
+                ImageUrl = reader["image_url"] != DBNull.Value ? (string)reader["image_url"] : null
             };
+
             orderItemList.Add(orderItem);
         }
 
         return orderItemList;
+    }
+
+    public async Task UpdateOrderStatusAsync(int orderId, string status)
+    {
+        var query = @"UPDATE Orders SET status = @status WHERE id = @orderId";
+
+        await using var connection = new SqlConnection(_connectionString);
+        await using var command = new SqlCommand(query, connection);
+
+        command.Parameters.AddWithValue("@orderId", orderId);
+        command.Parameters.AddWithValue("@status", status);
+
+        await connection.OpenAsync();
+        await command.ExecuteNonQueryAsync();
     }
 }

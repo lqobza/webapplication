@@ -9,6 +9,7 @@ import { MerchandiseCreateComponent } from './components/merchandise-create/merc
 import { MerchandiseUpdateComponent } from './components/merchandise-update/merchandise-update.component';
 import { CustomDesignPreviewComponent } from './components/custom-design-preview/custom-design-preview.component';
 import { CartComponent } from './components/cart/cart.component';
+import { OrderListComponent } from './components/order-list/order-list.component';
 
 const routes: Routes = [
   { path: '', redirectTo: '/merchandise', pathMatch: 'full' },
@@ -25,6 +26,7 @@ const routes: Routes = [
     canActivate: [AuthGuard]
   },
   { path: 'custom-design', component: CustomDesignPreviewComponent },
+  { path: 'orders', component: OrderListComponent },
 ];
 
 @NgModule({

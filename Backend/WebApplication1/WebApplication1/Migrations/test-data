@@ -88,3 +88,5 @@ VALUES (3, 2, 'XL', 1, 50.00);  -- 1 Hoodie (Extra Large)
 
 INSERT INTO OrderItems (order_id, merch_id, size, quantity, price)
 VALUES (3, 3, 'EU44', 2, 125.00);  -- 2 pairs of Sneakers (Size EU44)
+
+ALTER TABLE Orders ADD status NVARCHAR(50) DEFAULT 'Created';

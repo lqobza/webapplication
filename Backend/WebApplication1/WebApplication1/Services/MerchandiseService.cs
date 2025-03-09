@@ -3,7 +3,6 @@ using WebApplication1.Models.DTOs;
 using WebApplication1.Models.Enums;
 using WebApplication1.Repositories.Interface;
 using WebApplication1.Services.Interface;
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace WebApplication1.Services;

@@ -23,6 +23,13 @@
       <mat-icon>brush</mat-icon>
       <span>Custom Design</span>
     </a>
+
+    <ng-container *ngIf="authService.isLoggedIn()">
+      <a mat-button routerLink="/orders" routerLinkActive="active">
+        <mat-icon>receipt</mat-icon>
+        <span>My Orders</span>
+      </a>
+    </ng-container>
   </div>
 
   <div class="navbar-auth">

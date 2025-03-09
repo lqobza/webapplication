@@ -303,7 +303,7 @@ public class MerchandiseController : ControllerBase
     [HttpPost("{id}/images")]
     public async Task<IActionResult> UploadImage(int id, IFormFile image)
     {
-        if (image == null || image.Length == 0)
+        if (image.Length == 0)
             return BadRequest("No image file provided");
 
         _logger.LogInformation($"Uploading image for merchandise {id}...");

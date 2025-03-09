@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using WebApplication1.Models;
+﻿using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Models.DTOs;
 using WebApplication1.Services.Interface;
 

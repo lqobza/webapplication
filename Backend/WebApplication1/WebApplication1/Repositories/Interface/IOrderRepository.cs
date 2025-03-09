@@ -1,5 +1,4 @@
-﻿using WebApplication1.Models;
-using WebApplication1.Models.DTOs;
+﻿using WebApplication1.Models.DTOs;
 
 namespace WebApplication1.Repositories.Interface;
 
@@ -10,4 +9,5 @@ public interface IOrderRepository
     Task UpdateStockAsync(OrderItemDto item);
     Task<List<OrderDto>> GetAllOrdersAsync();
     Task<OrderDto?> GetOrderByIdAsync(int id);
+    Task UpdateOrderStatusAsync(int orderId, string status);
 }

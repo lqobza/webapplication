@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using WebApplication1.Models;
 using WebApplication1.Models.DTOs;
 using WebApplication1.Services.Interface;
-using Microsoft.Extensions.Logging;
 
 namespace WebApplication1.Controllers;
 

@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { PaginatedResponse } from '../../models/paginated-response.model';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-merchandise-list',
@@ -154,7 +155,7 @@ export class MerchandiseListComponent implements OnInit {
       const imageUrl = primaryImage ? primaryImage.imageUrl : merchandise.images[0].imageUrl;
       
       if (imageUrl && imageUrl.startsWith('/')) {
-        return `http://localhost:5214${imageUrl}`;
+        return `${environment.apiUrl}${imageUrl}`;
       }
       return imageUrl;
     }

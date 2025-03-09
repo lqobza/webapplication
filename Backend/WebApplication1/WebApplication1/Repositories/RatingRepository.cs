@@ -1,6 +1,5 @@
 ﻿using System.Data;
 using System.Data.SqlClient;
-using WebApplication1.Models;
 using WebApplication1.Models.DTOs;
 using WebApplication1.Repositories.Interface;
 

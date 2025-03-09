@@ -1,7 +1,6 @@
 ﻿using WebApplication1.Models;
 using WebApplication1.Models.DTOs;
 using WebApplication1.Models.Enums;
-using Microsoft.Data.SqlClient;
 
 namespace WebApplication1.Repositories.Interface;
 

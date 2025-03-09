@@ -1,18 +1,20 @@
-﻿using WebApplication1.Models;
-using WebApplication1.Models.DTOs;
+﻿using WebApplication1.Models.DTOs;
 using WebApplication1.Models.Enums;
 using WebApplication1.Repositories.Interface;
 using WebApplication1.Services.Interface;
+using Microsoft.Extensions.Logging;
 
 namespace WebApplication1.Services;
 
 public class OrderService : IOrderService
 {
     private readonly IOrderRepository _orderRepository;
+    private readonly ILogger<OrderService> _logger;
 
-    public OrderService(IOrderRepository orderRepository)
+    public OrderService(IOrderRepository orderRepository, ILogger<OrderService> logger)
     {
         _orderRepository = orderRepository;
+        _logger = logger;
     }
 
     public async Task<InsertResult> CreateOrderAsync(OrderCreateDto orderCreateDto)
@@ -50,5 +52,12 @@ public class OrderService : IOrderService
     public async Task<OrderDto?> GetOrderByIdAsync(int id)
     {
         return await _orderRepository.GetOrderByIdAsync(id);
+    }
+
+    public async Task UpdateOrderStatusAsync(int orderId, string status)
+    {
+        _logger.LogInformation("Updating order status for order {OrderId} to {Status}", orderId, status);
+        await _orderRepository.UpdateOrderStatusAsync(orderId, status);
+        _logger.LogInformation("Order status updated successfully for order {OrderId}", orderId);
     }
 }

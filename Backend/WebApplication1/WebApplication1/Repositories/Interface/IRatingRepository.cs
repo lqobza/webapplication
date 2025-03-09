@@ -1,5 +1,4 @@
-﻿using WebApplication1.Models;
-using WebApplication1.Models.DTOs;
+﻿using WebApplication1.Models.DTOs;
 
 namespace WebApplication1.Repositories.Interface;
 
