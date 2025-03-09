@@ -60,4 +60,10 @@ public class OrderService : IOrderService
         await _orderRepository.UpdateOrderStatusAsync(orderId, status);
         _logger.LogInformation("Order status updated successfully for order {OrderId}", orderId);
     }
+
+    public async Task<List<OrderDto>> GetOrdersByUserIdAsync(int userId)
+    {
+        _logger.LogInformation("Getting orders for user ID: {UserId}", userId);
+        return await _orderRepository.GetOrdersByUserIdAsync(userId);
+    }
 }

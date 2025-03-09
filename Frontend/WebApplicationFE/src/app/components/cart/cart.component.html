@@ -1,6 +1,7 @@
 <div class="cart-container" *ngIf="!isLoading; else loading">
   <div *ngIf="errorMessage" class="error-message">
     {{ errorMessage }}
+    <button class="close-error" (click)="errorMessage = null">×</button>
   </div>
 
   <ng-container *ngIf="cartItems.length > 0; else emptyCart">
@@ -10,6 +11,7 @@
         <img
           [src]="getImageUrl(item)"
           class="cart-item-image"
+          alt="{{ item.name || 'Product image' }}"
         />
         <div class="cart-item-details">
           <p class="cart-item-name">{{ item.name }}</p>
@@ -37,41 +39,82 @@
     </ul>
     <div class="cart-total">
       <h3>Total: ${{ totalPrice }}</h3>
-      <div class="customer-details">
+      <form #orderForm="ngForm" class="customer-details" (ngSubmit)="orderForm.valid && createOrder()">
         <h4>Customer Details</h4>
-        <input
-          type="text"
-          [(ngModel)]="customerName"
-          placeholder="Name"
-          required
-        />
-        <input
-          type="email"
-          [(ngModel)]="customerEmail"
-          placeholder="Email"
-          required
-        />
-        <input
-          type="text"
-          [(ngModel)]="customerAddress"
-          placeholder="Address"
-          required
-        />
-      </div>
-      <div class="cart-actions">
-        <button class="clear-cart-button" (click)="clearCart()">Clear Cart</button>
-        <button class="create-order-button" (click)="createOrder()">Create Order</button>
-      </div>
+        <div class="form-group">
+          <label for="customerName">Name</label>
+          <input
+            type="text"
+            id="customerName"
+            [(ngModel)]="customerName"
+            name="customerName"
+            #nameInput="ngModel"
+            placeholder="Your name"
+            required
+            pattern="^(?=.*[a-zA-Z].*[a-zA-Z].*[a-zA-Z].*[a-zA-Z].*[a-zA-Z]).*$"
+          />
+          <div *ngIf="nameInput.invalid && (nameInput.dirty || nameInput.touched)" class="validation-error">
+            <div *ngIf="nameInput.errors?.['required']">Name is required.</div>
+            <div *ngIf="nameInput.errors?.['pattern']">Name must contain at least 5 letters.</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="customerEmail">Email</label>
+          <input
+            type="email"
+            id="customerEmail"
+            [(ngModel)]="customerEmail"
+            name="customerEmail"
+            #emailInput="ngModel"
+            placeholder="Your email"
+            required
+            pattern="[^@]+@[^@]+\.[a-zA-Z]{2,}"
+          />
+          <div *ngIf="emailInput.invalid && (emailInput.dirty || emailInput.touched)" class="validation-error">
+            <div *ngIf="emailInput.errors?.['required']">Email is required.</div>
+            <div *ngIf="emailInput.errors?.['pattern']">Please enter a valid email address (e.g., example&#64;domain.com).</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="customerAddress">Shipping Address</label>
+          <textarea
+            id="customerAddress"
+            [(ngModel)]="customerAddress"
+            name="customerAddress"
+            #addressInput="ngModel"
+            placeholder="Your shipping address"
+            required
+            pattern="^(?=.*[a-zA-Z].*[a-zA-Z].*[a-zA-Z].*[a-zA-Z].*[a-zA-Z]).*$"
+            rows="3"
+          ></textarea>
+          <div *ngIf="addressInput.invalid && (addressInput.dirty || addressInput.touched)" class="validation-error">
+            <div *ngIf="addressInput.errors?.['required']">Shipping address is required.</div>
+            <div *ngIf="addressInput.errors?.['pattern']">Address must contain at least 5 letters.</div>
+          </div>
+        </div>
+        <div class="cart-actions">
+          <button type="button" class="clear-cart-button" (click)="clearCart()">Clear Cart</button>
+          <button type="submit" class="create-order-button" [disabled]="orderForm.invalid">
+            Create Order
+          </button>
+        </div>
+      </form>
     </div>
   </ng-container>
 
   <ng-template #emptyCart>
-    <p>Your cart is empty.</p>
+    <div class="empty-cart">
+      <span class="material-icons">shopping_cart</span>
+      <h2>Your cart is empty</h2>
+      <p>Looks like you haven't added any items to your cart yet.</p>
+      <button routerLink="/merchandise" class="continue-shopping">Continue Shopping</button>
+    </div>
   </ng-template>
 </div>
 
 <ng-template #loading>
   <div class="loading-message">
+    <div class="spinner"></div>
     <p>Loading your cart...</p>
   </div>
 </ng-template>

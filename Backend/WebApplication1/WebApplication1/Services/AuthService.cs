@@ -91,27 +91,25 @@ public class AuthService : IAuthService
 
     private string GenerateJwtToken(ApplicationUser user)
     {
-        var claims = new List<Claim>
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+        var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+        var claims = new[]
         {
-            new (JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new (JwtRegisteredClaimNames.Email, user.Email),
-            new (ClaimTypes.Role, user.Role)
+            new Claim(JwtRegisteredClaimNames.Sub, user.Username),
+            new Claim(JwtRegisteredClaimNames.Email, user.Email),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim("userId", user.Id.ToString()),
+            new Claim(ClaimTypes.Role, user.Role)
         };
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? throw new InvalidOperationException()));
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var token = new JwtSecurityToken(
+            issuer: _configuration["Jwt:Issuer"],
+            audience: _configuration["Jwt:Audience"],
+            claims: claims,
+            expires: DateTime.Now.AddHours(3),
+            signingCredentials: credentials);
 
-        var tokenDescriptor = new SecurityTokenDescriptor
-        {
-            Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddHours(1),
-            SigningCredentials = creds,
-            Issuer = _configuration["Jwt:Issuer"],
-            Audience = _configuration["Jwt:Audience"]
-        };
-
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var token = tokenHandler.CreateToken(tokenDescriptor);
-        return tokenHandler.WriteToken(token);
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }

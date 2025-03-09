@@ -100,3 +100,10 @@ ALTER TABLE MerchandiseImages DROP CONSTRAINT FK_MerchandiseImages_Merchandise_M
 ALTER TABLE MerchandiseImages 
 ADD CONSTRAINT FK_MerchandiseImages_Merch_MerchId 
 FOREIGN KEY (MerchId) REFERENCES Merch(id);
+
+ALTER TABLE Orders
+ADD user_id INT NULL;
+
+UPDATE Orders
+SET user_id = 1
+WHERE user_id IS NULL;

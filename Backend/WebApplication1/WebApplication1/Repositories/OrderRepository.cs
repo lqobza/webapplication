@@ -17,9 +17,9 @@ public class OrderRepository : IOrderRepository
     public async Task<int> InsertOrderAsync(OrderCreateDto orderCreateDto, decimal totalAmount)
     {
         var query = @"
-            INSERT INTO Orders (order_date, total_amount, customer_name, customer_email, customer_address, status)
+            INSERT INTO Orders (order_date, total_amount, customer_name, customer_email, customer_address, status, user_id)
             OUTPUT INSERTED.ID
-            VALUES (GETDATE(), @totalAmount, @customerName, @customerEmail, @customerAddress, @status)";
+            VALUES (GETDATE(), @totalAmount, @customerName, @customerEmail, @customerAddress, @status, @userId)";
 
         await using var connection = new SqlConnection(_connectionString);
         await using var command = new SqlCommand(query, connection);
@@ -29,6 +29,7 @@ public class OrderRepository : IOrderRepository
         command.Parameters.AddWithValue("@customerEmail", orderCreateDto.CustomerEmail);
         command.Parameters.AddWithValue("@customerAddress", orderCreateDto.CustomerAddress);
         command.Parameters.AddWithValue("@status", "Created");
+        command.Parameters.AddWithValue("@userId", orderCreateDto.UserId);
 
         await connection.OpenAsync();
         var result = await command.ExecuteScalarAsync();
@@ -198,5 +199,37 @@ public class OrderRepository : IOrderRepository
 
         await connection.OpenAsync();
         await command.ExecuteNonQueryAsync();
+    }
+
+    public async Task<List<OrderDto>> GetOrdersByUserIdAsync(int userId)
+    {
+        var query = @"SELECT * FROM Orders WHERE user_id = @userId";
+
+        var orderList = new List<OrderDto>();
+        await using var connection = new SqlConnection(_connectionString);
+        await using var command = new SqlCommand(query, connection);
+
+        command.Parameters.AddWithValue("@userId", userId);
+
+        await connection.OpenAsync();
+        await using var reader = await command.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
+        {
+            var order = new OrderDto
+            {
+                Id = (int)reader["id"],
+                OrderDate = (DateTime)reader["order_date"],
+                TotalAmount = (decimal)reader["total_amount"],
+                CustomerName = (string)reader["customer_name"],
+                CustomerEmail = (string)reader["customer_email"],
+                CustomerAddress = (string)reader["customer_address"],
+                Status = reader["status"] != DBNull.Value ? (string)reader["status"] : "Created",
+                Items = await GetOrderItemsByIdAsync((int)reader["id"])
+            };
+            orderList.Add(order);
+        }
+
+        return orderList;
     }
 }

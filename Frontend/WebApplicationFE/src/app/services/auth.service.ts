@@ -57,4 +57,46 @@ export class AuthService {
   isLoggedIn(): boolean {
     return !!this.currentUserValue;
   }
+
+  /**
+   * Get the JWT token from localStorage
+   */
+  private getToken(): string | null {
+    const currentUser = this.currentUserValue;
+    return currentUser?.token || null;
+  }
+
+  /**
+   * Get the current user ID from the JWT token
+   */
+  getCurrentUserId(): number {
+    const token = this.getToken();
+    if (!token) {
+      console.error('No token found');
+      return 0;
+    }
+
+    try {
+      // Decode the JWT token to get the payload
+      const tokenParts = token.split('.');
+      if (tokenParts.length !== 3) {
+        console.error('Invalid token format');
+        return 0;
+      }
+
+      const payload = JSON.parse(atob(tokenParts[1]));
+      // Check multiple possible claim types for user ID
+      const userId = payload.userId || payload.nameid || payload.sub || payload.id;
+      
+      if (!userId) {
+        console.error('User ID not found in token payload');
+        return 0;
+      }
+
+      return parseInt(userId, 10);
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      return 0;
+    }
+  }
 } 

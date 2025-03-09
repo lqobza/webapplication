@@ -7,6 +7,7 @@ public interface IOrderService
 {
     Task<InsertResult> CreateOrderAsync(OrderCreateDto orderCreateDto);
     Task<List<OrderDto>> GetAllOrdersAsync();
+    Task<List<OrderDto>> GetOrdersByUserIdAsync(int userId);
     Task<OrderDto?> GetOrderByIdAsync(int id);
     Task UpdateOrderStatusAsync(int orderId, string status);
 }

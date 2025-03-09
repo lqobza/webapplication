@@ -205,3 +205,11 @@ mat-card-actions {
   width: 40px;
   height: 40px;
 }
+
+.auth-actions {
+  margin-top: 20px;
+}
+
+.auth-actions button {
+  margin: 0 10px;
+}

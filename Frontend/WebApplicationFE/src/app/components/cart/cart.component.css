@@ -161,3 +161,119 @@
   border-color: #28a745;
   outline: none;
 }
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 10px 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.close-error {
+  background: none;
+  border: none;
+  color: #721c24;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.create-order-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.empty-cart {
+  text-align: center;
+  padding: 40px 0;
+}
+
+.empty-cart .material-icons {
+  font-size: 64px;
+  color: #ccc;
+  margin-bottom: 20px;
+}
+
+.empty-cart h2 {
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.empty-cart p {
+  margin-bottom: 20px;
+  color: #666;
+}
+
+.continue-shopping {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.continue-shopping:hover {
+  background-color: #0069d9;
+}
+
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border-left-color: #007bff;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.validation-error {
+  color: #dc3545;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+input.ng-invalid.ng-touched, 
+textarea.ng-invalid.ng-touched {
+  border-color: #dc3545;
+}
+
+input.ng-valid.ng-touched, 
+textarea.ng-valid.ng-touched {
+  border-color: #28a745;
+}

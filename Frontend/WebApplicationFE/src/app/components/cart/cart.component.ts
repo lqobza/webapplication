@@ -3,17 +3,19 @@ import { CartService } from '../../services/cart.service';
 import { CartItem } from '../../models/cartitem.model';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { MerchandiseService } from '../../services/merchandise.service';
 import { forkJoin, of } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-cart',
   templateUrl: './cart.component.html',
   styleUrls: ['./cart.component.css'],
   standalone: true,
-  imports: [CommonModule, FormsModule]
+  imports: [CommonModule, FormsModule, RouterModule]
 })
 export class CartComponent implements OnInit {
   cartItems: CartItem[] = [];
@@ -29,24 +31,63 @@ export class CartComponent implements OnInit {
 
   constructor(
     private cartService: CartService,
-    private merchandiseService: MerchandiseService
+    private merchandiseService: MerchandiseService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
+    this.loadCartItems();
+    this.loadUserData();
+  }
+
+  loadUserData(): void {
+    // Skip if user is not logged in
+    if (!this.authService.isLoggedIn()) {
+      return;
+    }
+    
+    const currentUser = this.authService.currentUserValue;
+    
+    if (currentUser && currentUser.token) {
+      try {
+        // Extract user data from JWT token
+        const tokenParts = currentUser.token.split('.');
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          
+          // Extract username and email from token
+          if (payload.sub) {
+            this.customerName = payload.sub;
+          }
+          
+          if (payload.email) {
+            this.customerEmail = payload.email;
+          }
+        }
+      } catch (error) {
+        console.error('Error decoding token:', error);
+      }
+    }
+  }
+
+  loadCartItems(): void {
     this.isLoading = true;
     this.cartService.getCartItems().subscribe({
-      next: (items: CartItem[]) => {
+      next: (items) => {
         this.cartItems = items;
         this.updateTotalPrice();
+        this.isLoading = false;
         
-        // Load merchandise details for all items before showing the cart
-        this.loadMerchandiseDetails();
+        // Load merchandise details if not already fetching
+        if (!this.isFetchingDetails) {
+          this.loadMerchandiseDetails();
+        }
       },
       error: (error) => {
+        console.error('Error loading cart items:', error);
         this.errorMessage = 'Failed to load cart items. Please try again later.';
         this.isLoading = false;
-        console.error('Error loading cart:', error);
-      },
+      }
     });
   }
 
@@ -170,22 +211,29 @@ export class CartComponent implements OnInit {
   }
 
   createOrder(): void {
+    console.log('[CartComponent] createOrder called with:', {
+      customerName: this.customerName,
+      customerEmail: this.customerEmail,
+      customerAddress: this.customerAddress
+    });
+    
     if (!this.customerName || !this.customerEmail || !this.customerAddress) {
       this.errorMessage = 'Please fill in all customer details.';
+      console.log('[CartComponent] Missing customer details, showing error');
       return;
     }
 
-    this.cartService.createOrder(this.customerName, this.customerEmail, this.customerAddress).subscribe({
-      next: () => {
-        alert('Order created successfully!');
-        this.cartService.clearCart(); // Clear the cart after successful order creation
-        this.cartItems = []; // Update the UI
-        this.totalPrice = 0; // Reset the total price
-      },
-      error: (error) => {
-        this.errorMessage = 'Failed to create order. Please try again later.';
-        console.error('Error creating order:', error);
-      },
-    });
+    this.cartService.createOrder(this.customerName, this.customerEmail, this.customerAddress)
+      .subscribe({
+        next: (response) => {
+          console.log('[CartComponent] Order created successfully:', response);
+          this.cartService.clearCart();
+          alert('Order created successfully!');
+        },
+        error: (error) => {
+          console.error('[CartComponent] Error creating order:', error);
+          this.errorMessage = 'Failed to create order. Please try again later.';
+        }
+      });
   }
 }

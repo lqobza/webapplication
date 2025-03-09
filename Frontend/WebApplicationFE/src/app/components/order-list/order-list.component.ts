@@ -9,7 +9,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialog, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { environment } from '../../../environments/environment';
 import { OrderDto, OrderStatus } from '../../models/order.model';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-order-list',
@@ -32,17 +33,30 @@ export class OrderListComponent implements OnInit {
   loading = true;
   error: string | null = null;
   orderStatuses = OrderStatus;
+  isAuthenticated = false;
 
   constructor(
     private http: HttpClient,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private authService: AuthService,
+    private router: Router
   ) {
     console.log('[OrderList] Component initialized');
   }
 
   ngOnInit(): void {
     console.log('[OrderList] ngOnInit called');
-    this.fetchOrders();
+    this.isAuthenticated = this.authService.isLoggedIn();
+    
+    if (this.isAuthenticated) {
+      this.fetchOrders();
+    } else {
+      console.log('[OrderList] User not authenticated, redirecting to login');
+      this.loading = false;
+      this.error = 'You need to be logged in to view your orders.';
+      // Optional: redirect to login page
+      // this.router.navigate(['/login']);
+    }
   }
 
   fetchOrders(): void {
@@ -51,11 +65,19 @@ export class OrderListComponent implements OnInit {
     const apiUrl = `${environment.apiUrl}/api/order/orders`;
     console.log(`[OrderList] API URL: ${apiUrl}`);
     
-    this.http.get<OrderDto[]>(apiUrl)
+    this.http.get<OrderDto[]>(apiUrl, { observe: 'response' })
       .subscribe({
-        next: (data) => {
-          console.log('[OrderList] Orders fetched successfully:', data);
-          this.orders = data;
+        next: (response) => {
+          console.log('[OrderList] Response status:', response.status);
+          
+          // If status is 204 No Content, set orders to empty array
+          if (response.status === 204) {
+            console.log('[OrderList] No orders found (204 No Content)');
+            this.orders = [];
+          } else {
+            console.log('[OrderList] Orders fetched successfully:', response.body);
+            this.orders = response.body || [];
+          }
           
           // Process image URLs to make them absolute
           this.orders.forEach(order => {
@@ -93,8 +115,18 @@ export class OrderListComponent implements OnInit {
         },
         error: (err) => {
           console.error('[OrderList] Error fetching orders:', err);
-          this.error = 'Failed to load orders. Please try again later.';
+          
+          if (err.status === 401) {
+            this.error = 'You need to be logged in to view your orders.';
+            this.isAuthenticated = false;
+            // Optional: redirect to login page
+            // this.router.navigate(['/login']);
+          } else {
+            this.error = 'Failed to load orders. Please try again later.';
+          }
+          
           this.loading = false;
+          this.orders = []; // Initialize to empty array on error
         }
       });
   }
@@ -158,6 +190,26 @@ export class OrderListComponent implements OnInit {
     }
   }
 
+  getPlaceholderImageUrl(merchId: number): string {
+    // Generate a placeholder image based on the merchandise ID
+    // This ensures each product gets a consistent color
+    const hue = (merchId * 137) % 360; // Use a prime number to get good distribution
+    return `https://via.placeholder.com/80x80/${this.hslToHex(hue, 70, 80)}/FFFFFF?text=${merchId}`;
+  }
+
+  // Helper function to convert HSL to HEX color
+  private hslToHex(h: number, s: number, l: number): string {
+    s /= 100;
+    l /= 100;
+    const a = s * Math.min(l, 1 - l);
+    const f = (n: number) => {
+      const k = (n + h / 30) % 12;
+      const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+      return Math.round(255 * color).toString(16).padStart(2, '0');
+    };
+    return `${f(0)}${f(8)}${f(4)}`;
+  }
+
   confirmCancelOrder(orderId: number): void {
     console.log(`[OrderList] Opening confirmation dialog for cancelling order ${orderId}`);
     
@@ -200,11 +252,18 @@ export class OrderListComponent implements OnInit {
             errorMessage = err.error || 'Cannot cancel this order in its current state.';
           } else if (err.status === 404) {
             errorMessage = 'Order not found.';
+          } else if (err.status === 401) {
+            errorMessage = 'You need to be logged in to cancel an order.';
+            this.isAuthenticated = false;
           }
           
           alert(errorMessage);
         }
       });
+  }
+
+  login(): void {
+    this.router.navigate(['/login']);
   }
 }
 

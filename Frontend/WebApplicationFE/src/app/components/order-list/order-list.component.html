@@ -9,17 +9,29 @@
   <div *ngIf="error" class="error-container">
     <mat-icon color="warn">error</mat-icon>
     <p>{{ error }}</p>
-    <button mat-raised-button color="primary" (click)="fetchOrders()">Try Again</button>
+    <div *ngIf="!isAuthenticated" class="auth-actions">
+      <button mat-raised-button color="primary" (click)="login()">Log In</button>
+    </div>
+    <div *ngIf="isAuthenticated">
+      <button mat-raised-button color="primary" (click)="fetchOrders()">Try Again</button>
+    </div>
   </div>
 
-  <div *ngIf="!loading && !error && orders.length === 0" class="empty-state">
+  <div *ngIf="!loading && !error && !isAuthenticated" class="empty-state">
+    <mat-icon class="empty-icon">account_circle</mat-icon>
+    <h2>Authentication Required</h2>
+    <p>You need to be logged in to view your orders.</p>
+    <button mat-raised-button color="primary" (click)="login()">Log In</button>
+  </div>
+
+  <div *ngIf="!loading && !error && isAuthenticated && orders.length === 0" class="empty-state">
     <mat-icon class="empty-icon">receipt_long</mat-icon>
     <h2>No Orders Found</h2>
     <p>You haven't placed any orders yet.</p>
     <button mat-raised-button color="primary" routerLink="/merchandise">Browse Products</button>
   </div>
 
-  <div *ngIf="!loading && !error && orders.length > 0" class="orders-list">
+  <div *ngIf="!loading && !error && isAuthenticated && orders.length > 0" class="orders-list">
     <mat-card *ngFor="let order of orders" class="order-card">
       <mat-card-header>
         <mat-card-title>Order #{{ order.id }}</mat-card-title>

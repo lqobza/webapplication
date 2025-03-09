@@ -3,6 +3,8 @@ using Newtonsoft.Json;
 using WebApplication1.Models.DTOs;
 using WebApplication1.Models.Enums;
 using WebApplication1.Services.Interface;
+using System.Security.Claims;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace WebApplication1.Controllers;
 
@@ -20,19 +22,37 @@ public class OrderController : ControllerBase
     }
 
     [HttpGet("orders")]
-    public async Task<IActionResult> GetAllOrders()
+    public async Task<IActionResult> GetOrdersByUserId()
     {
-        _logger.LogInformation("GetAllOrders endpoint called");
+        _logger.LogInformation("GetOrdersByUserId endpoint called");
 
-        var orderList = await _orderService.GetAllOrdersAsync();
+        // Try to get user ID from various possible claim types
+        var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "userId") ??
+                          User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier) ??
+                          User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub);
+        
+        if (userIdClaim == null)
+        {
+            _logger.LogWarning("User ID claim not found in token");
+            return Unauthorized(new { message = "User not authenticated or user ID not found in token" });
+        }
+
+        if (!int.TryParse(userIdClaim.Value, out int userId))
+        {
+            _logger.LogWarning("Invalid user ID format in token: {UserId}", userIdClaim.Value);
+            return BadRequest(new { message = "Invalid user ID format" });
+        }
+
+        _logger.LogInformation("Fetching orders for user ID: {UserId}", userId);
+        var orderList = await _orderService.GetOrdersByUserIdAsync(userId);
 
         if (orderList.Count == 0)
         {
-            _logger.LogInformation("No orders found");
+            _logger.LogInformation("No orders found for user ID: {UserId}", userId);
             return NoContent();
         }
 
-        _logger.LogInformation("Returning orders list");
+        _logger.LogInformation("Returning orders list for user ID: {UserId}", userId);
         return Ok(orderList);
     }
 

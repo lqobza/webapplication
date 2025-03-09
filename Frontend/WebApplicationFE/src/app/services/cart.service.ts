@@ -281,7 +281,12 @@ export class CartService {
       return EMPTY;
     }
 
+    // Get the current user ID from the auth service
+    const userId = this.authService.getCurrentUserId();
+    console.log(`[CartService] Current user ID: ${userId}`);
+
     const orderCreateDto = {
+      userId: userId,
       customerName,
       customerEmail,
       customerAddress,
