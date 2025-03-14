@@ -289,7 +289,6 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
 
         if (merchandise.Sizes != null)
         {
-            //TODO: ez a rész nem jó
             var sizesTable = new DataTable();
             sizesTable.Columns.Add("Size", typeof(string));
             sizesTable.Columns.Add("InStock", typeof(int));
@@ -368,8 +367,8 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
     {
         return categoryId switch
         {
-            1 => Enum.GetValues(typeof(ShoeSize))
-                .Cast<ShoeSize>()
+            1 => Enum.GetValues(typeof(ApparelSize))
+                .Cast<ApparelSize>()
                 .Select(e => e.ToString())
                 .ToList(),
 
@@ -378,8 +377,20 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
                 .Select(e => e.ToString())
                 .ToList(),
 
-            3 => Enum.GetValues(typeof(AccessorySize))
-                .Cast<AccessorySize>()
+            3 => Enum.GetValues(typeof(ApparelSize))
+                .Cast<ApparelSize>()
+                .Select(e => e.ToString())
+                .ToList(),
+            
+            4 => Enum.GetValues(typeof(ApparelSize))
+                .Cast<ApparelSize>()
+                .Select(e => e.ToString())
+                .ToList(),
+            
+            5 => null,
+            
+            6 => Enum.GetValues(typeof(ShoeSize))
+                .Cast<ShoeSize>()
                 .Select(e => e.ToString())
                 .ToList(),
 

@@ -1,8 +1,8 @@
 export interface RatingDto {
-    id?: number; // for fetching ratings
+    id?: number;
     merchId: number;
     rating: number;
     description: string;
-    createdAt?: Date; // for fetching ratings
+    createdAt?: Date;
 }
   

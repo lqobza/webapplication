@@ -1,0 +1,70 @@
+<div class="admin-merchandise-container">
+  <div class="header-actions">
+    <h1 class="page-title">Manage Merchandise</h1>
+    <button mat-raised-button color="primary" routerLink="/admin/merchandise/create">
+      <mat-icon>add</mat-icon> Add New Merchandise
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Loading merchandise...</p>
+  </div>
+
+  <div *ngIf="error" class="error-container">
+    <mat-icon color="warn">error</mat-icon>
+    <p>{{ error }}</p>
+    <button mat-raised-button color="primary" (click)="fetchMerchandise()">Try Again</button>
+  </div>
+
+  <div *ngIf="!loading && !error && merchandiseList.length === 0" class="empty-state">
+    <mat-icon class="empty-icon">inventory_2</mat-icon>
+    <h2>No Merchandise Found</h2>
+    <p>There are no merchandise items in the system.</p>
+    <button mat-raised-button color="primary" routerLink="/admin/merchandise/create">Add New Merchandise</button>
+  </div>
+
+  <div *ngIf="!loading && !error && merchandiseList.length > 0" class="merchandise-table-container">
+    <table mat-table [dataSource]="merchandiseList" class="merchandise-table" matSort>
+      <ng-container matColumnDef="id">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
+        <td mat-cell *matCellDef="let item">{{ item.id }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Name</th>
+        <td mat-cell *matCellDef="let item">{{ item.name }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="price">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Price</th>
+        <td mat-cell *matCellDef="let item">${{ item.price }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="category">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Category</th>
+        <td mat-cell *matCellDef="let item">{{ getCategoryName(item.categoryId) }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>Actions</th>
+        <td mat-cell *matCellDef="let item">
+          <button mat-icon-button color="primary" [routerLink]="['/admin/merchandise/edit', item.id]">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button color="accent" [routerLink]="['/merchandise', item.id]">
+            <mat-icon>visibility</mat-icon>
+          </button>
+          <button mat-icon-button color="warn" (click)="deleteMerchandise(item.id)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+
+    <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]" showFirstLastButtons></mat-paginator>
+  </div>
+</div> 

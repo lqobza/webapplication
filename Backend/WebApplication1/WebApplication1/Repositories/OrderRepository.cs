@@ -232,4 +232,87 @@ public class OrderRepository : IOrderRepository
 
         return orderList;
     }
+
+    // Order Messages Implementation
+    public async Task<OrderMessageDto> AddOrderMessageAsync(OrderMessageCreateDto messageDto)
+    {
+        var query = @"
+            INSERT INTO OrderMessages (OrderId, Content, Timestamp, IsFromAdmin, IsRead)
+            OUTPUT INSERTED.Id, INSERTED.OrderId, INSERTED.Content, INSERTED.Timestamp, INSERTED.IsFromAdmin, INSERTED.IsRead
+            VALUES (@orderId, @content, GETUTCDATE(), @isFromAdmin, 0)";
+
+        await using var connection = new SqlConnection(_connectionString);
+        await using var command = new SqlCommand(query, connection);
+
+        command.Parameters.AddWithValue("@orderId", messageDto.OrderId);
+        command.Parameters.AddWithValue("@content", messageDto.Content);
+        command.Parameters.AddWithValue("@isFromAdmin", messageDto.IsFromAdmin);
+
+        await connection.OpenAsync();
+        
+        var message = new OrderMessageDto();
+        
+        await using var reader = await command.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
+        {
+            message.Id = (int)reader["Id"];
+            message.OrderId = (int)reader["OrderId"];
+            message.Content = (string)reader["Content"];
+            message.Timestamp = (DateTime)reader["Timestamp"];
+            message.IsFromAdmin = (bool)reader["IsFromAdmin"];
+            message.IsRead = (bool)reader["IsRead"];
+        }
+        else
+        {
+            throw new InvalidOperationException("Failed to get the inserted message");
+        }
+        
+        return message;
+    }
+
+    public async Task<List<OrderMessageDto>> GetOrderMessagesAsync(int orderId)
+    {
+        var query = @"
+            SELECT * FROM OrderMessages 
+            WHERE OrderId = @orderId
+            ORDER BY Timestamp ASC";
+
+        var messageList = new List<OrderMessageDto>();
+        await using var connection = new SqlConnection(_connectionString);
+        await using var command = new SqlCommand(query, connection);
+
+        command.Parameters.AddWithValue("@orderId", orderId);
+
+        await connection.OpenAsync();
+        await using var reader = await command.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
+        {
+            var message = new OrderMessageDto
+            {
+                Id = (int)reader["Id"],
+                OrderId = (int)reader["OrderId"],
+                Content = (string)reader["Content"],
+                Timestamp = (DateTime)reader["Timestamp"],
+                IsFromAdmin = (bool)reader["IsFromAdmin"],
+                IsRead = (bool)reader["IsRead"]
+            };
+            messageList.Add(message);
+        }
+
+        return messageList;
+    }
+
+    public async Task MarkMessageAsReadAsync(int messageId)
+    {
+        var query = @"UPDATE OrderMessages SET IsRead = 1 WHERE Id = @messageId";
+
+        await using var connection = new SqlConnection(_connectionString);
+        await using var command = new SqlCommand(query, connection);
+
+        command.Parameters.AddWithValue("@messageId", messageId);
+
+        await connection.OpenAsync();
+        await command.ExecuteNonQueryAsync();
+    }
 }

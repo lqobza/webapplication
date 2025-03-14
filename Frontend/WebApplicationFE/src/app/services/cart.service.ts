@@ -227,7 +227,7 @@ export class CartService {
    */
   getTotalPrice(): number {
     const total = this.cartItems.reduce((sum, item) => {
-      return sum + (item.price * item.quantity);
+      return sum + Math.round(item.price * item.quantity);
     }, 0);
     console.log(`[CartService] Calculated total price: ${total}`);
     return total;
@@ -267,7 +267,7 @@ export class CartService {
   }
 
   getItemPrice(item: CartItem): number {
-    const price = item.price * item.quantity;
+    const price = Math.round(item.price * item.quantity);
     console.log(`[CartService] Calculated item price: ${price} for item:`, item);
     return price;
   }

@@ -58,17 +58,11 @@ export class AuthService {
     return !!this.currentUserValue;
   }
 
-  /**
-   * Get the JWT token from localStorage
-   */
   private getToken(): string | null {
     const currentUser = this.currentUserValue;
     return currentUser?.token || null;
   }
 
-  /**
-   * Get the current user ID from the JWT token
-   */
   getCurrentUserId(): number {
     const token = this.getToken();
     if (!token) {
@@ -97,6 +91,29 @@ export class AuthService {
     } catch (error) {
       console.error('Error decoding token:', error);
       return 0;
+    }
+  }
+
+  isAdmin(): boolean {
+    const currentUser = this.currentUserValue;
+    if (!currentUser || !currentUser.token) {
+      return false;
+    }
+
+    try {
+      // Extract user data from JWT token
+      const tokenParts = currentUser.token.split('.');
+      if (tokenParts.length !== 3) {
+        return false;
+      }
+
+      const payload = JSON.parse(atob(tokenParts[1]));
+      // Check if the user has the Admin role
+      return payload.role === 'Admin' || 
+             payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] === 'Admin';
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+      return false;
     }
   }
 } 

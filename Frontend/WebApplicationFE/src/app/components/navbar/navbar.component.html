@@ -30,6 +30,18 @@
         <span>My Orders</span>
       </a>
     </ng-container>
+    
+    <!-- Admin Links (only visible to admin users) -->
+    <ng-container *ngIf="isAdmin">
+      <a mat-button routerLink="/admin/orders" routerLinkActive="active">
+        <mat-icon>supervisor_account</mat-icon>
+        <span>All Orders</span>
+      </a>
+      <a mat-button routerLink="/admin/merchandise" routerLinkActive="active">
+        <mat-icon>inventory</mat-icon>
+        <span>Manage Merchandise</span>
+      </a>
+    </ng-container>
   </div>
 
   <div class="navbar-auth">

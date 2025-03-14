@@ -31,7 +31,7 @@
     <button mat-raised-button color="primary" routerLink="/merchandise">Browse Products</button>
   </div>
 
-  <div *ngIf="!loading && !error && isAuthenticated && orders.length > 0" class="orders-list">
+  <div *ngIf="!loading && orders.length > 0" class="orders-list">
     <mat-card *ngFor="let order of orders" class="order-card">
       <mat-card-header>
         <mat-card-title>Order #{{ order.id }}</mat-card-title>
@@ -45,13 +45,13 @@
       
       <mat-card-content>
         <div class="order-items">
-          <div *ngFor="let item of order.items" class="order-item">
+          <div *ngFor="let item of order.orderItems" class="order-item">
             <div class="item-image">
-              <img *ngIf="item.imageUrl" [src]="item.imageUrl" alt="{{ item.merchandiseName || item.name || 'Product Image' }}">
-              <img *ngIf="!item.imageUrl" [src]="'/assets/images/placeholder.png'" alt="{{ item.merchandiseName || item.name || 'Product Image' }}">
+              <img *ngIf="item.merchandise?.primaryImageUrl" [src]="item.merchandise.primaryImageUrl" alt="{{ item.merchandise.name || 'Product Image' }}">
+              <img *ngIf="!item.merchandise?.primaryImageUrl" [src]="'/assets/images/placeholder.png'" alt="{{ item.merchandise.name || 'Product Image' }}">
             </div>
             <div class="item-details">
-              <h3>{{ item.merchandiseName || item.name || 'Product #' + item.merchId }}</h3>
+              <h3>{{ item.merchandise.name || 'Product #' + item.merchandiseId }}</h3>
               <p>Size: {{ item.size }}</p>
               <p>Quantity: {{ item.quantity }}</p>
               <p>Price: ${{ item.price.toFixed(2) }}</p>
@@ -62,20 +62,24 @@
         <mat-divider></mat-divider>
         
         <div class="order-summary">
-          <p>Shipping Address: {{ order.customerAddress }}</p>
+          <p>Customer: {{ order.customerName }}</p>
           <p class="total-amount">Total: <strong>${{ order.totalAmount.toFixed(2) }}</strong></p>
         </div>
       </mat-card-content>
       
       <mat-card-actions align="end">
-        <button mat-button color="primary">
-          <mat-icon>visibility</mat-icon> View Details
+        <button mat-button color="primary" (click)="toggleOrderMessages(order.id)">
+          <mat-icon>chat</mat-icon> Messages
         </button>
         <button mat-button *ngIf="order.status === orderStatuses.Created || order.status === orderStatuses.Processing" 
                 color="warn" (click)="confirmCancelOrder(order.id)">
           <mat-icon>cancel</mat-icon> Cancel Order
         </button>
       </mat-card-actions>
+      
+      <div *ngIf="expandedOrderId === order.id" class="order-messages-section">
+        <app-order-messages [orderId]="order.id"></app-order-messages>
+      </div>
     </mat-card>
   </div>
 </div>

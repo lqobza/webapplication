@@ -1,20 +1,32 @@
-import { CartItem } from "./cartitem.model";
-
 export enum OrderStatus {
-  Created = "Created",
-  Processing = "Processing",
-  Sent = "Sent",
-  Fulfilled = "Fulfilled",
-  Cancelled = "Cancelled"
+  Created = 'Created',
+  Processing = 'Processing',
+  Shipped = 'Shipped',
+  Delivered = 'Delivered',
+  Cancelled = 'Cancelled'
 }
 
 export interface OrderDto {
   id: number;
-  orderDate: Date;
-  totalAmount: number;
+  userId: string;
   customerName: string;
-  customerEmail: string;
-  customerAddress: string;
+  orderDate: string;
+  totalAmount: number;
   status: string;
-  items: CartItem[];
+  orderItems: OrderItemDto[];
+  hasUnreadMessages?: boolean;
+}
+
+export interface OrderItemDto {
+  id: number;
+  orderId: number;
+  merchandiseId: number;
+  merchandise: {
+    id: number;
+    name: string;
+    primaryImageUrl: string;
+  };
+  size: string;
+  quantity: number;
+  price: number;
 }

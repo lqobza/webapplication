@@ -1,0 +1,112 @@
+.admin-orders-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.page-title {
+  margin-bottom: 24px;
+  color: #333;
+  font-weight: 500;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+}
+
+.loading-container p {
+  margin-top: 16px;
+  color: #666;
+}
+
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+  text-align: center;
+}
+
+.error-container mat-icon {
+  font-size: 48px;
+  height: 48px;
+  width: 48px;
+  margin-bottom: 16px;
+}
+
+.error-container p {
+  margin-bottom: 16px;
+  color: #f44336;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 0;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 64px;
+  height: 64px;
+  width: 64px;
+  margin-bottom: 16px;
+  color: #9e9e9e;
+}
+
+.empty-state h2 {
+  margin-bottom: 8px;
+  color: #424242;
+}
+
+.empty-state p {
+  margin-bottom: 24px;
+  color: #757575;
+}
+
+.orders-table-container {
+  overflow-x: auto;
+}
+
+.orders-table {
+  width: 100%;
+}
+
+.mat-column-id {
+  width: 100px;
+}
+
+.mat-column-status {
+  width: 150px;
+}
+
+.mat-column-actions {
+  width: 120px;
+  text-align: right;
+}
+
+.order-messages-section {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+mat-select {
+  width: 120px;
+}
+
+.status-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-spinner {
+  margin-left: 8px;
+} 

@@ -7,56 +7,77 @@
 </div>
 
 <div class="merchandise-details" *ngIf="merchandise">
-  <div class="details-header">
-    <h2>{{ merchandise.name }}</h2>
-    <button (click)="goToUpdatePage(merchandise.id)" class="edit-button">
-      Edit Details
-    </button>
-  </div>
-
-  <div class="merchandise-info">
-    <p class="price">{{ merchandise.price | currency }}</p>
-    <p>{{ merchandise.description }}</p>
-    <p><strong>Brand:</strong> {{ merchandise.brandName }}</p>
-  </div>
-
-  <div *ngIf="merchandise.themes && merchandise.themes.length > 0">
-    <h3>Themes</h3>
-    <ul>
-      <li *ngFor="let theme of merchandise.themes">
-        {{ theme.name }}
-      </li>
-    </ul>
-  </div>
-
-  <div class="size-quantity-section" *ngIf="merchandise.sizes && merchandise.sizes.length > 0">
-    <h3 *ngIf="hasMultipleSizes">Select Size</h3>
-
-    <select *ngIf="hasMultipleSizes" [(ngModel)]="selectedSize" (change)="onSizeChange()">
-      <option *ngFor="let size of merchandise.sizes" [ngValue]="size.size">
-        {{ size.size }}
-      </option>
-    </select>
-
-    <div class="in-stock" *ngIf="!hasMultipleSizes && merchandise.sizes.length === 1">
-      <span>In Stock:</span> {{ inStock }}
+  <div class="merchandise-container">
+    <!-- Left column: Images -->
+    <div class="merchandise-images-column">
+      <div class="primary-image">
+        <img [src]="getPrimaryImageUrl()" alt="{{ merchandise.name }}" />
+      </div>
+      <div class="thumbnail-gallery" *ngIf="merchandise.images && merchandise.images.length > 1">
+        <div *ngFor="let image of merchandise.images" 
+             class="thumbnail" 
+             (click)="selectImage(image)"
+             [class.active]="selectedImage === image">
+          <img [src]="getFullImageUrl(image.imageUrl)" alt="{{ merchandise.name }}" />
+        </div>
+      </div>
     </div>
 
-    <div class="in-stock" *ngIf="selectedSize && hasMultipleSizes">
-      <span>In Stock:</span> {{ getInStock(selectedSize) }}
-    </div>
+    <!-- Right column: Details -->
+    <div class="merchandise-info-column">
+      <div class="details-header">
+        <h2>{{ merchandise.name }}</h2>
+      </div>
 
-    <div class="quantity-section" *ngIf="(selectedSize || merchandise.sizes.length === 1) && isAddToCartEnabled">
-      <label for="quantity">Quantity:</label>
-      <input type="number" id="quantity" name="quantity" [(ngModel)]="quantity"
-             min="1" [max]="maxQuantity" (change)="onQuantityChange()">
-      <button (click)="addToCart()" [disabled]="isAddToCartDisabled">
-        Add to Cart
-      </button>
-    </div>
+      <div class="merchandise-info">
+        <p class="price">${{ merchandise.price }}</p>
+        <p class="description">{{ merchandise.description }}</p>
+        <p *ngIf="merchandise.brandName"><strong>Brand:</strong> {{ merchandise.brandName }}</p>
+      </div>
 
-    <div class="out-of-stock" *ngIf="(selectedSize || merchandise.sizes.length === 1) && isOutOfStock()">
-      <p>Currently Out of Stock</p>
+      <div *ngIf="merchandise.themes && merchandise.themes.length > 0" class="themes-section">
+        <h3>Themes</h3>
+        <ul>
+          <li *ngFor="let theme of merchandise.themes">
+            {{ theme.name }}
+          </li>
+        </ul>
+      </div>
+
+      <div class="size-quantity-section" *ngIf="merchandise.sizes && merchandise.sizes.length > 0">
+        <h3 *ngIf="hasMultipleSizes">Select Size</h3>
+
+        <select *ngIf="hasMultipleSizes" [(ngModel)]="selectedSize" (change)="onSizeChange()">
+          <option *ngFor="let size of merchandise.sizes" [ngValue]="size.size">
+            {{ size.size }}
+          </option>
+        </select>
+
+        <div class="in-stock" *ngIf="!hasMultipleSizes && merchandise.sizes.length === 1">
+          <span>In Stock:</span> {{ inStock }}
+        </div>
+
+        <div class="in-stock" *ngIf="selectedSize && hasMultipleSizes">
+          <span>In Stock:</span> {{ getInStock(selectedSize) }}
+        </div>
+
+        <div class="quantity-section" *ngIf="(selectedSize || merchandise.sizes.length === 1) && isAddToCartEnabled">
+          <label for="quantity">Quantity:</label>
+          <div class="quantity-controls">
+            <button class="quantity-btn" (click)="decrementQuantity()">-</button>
+            <input type="number" id="quantity" name="quantity" [(ngModel)]="quantity"
+                  min="1" [max]="maxQuantity" (change)="onQuantityChange()">
+            <button class="quantity-btn" (click)="incrementQuantity()">+</button>
+          </div>
+          <button class="add-to-cart-btn" (click)="addToCart()" [disabled]="isAddToCartDisabled">
+            Add to Cart
+          </button>
+        </div>
+
+        <div class="out-of-stock" *ngIf="(selectedSize || merchandise.sizes.length === 1) && isOutOfStock()">
+          <p>Currently Out of Stock</p>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -86,16 +107,5 @@
             [disabled]="!newRating || !newRatingText.trim()">
       Submit Review
     </button>
-  </div>
-
-  <div class="merchandise-images" *ngIf="merchandise?.images && merchandise.images.length > 0">
-    <div class="primary-image">
-      <img [src]="getPrimaryImageUrl()" alt="{{ merchandise.name }}" />
-    </div>
-    <div class="thumbnail-gallery" *ngIf="merchandise.images.length > 1">
-      <div *ngFor="let image of merchandise.images" class="thumbnail" (click)="selectImage(image)">
-        <img [src]="image.imageUrl" alt="{{ merchandise.name }}" />
-      </div>
-    </div>
   </div>
 </div>

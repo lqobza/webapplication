@@ -1,6 +1,5 @@
 import { Component, OnInit, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -11,6 +10,9 @@ import { environment } from '../../../environments/environment';
 import { OrderDto, OrderStatus } from '../../models/order.model';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { OrderMessagesComponent } from '../order-messages/order-messages.component';
+import { OrderService } from '../../services/order.service';
 
 @Component({
   selector: 'app-order-list',
@@ -23,7 +25,9 @@ import { AuthService } from '../../services/auth.service';
     MatIconModule,
     MatButtonModule,
     MatDialogModule,
-    RouterModule
+    RouterModule,
+    MatExpansionModule,
+    OrderMessagesComponent
   ],
   templateUrl: './order-list.component.html',
   styleUrl: './order-list.component.css'
@@ -34,9 +38,10 @@ export class OrderListComponent implements OnInit {
   error: string | null = null;
   orderStatuses = OrderStatus;
   isAuthenticated = false;
+  expandedOrderId: number | null = null;
 
   constructor(
-    private http: HttpClient,
+    private orderService: OrderService,
     private dialog: MatDialog,
     private authService: AuthService,
     private router: Router
@@ -62,73 +67,62 @@ export class OrderListComponent implements OnInit {
   fetchOrders(): void {
     console.log('[OrderList] Fetching orders');
     this.loading = true;
-    const apiUrl = `${environment.apiUrl}/api/order/orders`;
-    console.log(`[OrderList] API URL: ${apiUrl}`);
     
-    this.http.get<OrderDto[]>(apiUrl, { observe: 'response' })
-      .subscribe({
-        next: (response) => {
-          console.log('[OrderList] Response status:', response.status);
-          
-          // If status is 204 No Content, set orders to empty array
-          if (response.status === 204) {
-            console.log('[OrderList] No orders found (204 No Content)');
-            this.orders = [];
-          } else {
-            console.log('[OrderList] Orders fetched successfully:', response.body);
-            this.orders = response.body || [];
+    this.orderService.getUserOrders().subscribe({
+      next: (data: OrderDto[]) => {
+        console.log('[OrderList] Orders fetched successfully:', data);
+        this.orders = data || [];
+        
+        // Process image URLs to make them absolute
+        this.orders.forEach(order => {
+          if (order.orderItems) {
+            order.orderItems.forEach(item => {
+              if (item.merchandise && item.merchandise.primaryImageUrl) {
+                item.merchandise.primaryImageUrl = this.getFullImageUrl(item.merchandise.primaryImageUrl);
+              }
+            });
           }
+        });
+        
+        // Log details about each order for debugging
+        this.orders.forEach((order, index) => {
+          console.log(`[OrderList] Order #${index + 1} (ID: ${order.id}):`);
+          console.log(`  Status: ${order.status}`);
+          console.log(`  Date: ${order.orderDate}`);
+          console.log(`  Total: ${order.totalAmount}`);
+          console.log(`  Items: ${order.orderItems?.length || 0}`);
           
-          // Process image URLs to make them absolute
-          this.orders.forEach(order => {
-            if (order.items) {
-              order.items.forEach(item => {
-                if (item.imageUrl) {
-                  item.imageUrl = this.getFullImageUrl(item.imageUrl);
-                }
-              });
-            }
-          });
-          
-          // Log details about each order for debugging
-          this.orders.forEach((order, index) => {
-            console.log(`[OrderList] Order #${index + 1} (ID: ${order.id}):`);
-            console.log(`  Status: ${order.status}`);
-            console.log(`  Date: ${order.orderDate}`);
-            console.log(`  Total: ${order.totalAmount}`);
-            console.log(`  Items: ${order.items?.length || 0}`);
-            
-            if (order.items && order.items.length > 0) {
-              order.items.forEach((item, itemIndex) => {
-                console.log(`  Item #${itemIndex + 1}:`);
-                console.log(`    MerchId: ${item.merchId}`);
-                console.log(`    Name: ${item.merchandiseName || item.name || 'N/A'}`);
-                console.log(`    Size: ${item.size}`);
-                console.log(`    Quantity: ${item.quantity}`);
-                console.log(`    Price: ${item.price}`);
-                console.log(`    Image URL: ${item.imageUrl}`);
-              });
-            }
-          });
-          
-          this.loading = false;
-        },
-        error: (err) => {
-          console.error('[OrderList] Error fetching orders:', err);
-          
-          if (err.status === 401) {
-            this.error = 'You need to be logged in to view your orders.';
-            this.isAuthenticated = false;
-            // Optional: redirect to login page
-            // this.router.navigate(['/login']);
-          } else {
-            this.error = 'Failed to load orders. Please try again later.';
+          if (order.orderItems && order.orderItems.length > 0) {
+            order.orderItems.forEach((item, itemIndex) => {
+              console.log(`  Item #${itemIndex + 1}:`);
+              console.log(`    MerchId: ${item.merchandiseId}`);
+              console.log(`    Name: ${item.merchandise?.name || 'N/A'}`);
+              console.log(`    Size: ${item.size}`);
+              console.log(`    Quantity: ${item.quantity}`);
+              console.log(`    Price: ${item.price}`);
+              console.log(`    Image URL: ${item.merchandise?.primaryImageUrl || 'N/A'}`);
+            });
           }
-          
-          this.loading = false;
-          this.orders = []; // Initialize to empty array on error
+        });
+        
+        this.loading = false;
+      },
+      error: (err: any) => {
+        console.error('[OrderList] Error fetching orders:', err);
+        
+        if (err.status === 401) {
+          this.error = 'You need to be logged in to view your orders.';
+          this.isAuthenticated = false;
+          // Optional: redirect to login page
+          // this.router.navigate(['/login']);
+        } else {
+          this.error = 'Failed to load orders. Please try again later.';
         }
-      });
+        
+        this.loading = false;
+        this.orders = []; // Initialize to empty array on error
+      }
+    });
   }
 
   getFullImageUrl(relativeUrl: string | null): string {
@@ -152,13 +146,13 @@ export class OrderListComponent implements OnInit {
     let statusClass: string;
     
     switch (status.toLowerCase()) {
-      case OrderStatus.Fulfilled.toLowerCase():
-        statusClass = 'status-completed';
+      case OrderStatus.Delivered.toLowerCase():
+        statusClass = 'status-delivered';
         break;
       case OrderStatus.Processing.toLowerCase():
         statusClass = 'status-processing';
         break;
-      case OrderStatus.Sent.toLowerCase():
+      case OrderStatus.Shipped.toLowerCase():
         statusClass = 'status-shipped';
         break;
       case OrderStatus.Cancelled.toLowerCase():
@@ -166,7 +160,7 @@ export class OrderListComponent implements OnInit {
         break;
       case OrderStatus.Created.toLowerCase():
       default:
-        statusClass = 'status-pending';
+        statusClass = 'status-created';
         break;
     }
     
@@ -228,42 +222,47 @@ export class OrderListComponent implements OnInit {
 
   cancelOrder(orderId: number): void {
     console.log(`[OrderList] Cancelling order with ID: ${orderId}`);
-    const apiUrl = `${environment.apiUrl}/api/order/${orderId}/cancel`;
-    console.log(`[OrderList] Cancel API URL: ${apiUrl}`);
     
-    this.http.post(apiUrl, {})
-      .subscribe({
-        next: (response) => {
-          console.log(`[OrderList] Order ${orderId} cancelled successfully:`, response);
-          // Update the order status in the local array
-          const order = this.orders.find(o => o.id === orderId);
-          if (order) {
-            console.log(`[OrderList] Updating order ${orderId} status to Cancelled`);
-            order.status = OrderStatus.Cancelled;
-          } else {
-            console.log(`[OrderList] Could not find order ${orderId} in local array`);
-          }
-        },
-        error: (err) => {
-          console.error(`[OrderList] Error cancelling order ${orderId}:`, err);
-          let errorMessage = 'Failed to cancel order. Please try again later.';
-          
-          if (err.status === 400) {
-            errorMessage = err.error || 'Cannot cancel this order in its current state.';
-          } else if (err.status === 404) {
-            errorMessage = 'Order not found.';
-          } else if (err.status === 401) {
-            errorMessage = 'You need to be logged in to cancel an order.';
-            this.isAuthenticated = false;
-          }
-          
-          alert(errorMessage);
+    this.orderService.cancelOrder(orderId).subscribe({
+      next: (response: any) => {
+        console.log(`[OrderList] Order ${orderId} cancelled successfully:`, response);
+        // Update the order status in the local array
+        const order = this.orders.find(o => o.id === orderId);
+        if (order) {
+          console.log(`[OrderList] Updating order ${orderId} status to Cancelled`);
+          order.status = OrderStatus.Cancelled;
+        } else {
+          console.log(`[OrderList] Could not find order ${orderId} in local array`);
         }
-      });
+      },
+      error: (err: any) => {
+        console.error(`[OrderList] Error cancelling order ${orderId}:`, err);
+        let errorMessage = 'Failed to cancel order. Please try again later.';
+        
+        if (err.status === 400) {
+          errorMessage = err.error || 'Cannot cancel this order in its current state.';
+        } else if (err.status === 404) {
+          errorMessage = 'Order not found.';
+        } else if (err.status === 401) {
+          errorMessage = 'You need to be logged in to cancel an order.';
+          this.isAuthenticated = false;
+        }
+        
+        alert(errorMessage);
+      }
+    });
   }
 
   login(): void {
     this.router.navigate(['/login']);
+  }
+
+  toggleOrderMessages(orderId: number): void {
+    if (this.expandedOrderId === orderId) {
+      this.expandedOrderId = null;
+    } else {
+      this.expandedOrderId = orderId;
+    }
   }
 }
 

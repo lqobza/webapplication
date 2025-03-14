@@ -3,7 +3,6 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Merchandise } from '../models/merchandise.model';
 import { Category } from '../models/category.model';
-import { Brand } from '../models/brand.model';
 import { PaginatedResponse } from '../models/paginated-response.model';
 import { catchError } from 'rxjs/operators';
 import { ErrorHandlingService } from './error-handling.service';
@@ -52,11 +51,21 @@ export class MerchandiseService {
   }
 
   getSizes(categoryId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/sizes/${categoryId}`);
+    console.log(`Fetching sizes for category ID: ${categoryId}`);
+    return this.http.get<any[]>(`${this.apiUrl}/sizes/${categoryId}`)
+      .pipe(
+        catchError(error => {
+          console.error('Error fetching sizes:', error);
+          return new Observable<any[]>(observer => {
+            observer.next([]);
+            observer.complete();
+          });
+        })
+      );
   }
 
-  getBrands(): Observable<Brand[]> {
-    return this.http.get<Brand[]>(`${this.apiUrl}/brands`);
+  getBrands(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/brands`);
   }
 
   uploadImage(merchandiseId: number, image: File): Observable<any> {
@@ -64,7 +73,7 @@ export class MerchandiseService {
     formData.append('image', image);
     
     return this.http.post(
-      `${this.apiUrl}/merchandise/${merchandiseId}/images`, 
+      `${this.apiUrl}/${merchandiseId}/images`, 
       formData
     );
   }
@@ -73,7 +82,26 @@ export class MerchandiseService {
     console.log(`[MerchandiseService] Fetching images for merchandise ID: ${merchandiseId}`);
     return this.http.get<MerchandiseImage[]>(`${this.apiUrl}/images/${merchandiseId}`)
       .pipe(
-        catchError(this.errorHandlingService.handleError<MerchandiseImage[]>('getMerchandiseImages', []))
+        catchError((error) => {
+          // If it's a 404 error, it means the merchandise has no images yet
+          if (error.status === 404) {
+            console.log(`[MerchandiseService] No images found for merchandise ID: ${merchandiseId}. This is normal for new items.`);
+            return new Observable<MerchandiseImage[]>(observer => {
+              observer.next([]);
+              observer.complete();
+            });
+          }
+          // For other errors, use the general error handler
+          return this.errorHandlingService.handleError<MerchandiseImage[]>('getMerchandiseImages', [])(error);
+        })
       );
+  }
+
+  deleteMerchandise(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${id}`);
+  }
+
+  createMerchandise(merchandise: Omit<Merchandise, 'id'>): Observable<Merchandise> {
+    return this.http.post<Merchandise>(`${this.apiUrl}`, merchandise);
   }
 }

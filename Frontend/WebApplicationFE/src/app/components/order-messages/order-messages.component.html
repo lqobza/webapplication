@@ -1,0 +1,53 @@
+<div class="messages-container">
+  <h3>Order Messages</h3>
+  
+  <!-- Loading state -->
+  <div *ngIf="loading && messages.length === 0" class="loading-container">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Loading messages...</p>
+  </div>
+  
+  <!-- Error state -->
+  <div *ngIf="error" class="error-container">
+    <mat-icon color="warn">error</mat-icon>
+    <p>{{ error }}</p>
+    <button mat-button color="primary" (click)="loadMessages()">Try Again</button>
+  </div>
+  
+  <!-- Empty state -->
+  <div *ngIf="!loading && !error && messages.length === 0" class="empty-container">
+    <p>No messages yet. Start the conversation!</p>
+  </div>
+  
+  <!-- Messages list -->
+  <div *ngIf="messages.length > 0" class="messages-list">
+    <div *ngFor="let message of messages" class="message" [ngClass]="{'admin-message': message.isFromAdmin, 'user-message': !message.isFromAdmin}">
+      <div class="message-header">
+        <span class="sender">{{ message.isFromAdmin ? 'Admin' : (isAdminMode ? 'Customer' : 'You') }}</span>
+        <span class="timestamp">{{ formatDate(message.timestamp) }}</span>
+      </div>
+      <div class="message-content">{{ message.content }}</div>
+      <div *ngIf="message.isFromAdmin" class="read-status">
+        <mat-icon *ngIf="message.isRead" class="read-icon">done_all</mat-icon>
+        <span *ngIf="message.isRead" class="read-text">Read</span>
+        <span *ngIf="!message.isRead" class="unread-text">Unread</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- New message form -->
+  <div class="message-form">
+    <mat-form-field appearance="outline" class="message-input">
+      <mat-label>Type your message</mat-label>
+      <textarea matInput [(ngModel)]="newMessage" placeholder="Type your message here..." rows="2"></textarea>
+    </mat-form-field>
+    <button 
+      mat-raised-button 
+      color="primary" 
+      [disabled]="!newMessage.trim() || loading" 
+      (click)="sendMessage()">
+      <mat-icon>send</mat-icon>
+      Send
+    </button>
+  </div>
+</div> 

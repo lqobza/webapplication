@@ -155,14 +155,6 @@ export class MerchandiseDetailComponent implements OnInit {
 
     return 1;
   }
-
-  goToUpdatePage(merchandiseId: number | undefined) {
-    if (merchandiseId) {
-      this.router.navigate(['/update', merchandiseId]);
-    } else {
-      console.error("Merchandise ID is undefined. Cannot navigate.");
-    }
-  }
   
   addToCart(): void {
     console.log('[MerchandiseDetail] Adding to cart');

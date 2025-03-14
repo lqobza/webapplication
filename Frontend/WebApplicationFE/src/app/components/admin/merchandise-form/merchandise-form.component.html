@@ -1,0 +1,179 @@
+<div class="merchandise-form-container">
+  <h1 class="page-title">{{ isEditMode ? 'Edit' : 'Create' }} Merchandise</h1>
+
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Loading merchandise data...</p>
+  </div>
+
+  <div *ngIf="error" class="error-container">
+    <mat-icon color="warn">error</mat-icon>
+    <p>{{ error }}</p>
+    <button mat-raised-button color="primary" routerLink="/admin/merchandise">Back to Merchandise List</button>
+  </div>
+
+  <form *ngIf="!loading && !error" [formGroup]="merchandiseForm" (ngSubmit)="onSubmit()" class="merchandise-form">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Basic Information</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Name</mat-label>
+            <input matInput formControlName="name" placeholder="Enter merchandise name">
+            <mat-error *ngIf="merchandiseForm.get('name')?.hasError('required')">Name is required</mat-error>
+            <mat-error *ngIf="merchandiseForm.get('name')?.hasError('minlength')">Name must be at least 3 characters</mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Description</mat-label>
+            <textarea matInput formControlName="description" placeholder="Enter merchandise description" rows="4"></textarea>
+            <mat-error *ngIf="merchandiseForm.get('description')?.hasError('required')">Description is required</mat-error>
+            <mat-error *ngIf="merchandiseForm.get('description')?.hasError('minlength')">Description must be at least 10 characters</mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row two-columns">
+          <mat-form-field appearance="outline">
+            <mat-label>Price</mat-label>
+            <input matInput type="number" formControlName="price" placeholder="Enter price in whole numbers" min="1" step="1">
+            <mat-error *ngIf="merchandiseForm.get('price')?.hasError('required')">Price is required</mat-error>
+            <mat-error *ngIf="merchandiseForm.get('price')?.hasError('min')">Price must be at least 1</mat-error>
+            <mat-error *ngIf="merchandiseForm.get('price')?.hasError('pattern')">Price must be a whole number</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Category</mat-label>
+            <mat-select formControlName="categoryId">
+              <mat-option *ngFor="let category of categories" [value]="category.id">
+                {{ category.name }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="merchandiseForm.get('categoryId')?.hasError('required')">Category is required</mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Brand</mat-label>
+            <mat-select formControlName="brandId">
+              <mat-option [value]="0">No Brand</mat-option>
+              <mat-option *ngFor="let brand of brands" [value]="brand.id">
+                {{ brand.name }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="merchandiseForm.get('brandId')?.hasError('required')">Brand is required</mat-error>
+          </mat-form-field>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="section-card">
+      <mat-card-header>
+        <mat-card-title>Sizes and Stock</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div *ngIf="loadingSizes" class="loading-sizes">
+          <mat-spinner diameter="30"></mat-spinner>
+          <p>Loading available sizes...</p>
+        </div>
+        
+        <div *ngIf="!merchandiseForm.get('categoryId')?.value" class="info-message">
+          <p>Please select a category to see available sizes</p>
+        </div>
+        
+        <div *ngIf="merchandiseForm.get('categoryId')?.value === ACCESSORY_CATEGORY_ID" class="info-message accent">
+          <p>Accessories only have one size</p>
+        </div>
+        
+        <div formArrayName="sizes">
+          <div *ngFor="let sizeGroup of sizesArray.controls; let i = index" [formGroupName]="i" class="size-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Size</mat-label>
+              <mat-select formControlName="size">
+                <mat-option *ngFor="let size of getAvailableSizesForSelection(i)" [value]="size">
+                  {{ size }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="sizesArray.at(i).get('size')?.hasError('required')">Size is required</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>In Stock</mat-label>
+              <input matInput type="number" formControlName="inStock" placeholder="Quantity in stock" min="0">
+              <mat-error *ngIf="sizesArray.at(i).get('inStock')?.hasError('required')">Stock quantity is required</mat-error>
+              <mat-error *ngIf="sizesArray.at(i).get('inStock')?.hasError('min')">Stock quantity must be 0 or greater</mat-error>
+            </mat-form-field>
+
+            <button type="button" mat-icon-button color="warn" (click)="removeSize(i)" 
+                    [disabled]="sizesArray.length <= 1 || (merchandiseForm.get('categoryId')?.value === ACCESSORY_CATEGORY_ID && sizesArray.length <= 1)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <button type="button" mat-stroked-button color="primary" (click)="addSize()" 
+                [disabled]="availableSizes.length === 0 || loadingSizes || merchandiseForm.get('categoryId')?.value === ACCESSORY_CATEGORY_ID">
+          <mat-icon>add</mat-icon> Add Size
+        </button>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="section-card">
+      <mat-card-header>
+        <mat-card-title>Images</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div *ngIf="!isEditMode" class="info-message accent">
+          <p>You'll be able to upload images after saving the merchandise.</p>
+        </div>
+        
+        <div class="image-upload-section">
+          <input #fileInput type="file" accept="image/*" (change)="onFileSelected($event)" style="display: none">
+          <button type="button" mat-raised-button color="primary" (click)="fileInput.click()" [disabled]="!isEditMode && !merchandiseId">
+            <mat-icon>cloud_upload</mat-icon> Upload Image
+          </button>
+          
+          <div *ngIf="isUploading" class="upload-progress">
+            <p>Uploading image...</p>
+            <mat-progress-bar mode="determinate" [value]="uploadProgress"></mat-progress-bar>
+          </div>
+        </div>
+
+        <div *ngIf="imagesArray.length > 0" class="images-container">
+          <div *ngFor="let imageGroup of imagesArray.controls; let i = index" [formGroupName]="i" class="image-item">
+            <div class="image-preview" *ngIf="imageGroup.get('imageUrl')?.value">
+              <img [src]="getImagePreview(imageGroup.get('imageUrl')?.value)" alt="Merchandise image">
+            </div>
+            
+            <div class="image-controls">
+              <div class="image-primary">
+                <mat-checkbox formControlName="isPrimary" (change)="setPrimaryImage(i)">
+                  Primary Image
+                </mat-checkbox>
+              </div>
+
+              <button type="button" mat-icon-button color="warn" (click)="removeImage(i)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="isEditMode && imagesArray.length === 0" class="info-message">
+          <p>No images uploaded yet. Use the upload button above to add images.</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <div class="form-actions">
+      <button type="button" mat-stroked-button (click)="cancel()">Cancel</button>
+      <button type="submit" mat-raised-button color="primary" [disabled]="submitting">
+        {{ isEditMode ? 'Update' : 'Create' }} Merchandise
+      </button>
+    </div>
+  </form>
+</div> 

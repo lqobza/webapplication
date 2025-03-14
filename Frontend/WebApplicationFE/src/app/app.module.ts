@@ -1,7 +1,6 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
 import { Routes, provideRouter } from '@angular/router';
-import { AppComponent } from './app.component';
 import { LoginComponent } from './components/login/login.component';
 import { RegisterComponent } from './components/register/register.component';
 import { ApplicationConfig } from '@angular/core';
@@ -13,6 +12,11 @@ import { MerchandiseCreateComponent } from './components/merchandise-create/merc
 import { MerchandiseUpdateComponent } from './components/merchandise-update/merchandise-update.component';
 import { CartComponent } from './components/cart/cart.component';
 import { OrderListComponent } from './components/order-list/order-list.component';
+import { AuthGuard } from './guards/auth.guard';
+import { AdminGuard } from './guards/admin.guard';
+import { AdminOrdersComponent } from './components/admin/admin-orders/admin-orders.component';
+import { AdminMerchandiseComponent } from './components/admin/admin-merchandise/admin-merchandise.component';
+import { MerchandiseFormComponent } from './components/admin/merchandise-form/merchandise-form.component';
 
 const routes: Routes = [
   { path: '', component: MerchandiseListComponent },
@@ -23,8 +27,28 @@ const routes: Routes = [
   { path: 'merchandise/create', component: MerchandiseCreateComponent },
   { path: 'merchandise/:id', component: MerchandiseDetailComponent },
   { path: 'merchandise/:id/edit', component: MerchandiseUpdateComponent },
-  { path: 'cart', component: CartComponent },
-  { path: 'orders', component: OrderListComponent },
+  { path: 'cart', component: CartComponent, canActivate: [AuthGuard] },
+  { path: 'orders', component: OrderListComponent, canActivate: [AuthGuard] },
+  { 
+    path: 'admin/orders', 
+    component: AdminOrdersComponent,
+    canActivate: [AuthGuard, AdminGuard]
+  },
+  { 
+    path: 'admin/merchandise', 
+    component: AdminMerchandiseComponent,
+    canActivate: [AuthGuard, AdminGuard]
+  },
+  { 
+    path: 'admin/merchandise/create', 
+    component: MerchandiseFormComponent,
+    canActivate: [AuthGuard, AdminGuard]
+  },
+  { 
+    path: 'admin/merchandise/edit/:id', 
+    component: MerchandiseFormComponent,
+    canActivate: [AuthGuard, AdminGuard]
+  },
   { path: '**', redirectTo: '' }
 ];
 

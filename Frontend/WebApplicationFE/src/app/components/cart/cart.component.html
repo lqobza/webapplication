@@ -26,7 +26,7 @@
               aria-label="Quantity"
             />
           </div>
-          <p>Price: ${{ getItemPrice(item) }}</p>
+          <p>Price: ${{ getItemPrice(item) | number: '1.0-0' }}</p>
         </div>
         <button
           class="remove-button"
@@ -38,7 +38,7 @@
       </li>
     </ul>
     <div class="cart-total">
-      <h3>Total: ${{ totalPrice }}</h3>
+      <h3>Total: ${{ totalPrice | number: '1.0-0' }}</h3>
       <form #orderForm="ngForm" class="customer-details" (ngSubmit)="orderForm.valid && createOrder()">
         <h4>Customer Details</h4>
         <div class="form-group">

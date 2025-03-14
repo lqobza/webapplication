@@ -38,4 +38,8 @@ export class NavbarComponent {
     const user = this.authService.currentUserValue;
     return user ? user.email : '';
   }
+  
+  get isAdmin(): boolean {
+    return this.authService.isAdmin();
+  }
 }

@@ -66,4 +66,23 @@ public class OrderService : IOrderService
         _logger.LogInformation("Getting orders for user ID: {UserId}", userId);
         return await _orderRepository.GetOrdersByUserIdAsync(userId);
     }
+
+    // Order Messages Implementation
+    public async Task<OrderMessageDto> AddOrderMessageAsync(OrderMessageCreateDto messageDto)
+    {
+        _logger.LogInformation("Adding message for order {OrderId}", messageDto.OrderId);
+        return await _orderRepository.AddOrderMessageAsync(messageDto);
+    }
+
+    public async Task<List<OrderMessageDto>> GetOrderMessagesAsync(int orderId)
+    {
+        _logger.LogInformation("Getting messages for order {OrderId}", orderId);
+        return await _orderRepository.GetOrderMessagesAsync(orderId);
+    }
+
+    public async Task MarkMessageAsReadAsync(int messageId)
+    {
+        _logger.LogInformation("Marking message {MessageId} as read", messageId);
+        await _orderRepository.MarkMessageAsReadAsync(messageId);
+    }
 }

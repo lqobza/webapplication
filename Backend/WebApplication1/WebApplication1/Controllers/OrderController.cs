@@ -21,6 +21,51 @@ public class OrderController : ControllerBase
         _logger = logger;
     }
 
+    [HttpGet]
+    public async Task<IActionResult> GetAllOrders()
+    {
+        _logger.LogInformation("GetAllOrders endpoint called");
+
+        // Log all claims for debugging
+        foreach (var claim in User.Claims)
+        {
+            _logger.LogInformation("Claim: Type = {ClaimType}, Value = {ClaimValue}", claim.Type, claim.Value);
+        }
+
+        // TEMPORARY: Skip admin check for debugging
+        // Remove this and uncomment the proper check below when fixed
+        //bool isAdmin = true;
+
+        
+        // Check for admin role in various possible claim types
+        bool isAdmin = User.Claims.Any(c => 
+            (c.Type == "Role" && c.Value == "Admin") ||
+            (c.Type == "role" && c.Value == "Admin") ||
+            (c.Type == ClaimTypes.Role && c.Value == "Admin") ||
+            (c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role" && c.Value == "Admin") ||
+            (c.Type == "roles" && c.Value.Contains("Admin"))
+        );
+        
+
+        if (!isAdmin)
+        {
+            _logger.LogWarning("Unauthorized access attempt to GetAllOrders");
+            return Unauthorized(new { message = "Admin access required" });
+        }
+
+        try
+        {
+            var orders = await _orderService.GetAllOrdersAsync();
+            _logger.LogInformation("Retrieved {Count} orders", orders.Count);
+            return Ok(orders);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving all orders");
+            return StatusCode(500, "An error occurred while retrieving orders");
+        }
+    }
+
     [HttpGet("orders")]
     public async Task<IActionResult> GetOrdersByUserId()
     {
@@ -144,6 +189,108 @@ public class OrderController : ControllerBase
         {
             _logger.LogError(ex, "Error cancelling order {OrderId}", id);
             return StatusCode(500, "An error occurred while cancelling the order");
+        }
+    }
+    
+    [HttpPost("{id}/status")]
+    public async Task<IActionResult> UpdateOrderStatus(int id, [FromBody] UpdateOrderStatusDto statusDto)
+    {
+        try
+        {
+            _logger.LogInformation("UpdateOrderStatus endpoint called for order {OrderId} with status {Status}", id, statusDto.Status);
+            
+            // First check if the order exists
+            var order = await _orderService.GetOrderByIdAsync(id);
+            if (order == null)
+            {
+                _logger.LogWarning("Order with ID {OrderId} not found", id);
+                return NotFound($"Order with ID {id} not found");
+            }
+
+            // Validate the status
+            if (string.IsNullOrWhiteSpace(statusDto.Status))
+            {
+                _logger.LogWarning("Invalid status provided for order {OrderId}", id);
+                return BadRequest("Status cannot be empty");
+            }
+
+            // Update the order status
+            await _orderService.UpdateOrderStatusAsync(id, statusDto.Status);
+            _logger.LogInformation("Order {OrderId} status updated to {Status} successfully", id, statusDto.Status);
+
+            return Ok(new { message = $"Order status updated to {statusDto.Status} successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating status for order {OrderId}", id);
+            return StatusCode(500, "An error occurred while updating the order status");
+        }
+    }
+    
+    // Order Messages Endpoints
+    
+    [HttpGet("{id}/messages")]
+    public async Task<IActionResult> GetOrderMessages(int id)
+    {
+        _logger.LogInformation("GetOrderMessages endpoint called for order {OrderId}", id);
+        
+        // Check if the order exists
+        var order = await _orderService.GetOrderByIdAsync(id);
+        if (order == null)
+        {
+            _logger.LogWarning("Order with ID {OrderId} not found", id);
+            return NotFound($"Order with ID {id} not found");
+        }
+        
+        // Get messages for the order
+        var messages = await _orderService.GetOrderMessagesAsync(id);
+        
+        return Ok(messages);
+    }
+    
+    [HttpPost("{id}/messages")]
+    public async Task<IActionResult> AddOrderMessage(int id, [FromBody] OrderMessageCreateDto messageDto)
+    {
+        _logger.LogInformation("AddOrderMessage endpoint called for order {OrderId}", id);
+        
+        // Validate the message
+        if (string.IsNullOrWhiteSpace(messageDto.Content))
+        {
+            return BadRequest("Message cannot be empty");
+        }
+        
+        // Check if the order exists
+        var order = await _orderService.GetOrderByIdAsync(id);
+        if (order == null)
+        {
+            _logger.LogWarning("Order with ID {OrderId} not found", id);
+            return NotFound($"Order with ID {id} not found");
+        }
+        
+        // Set the order ID in the message DTO
+        messageDto.OrderId = id;
+        
+        // Add the message
+        var message = await _orderService.AddOrderMessageAsync(messageDto);
+        
+        // Return the full message object
+        return Ok(message);
+    }
+    
+    [HttpPut("messages/{id}/read")]
+    public async Task<IActionResult> MarkMessageAsRead(int id)
+    {
+        _logger.LogInformation("MarkMessageAsRead endpoint called for message {MessageId}", id);
+        
+        try
+        {
+            await _orderService.MarkMessageAsReadAsync(id);
+            return Ok(new { message = "Message marked as read" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error marking message {MessageId} as read", id);
+            return StatusCode(500, "An error occurred while marking the message as read");
         }
     }
 }

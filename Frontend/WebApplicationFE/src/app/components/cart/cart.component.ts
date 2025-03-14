@@ -178,7 +178,8 @@ export class CartComponent implements OnInit {
   }
 
   getItemPrice(item: CartItem): number {
-    return item.price * item.quantity;
+    // Ensure price is an integer
+    return Math.round(item.price * item.quantity);
   }
 
   removeItem(item: CartItem): void {
@@ -207,7 +208,7 @@ export class CartComponent implements OnInit {
    * Update the total price of the cart.
    */
   updateTotalPrice(): void {
-    this.totalPrice = this.cartService.getTotalPrice();
+    this.totalPrice = Math.round(this.cartService.getTotalPrice());
   }
 
   createOrder(): void {
