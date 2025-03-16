@@ -7,7 +7,6 @@ public class OrderMessageDto
     public string Content { get; set; } = string.Empty;
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     public bool IsFromAdmin { get; set; }
-    public bool IsRead { get; set; } = false;
 }
 
 public class OrderMessageCreateDto

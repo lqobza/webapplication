@@ -27,11 +27,6 @@
         <span class="timestamp">{{ formatDate(message.timestamp) }}</span>
       </div>
       <div class="message-content">{{ message.content }}</div>
-      <div *ngIf="message.isFromAdmin" class="read-status">
-        <mat-icon *ngIf="message.isRead" class="read-icon">done_all</mat-icon>
-        <span *ngIf="message.isRead" class="read-text">Read</span>
-        <span *ngIf="!message.isRead" class="unread-text">Unread</span>
-      </div>
     </div>
   </div>
   

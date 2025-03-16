@@ -114,6 +114,103 @@ CREATE TABLE OrderMessages (
     Content NVARCHAR(1000) NOT NULL,
     Timestamp DATETIME2 NOT NULL DEFAULT GETDATE(),
     IsFromAdmin BIT NOT NULL,
-    IsRead BIT NOT NULL DEFAULT 0,
     CONSTRAINT FK_OrderMessages_Orders FOREIGN KEY (OrderId) REFERENCES Orders(Id) ON DELETE CASCADE
 );
+
+CREATE TABLE CustomDesigns (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id NVARCHAR(450) NOT NULL,
+    name NVARCHAR(100) NOT NULL,
+    front_image NVARCHAR(MAX) NOT NULL,
+    back_image NVARCHAR(MAX) NOT NULL,
+    created_at DATETIME2 NOT NULL DEFAULT GETDATE()
+);
+
+CREATE INDEX IX_CustomDesigns_UserId ON CustomDesigns(user_id);
+
+-- Add is_custom column to OrderItems table if it doesn't exist
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[OrderItems]') AND name = 'is_custom')
+BEGIN
+    ALTER TABLE OrderItems
+    ADD is_custom BIT NOT NULL DEFAULT 0;
+    PRINT 'Added is_custom column to OrderItems table';
+END
+ELSE
+BEGIN
+    PRINT 'is_custom column already exists in OrderItems table';
+END
+
+-- Add merchandise_name column if it doesn't exist
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[OrderItems]') AND name = 'merchandise_name')
+BEGIN
+    ALTER TABLE OrderItems
+    ADD merchandise_name NVARCHAR(255) NULL;
+    PRINT 'Added merchandise_name column to OrderItems table';
+END
+ELSE
+BEGIN
+    PRINT 'merchandise_name column already exists in OrderItems table';
+END
+
+-- Add image_url column if it doesn't exist
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[OrderItems]') AND name = 'image_url')
+BEGIN
+    ALTER TABLE OrderItems
+    ADD image_url NVARCHAR(MAX) NULL;
+    PRINT 'Added image_url column to OrderItems table';
+END
+ELSE
+BEGIN
+    PRINT 'image_url column already exists in OrderItems table';
+END
+
+-- First, drop the foreign key constraint
+IF EXISTS (SELECT * FROM sys.foreign_keys WHERE object_id = OBJECT_ID(N'[dbo].[FK__OrderItem__merch__6A30C649]') AND parent_object_id = OBJECT_ID(N'[dbo].[OrderItems]'))
+    BEGIN
+        ALTER TABLE OrderItems DROP CONSTRAINT [FK__OrderItem__merch__6A30C649]
+        PRINT 'Dropped foreign key constraint FK__OrderItem__merch__6A30C649'
+    END
+
+-- Then, modify the merch_id column to allow NULL values
+IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[OrderItems]') AND name = 'merch_id' AND is_nullable = 0)
+BEGIN
+    ALTER TABLE OrderItems ALTER COLUMN merch_id INT NULL
+    PRINT 'Modified merch_id column to allow NULL values'
+END
+
+-- Finally, recreate the foreign key constraint with the NULL option
+IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE object_id = OBJECT_ID(N'[dbo].[FK__OrderItem__merch__6A30C649]') AND parent_object_id = OBJECT_ID(N'[dbo].[OrderItems]'))
+BEGIN
+    ALTER TABLE OrderItems 
+    ADD CONSTRAINT [FK__OrderItem__merch__6A30C649] 
+    FOREIGN KEY (merch_id) 
+    REFERENCES Merch(id);
+    PRINT 'Recreated foreign key constraint FK__OrderItem__merch__6A30C649'
+END 
+
+-- Check if the IsRead column exists in the OrderMessages table
+IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[OrderMessages]') AND name = 'IsRead')
+BEGIN
+    -- First, find and drop the default constraint on the IsRead column
+    DECLARE @constraintName NVARCHAR(200)
+    
+    SELECT @constraintName = dc.name
+    FROM sys.default_constraints dc
+    JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id
+    WHERE c.object_id = OBJECT_ID(N'[dbo].[OrderMessages]') AND c.name = 'IsRead'
+    
+    IF @constraintName IS NOT NULL
+    BEGIN
+        DECLARE @sql NVARCHAR(MAX) = N'ALTER TABLE [dbo].[OrderMessages] DROP CONSTRAINT ' + QUOTENAME(@constraintName)
+        EXEC sp_executesql @sql
+        PRINT 'Dropped default constraint ' + @constraintName + ' on IsRead column'
+    END
+    
+    -- Now drop the IsRead column
+    ALTER TABLE OrderMessages DROP COLUMN IsRead;
+    PRINT 'Removed IsRead column from OrderMessages table';
+END
+ELSE
+BEGIN
+    PRINT 'IsRead column does not exist in OrderMessages table';
+END 

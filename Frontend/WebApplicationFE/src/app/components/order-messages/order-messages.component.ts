@@ -48,7 +48,6 @@ export class OrderMessagesComponent implements OnInit, OnDestroy, OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     // If orderId changes, reload messages
     if (changes['orderId'] && !changes['orderId'].firstChange) {
-      console.log(`Order ID changed from ${changes['orderId'].previousValue} to ${changes['orderId'].currentValue}`);
       this.loadMessages();
       
       // Reset the auto-refresh with the new orderId
@@ -75,8 +74,7 @@ export class OrderMessagesComponent implements OnInit, OnDestroy, OnChanges {
         next: (messages) => {
           this.messages = messages;
         },
-        error: (err) => {
-          console.error('Error refreshing messages:', err);
+        error: () => {
           // Don't show error on auto-refresh to avoid disrupting the UI
         }
       });
@@ -87,18 +85,12 @@ export class OrderMessagesComponent implements OnInit, OnDestroy, OnChanges {
     this.error = null;
     this.messages = []; // Clear existing messages while loading
     
-    console.log(`Loading messages for order ID: ${this.orderId}`);
-    
     this.orderService.getOrderMessages(this.orderId).subscribe({
       next: (messages) => {
         this.messages = messages;
         this.loading = false;
-        
-        // Mark unread messages as read
-        this.markUnreadMessagesAsRead();
       },
       error: (err) => {
-        console.error('Error loading messages:', err);
         this.error = 'Failed to load messages. Please try again.';
         this.loading = false;
       }
@@ -120,42 +112,18 @@ export class OrderMessagesComponent implements OnInit, OnDestroy, OnChanges {
     
     this.orderService.addOrderMessage(this.orderId, messageToSend).subscribe({
       next: (message) => {
-        console.log('Message sent successfully:', message);
-        
         // Add the new message to the messages array
         if (message && message.id) {
           this.messages = [...this.messages, message];
-        } else {
-          console.error('Received invalid message response:', message);
         }
         
         this.newMessage = '';
         this.loading = false;
       },
       error: (err) => {
-        console.error('Error sending message:', err);
         alert('Failed to send message. Please try again.');
         this.loading = false;
       }
-    });
-  }
-
-  markUnreadMessagesAsRead(): void {
-    const unreadMessages = this.messages.filter(m => !m.isRead && m.isFromAdmin);
-    
-    unreadMessages.forEach(message => {
-      this.orderService.markMessageAsRead(message.id).subscribe({
-        next: () => {
-          // Update the message in our local array
-          const index = this.messages.findIndex(m => m.id === message.id);
-          if (index !== -1) {
-            this.messages[index].isRead = true;
-          }
-        },
-        error: (err) => {
-          console.error(`Error marking message ${message.id} as read:`, err);
-        }
-      });
     });
   }
 
@@ -170,7 +138,6 @@ export class OrderMessagesComponent implements OnInit, OnDestroy, OnChanges {
         minute: '2-digit'
       });
     } catch (error) {
-      console.error('Error formatting date:', error);
       return dateString;
     }
   }

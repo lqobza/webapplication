@@ -1,53 +1,52 @@
 <div class="custom-design-container">
   <div class="preview-section">
-    <canvas #designCanvas 
-            width="600" 
-            height="700"
-            (mousedown)="onMouseDown($event)"
-            (mousemove)="onMouseMove($event)"
-            (mouseup)="onMouseUp()"
-            (mouseleave)="onMouseUp()">
-    </canvas>
+    <h2>Custom T-Shirt Designer</h2>
     
-    <div class="design-controls">
-      <input #fileInput
-             type="file"
-             accept="image/*"
-             (change)="onFileSelected($event)"
-             class="file-input">
+    <!-- T-shirt side toggle -->
+    <div class="side-toggle">
+      <mat-button-toggle-group [value]="currentSide" (change)="switchSide($event.value)">
+        <mat-button-toggle value="front">Front</mat-button-toggle>
+        <mat-button-toggle value="back">Back</mat-button-toggle>
+      </mat-button-toggle-group>
+    </div>
+    
+    <div class="canvas-container">
+      <canvas #designCanvas 
+              [width]="canvasWidth" 
+              [height]="canvasHeight">
+      </canvas>
       
-      <div class="control-group">
-        <div class="scale-control">
-          <label>Design Size:</label>
-          <input type="range"
-                 min="0.5"
-                 max="2"
-                 step="0.1"
-                 [value]="1"
-                 (input)="onScaleChange($event)">
-        </div>
-
-        <div class="rotation-control">
-          <label>Rotation:</label>
-          <input type="range"
-                 min="-180"
-                 max="180"
-                 step="1"
-                 [value]="0"
-                 (input)="onRotationChange($event)">
-        </div>
+      <div *ngIf="isLoading" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Saving your design...</p>
+      </div>
+    </div>
+    
+    <div class="element-controls" *ngIf="activeElement">
+      <h3>Element Controls</h3>
+      <div class="control-buttons">
+        <button mat-mini-fab color="primary" (click)="rotateActiveElement(-5)" matTooltip="Rotate Left">
+          <mat-icon>rotate_left</mat-icon>
+        </button>
+        <button mat-mini-fab color="primary" (click)="rotateActiveElement(5)" matTooltip="Rotate Right">
+          <mat-icon>rotate_right</mat-icon>
+        </button>
+        <button mat-mini-fab color="warn" (click)="deleteActiveElement()" matTooltip="Delete Element">
+          <mat-icon>delete</mat-icon>
+        </button>
       </div>
     </div>
   </div>
 
   <div class="customization-section">
-    <div class="color-picker-wrapper">
-      <div class="color-wheel">
+    <!-- T-shirt Color Selection -->
+    <div class="color-section">
+      <h3>T-Shirt Color</h3>
+      <div class="color-picker-wrapper">
         <div class="selected-color"
              [style.background]="selectedColor"
              [(colorPicker)]="selectedColor"
              [cpPosition]="'right'"
-             [cpPositionOffset]="'50%'"
              [cpOutputFormat]="'hex'"
              [cpAlphaChannel]="'disabled'"
              [cpDialogDisplay]="'popup'"
@@ -56,26 +55,109 @@
       </div>
     </div>
 
-    <div class="size-selector">
-      <h3>Select Size</h3>
-      <div class="size-options">
-        <button *ngFor="let size of availableSizes"
-                [class.selected]="size === selectedSize"
-                (click)="onSizeSelect(size)"
-                class="size-option">
-          {{size}}
-        </button>
+    <!-- Size Selection -->
+    <div class="size-section">
+      <h3>Size</h3>
+      <mat-form-field appearance="fill">
+        <mat-label>Select Size</mat-label>
+        <mat-select [(value)]="selectedSize" (selectionChange)="onSizeSelect($event.value)">
+          <mat-option *ngFor="let size of availableSizes" [value]="size">
+            {{size}}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <!-- Add Image -->
+    <div class="add-image-section">
+      <h3>Add Image</h3>
+      <button mat-raised-button color="primary" (click)="fileInput.click()">
+        <mat-icon>add_photo_alternate</mat-icon>
+        Upload Image
+      </button>
+      <input #fileInput
+             type="file"
+             accept="image/*"
+             (change)="onFileSelected($event)"
+             class="file-input">
+    </div>
+
+    <!-- Add Text -->
+    <div class="add-text-section">
+      <h3>Add Text</h3>
+      <mat-form-field appearance="fill" class="full-width">
+        <mat-label>Enter Text</mat-label>
+        <input matInput [(ngModel)]="newText" placeholder="Your text here">
+      </mat-form-field>
+      
+      <div class="text-controls">
+        <mat-form-field appearance="fill">
+          <mat-label>Font</mat-label>
+          <mat-select [(value)]="fontFamily">
+            <mat-option *ngFor="let font of fontFamilies" [value]="font" [style.fontFamily]="font">
+              {{font}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+        
+        <mat-form-field appearance="fill">
+          <mat-label>Size</mat-label>
+          <input matInput type="number" [(ngModel)]="fontSize" min="10" max="72">
+        </mat-form-field>
+        
+        <div class="color-picker-small">
+          <div class="color-preview"
+               [style.background]="textColor"
+               [(colorPicker)]="textColor"
+               [cpPosition]="'bottom'"
+               [cpOutputFormat]="'hex'"
+               [cpAlphaChannel]="'disabled'"
+               [cpDialogDisplay]="'popup'">
+          </div>
+        </div>
       </div>
+      
+      <button mat-raised-button color="primary" (click)="addText()" [disabled]="!newText.trim()">
+        <mat-icon>text_fields</mat-icon>
+        Add Text
+      </button>
     </div>
 
-    <div class="price-section">
-      <h3>Price: ${{customProduct.price}}</h3>
+    <!-- Save Design -->
+    <div class="save-design-section">
+      <h3>Name Your Design</h3>
+      <mat-form-field appearance="fill" class="full-width">
+        <mat-label>Design Name</mat-label>
+        <input matInput [(ngModel)]="designName" placeholder="My Design">
+      </mat-form-field>
+      <button mat-raised-button color="accent" (click)="saveDesign()" 
+              [disabled]="!designName.trim() || 
+                         ((frontTextElements.length === 0 && frontImageElements.length === 0) && 
+                          (backTextElements.length === 0 && backImageElements.length === 0))">
+        <mat-icon>save</mat-icon>
+        Save Design
+      </button>
     </div>
 
-    <button class="add-to-cart-btn"
-            (click)="addToCart()"
-            [disabled]="!customProduct.designUrl">
-      Add to Cart
-    </button>
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+      <button mat-raised-button color="warn" (click)="clearDesign()">
+        <mat-icon>delete_sweep</mat-icon>
+        Clear Current Side
+      </button>
+      
+      <button mat-raised-button color="warn" (click)="clearAllDesigns()">
+        <mat-icon>delete_forever</mat-icon>
+        Clear All
+      </button>
+      
+      <button mat-raised-button color="primary" (click)="addToCart()" 
+              [disabled]="!designName.trim() || 
+                         ((frontTextElements.length === 0 && frontImageElements.length === 0) && 
+                          (backTextElements.length === 0 && backImageElements.length === 0))">
+        <mat-icon>shopping_cart</mat-icon>
+        Add to Cart
+      </button>
+    </div>
   </div>
 </div>

@@ -21,4 +21,5 @@ public interface IMerchandiseRepository
     public int AddCategoryToDb(CategoryCreateDto categoryCreateDto);
     public int AddThemeToDb(ThemeCreateDto themeCreateDto);
     public T ExecuteScalar<T>(string sql, params System.Data.SqlClient.SqlParameter[] parameters);
+    public List<MerchSizeDto> GetSizesByMerchId(int merchId);
 }

@@ -10,11 +10,12 @@ export interface OrderDto {
   id: number;
   userId: string;
   customerName: string;
+  customerEmail?: string;
+  customerAddress?: string;
   orderDate: string;
   totalAmount: number;
   status: string;
   orderItems: OrderItemDto[];
-  hasUnreadMessages?: boolean;
 }
 
 export interface OrderItemDto {

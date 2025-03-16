@@ -55,7 +55,28 @@ export class AuthService {
   }
 
   isLoggedIn(): boolean {
-    return !!this.currentUserValue;
+    const currentUser = this.currentUserValue;
+    if (!currentUser || !currentUser.token) {
+      return false;
+    }
+    
+    // Check if token is expired
+    try {
+      const tokenParts = currentUser.token.split('.');
+      if (tokenParts.length === 3) {
+        const payload = JSON.parse(atob(tokenParts[1]));
+        
+        // Check expiration time (exp is in seconds, Date.now() is in milliseconds)
+        if (payload.exp && payload.exp * 1000 < Date.now()) {
+          this.logout();
+          return false;
+        }
+      }
+      return true;
+    } catch (error) {
+      console.error('Error checking token expiration:', error);
+      return false;
+    }
   }
 
   private getToken(): string | null {

@@ -115,6 +115,10 @@
   cursor: pointer;
   font-size: 14px;
   transition: background-color 0.3s ease;
+  min-width: 120px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .create-order-button:hover {
@@ -122,13 +126,93 @@
 }
 
 .error-message {
-  color: #ff0000;
-  background-color: #ffe6e6;
-  padding: 10px;
-  border: 1px solid #ff0000;
+  color: #721c24;
+  background-color: #f8d7da;
+  padding: 15px;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+}
+
+.error-icon {
+  font-size: 24px;
+  margin-right: 15px;
+  flex-shrink: 0;
+}
+
+.error-content {
+  flex-grow: 1;
+  text-align: left;
+}
+
+.error-content h3 {
+  margin-top: 0;
+  margin-bottom: 5px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.error-content p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.close-error {
+  background: none;
+  border: none;
+  color: #721c24;
+  font-size: 20px;
+  cursor: pointer;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 0;
+  line-height: 1;
+}
+
+.success-message {
+  color: #155724;
+  background-color: #d4edda;
+  padding: 20px;
+  border: 1px solid #c3e6cb;
   border-radius: 4px;
   margin-bottom: 20px;
   text-align: center;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.success-icon {
+  font-size: 48px;
+  color: #28a745;
+  margin-bottom: 10px;
+  background-color: #fff;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 15px;
+  border: 2px solid #28a745;
+}
+
+.success-message h2 {
+  margin-bottom: 15px;
+  color: #155724;
+}
+
+.success-message p {
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.redirect-message {
+  font-style: italic;
+  color: #6c757d;
+  margin: 15px 0;
 }
 
 .loading-message {
@@ -188,25 +272,6 @@
   box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
-.error-message {
-  background-color: #f8d7da;
-  color: #721c24;
-  padding: 10px 15px;
-  border-radius: 4px;
-  margin-bottom: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.close-error {
-  background: none;
-  border: none;
-  color: #721c24;
-  font-size: 20px;
-  cursor: pointer;
-}
-
 .create-order-button:disabled {
   background-color: #cccccc;
   cursor: not-allowed;
@@ -257,9 +322,24 @@
   margin: 0 auto 20px;
 }
 
+.button-spinner {
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .validation-error {
@@ -276,4 +356,39 @@ textarea.ng-invalid.ng-touched {
 input.ng-valid.ng-touched, 
 textarea.ng-valid.ng-touched {
   border-color: #28a745;
+}
+
+.success-actions {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.return-home {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+.return-home:hover {
+  background-color: #5a6268;
+}
+
+.stock-warning {
+  color: #e65100;
+  font-size: 12px;
+  margin-left: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.warning-icon {
+  margin-right: 5px;
+  font-size: 14px;
 }

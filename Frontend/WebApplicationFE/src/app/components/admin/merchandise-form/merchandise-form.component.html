@@ -144,14 +144,14 @@
         </div>
 
         <div *ngIf="imagesArray.length > 0" class="images-container">
-          <div *ngFor="let imageGroup of imagesArray.controls; let i = index" [formGroupName]="i" class="image-item">
+          <div *ngFor="let imageGroup of imagesArray.controls; let i = index" class="image-item">
             <div class="image-preview" *ngIf="imageGroup.get('imageUrl')?.value">
               <img [src]="getImagePreview(imageGroup.get('imageUrl')?.value)" alt="Merchandise image">
             </div>
             
             <div class="image-controls">
               <div class="image-primary">
-                <mat-checkbox formControlName="isPrimary" (change)="setPrimaryImage(i)">
+                <mat-checkbox [formControl]="$any(imageGroup).controls.isPrimary" (change)="setPrimaryImage(i)">
                   Primary Image
                 </mat-checkbox>
               </div>

@@ -1,0 +1,87 @@
+<div class="order-details-container">
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Loading order details...</p>
+  </div>
+
+  <div *ngIf="error" class="error-container">
+    <mat-icon color="warn">error</mat-icon>
+    <p>{{ error }}</p>
+    <button mat-raised-button color="primary" (click)="fetchOrderDetails()">Try Again</button>
+  </div>
+
+  <div *ngIf="!loading && !error && order" class="order-details">
+    <mat-card class="order-header-card">
+      <button *ngIf="dialogRef" mat-icon-button class="close-button" (click)="closeDialog()">
+        <mat-icon>close</mat-icon>
+      </button>
+      <mat-card-header>
+        <mat-card-title>Order #{{ order.id }}</mat-card-title>
+        <mat-card-subtitle>
+          <span>Placed on {{ formatDate(order.orderDate) }}</span>
+        </mat-card-subtitle>
+        <div class="order-status">
+          <span [ngClass]="getOrderStatusClass(order.status)">{{ order.status }}</span>
+        </div>
+      </mat-card-header>
+    </mat-card>
+
+    <mat-tab-group>
+      <!-- Order Items Tab -->
+      <mat-tab label="Items">
+        <div class="tab-content">
+          <div class="order-items">
+            <div *ngFor="let item of order.orderItems" class="order-item">
+              <div class="item-image">
+                <!-- Custom merchandise indicator -->
+                <div *ngIf="item.merchandiseId === null" class="custom-badge">Custom</div>
+                
+                <img *ngIf="item.merchandise?.primaryImageUrl" [src]="getImageUrl(item.merchandise.primaryImageUrl)" alt="{{ item.merchandise.name || 'Product Image' }}">
+                <img *ngIf="!item.merchandise?.primaryImageUrl" src="/assets/images/placeholder.png" alt="{{ item.merchandise.name || 'Product #' + item.merchandiseId }}">
+              </div>
+              <div class="item-details">
+                <h3>{{ item.merchandise.name || 'Product #' + item.merchandiseId }}</h3>
+                <p *ngIf="item.size"><strong>Size:</strong> {{ item.size }}</p>
+                <p><strong>Quantity:</strong> {{ item.quantity }}</p>
+                <p><strong>Price:</strong> ${{ item.price.toFixed(2) }}</p>
+              </div>
+            </div>
+          </div>
+          
+          <mat-divider></mat-divider>
+          
+          <div class="order-summary">
+            <p class="total-amount">Total: <strong>${{ order.totalAmount.toFixed(2) }}</strong></p>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Customer Details Tab -->
+      <mat-tab label="Customer Details">
+        <div class="tab-content">
+          <div class="customer-details">
+            <div class="detail-row">
+              <span class="detail-label">Name:</span>
+              <span class="detail-value">{{ order.customerName }}</span>
+            </div>
+            <div class="detail-row" *ngIf="order.customerEmail">
+              <span class="detail-label">Email:</span>
+              <span class="detail-value">{{ order.customerEmail }}</span>
+            </div>
+            <div class="detail-row" *ngIf="order.customerAddress">
+              <span class="detail-label">Shipping Address:</span>
+              <span class="detail-value">{{ order.customerAddress }}</span>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Messages Tab -->
+      <mat-tab label="Messages">
+        <div class="tab-content">
+          <app-order-messages [orderId]="order.id" [isAdminMode]="isAdminMode"></app-order-messages>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+</div>

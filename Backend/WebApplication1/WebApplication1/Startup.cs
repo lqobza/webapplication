@@ -77,12 +77,16 @@ public class Startup
             options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
         });
 
+        
         services.AddTransient<IMerchandiseRepository, MerchandiseRepository>();
         services.AddTransient<IMerchandiseService, MerchandiseService>();
         services.AddTransient<IRatingRepository, RatingRepository>();
         services.AddTransient<IRatingService, RatingService>();
         services.AddTransient<IOrderRepository, OrderRepository>();
         services.AddTransient<IOrderService, OrderService>();
+        services.AddTransient<ICustomDesignRepository, CustomDesignRepository>();
+        services.AddTransient<ICustomDesignService, CustomDesignService>();
+
         services.AddControllers()
             .AddJsonOptions(options =>
             {

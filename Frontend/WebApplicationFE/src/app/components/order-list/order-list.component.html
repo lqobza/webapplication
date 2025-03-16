@@ -68,18 +68,14 @@
       </mat-card-content>
       
       <mat-card-actions align="end">
-        <button mat-button color="primary" (click)="toggleOrderMessages(order.id)">
-          <mat-icon>chat</mat-icon> Messages
+        <button mat-button color="primary" (click)="viewOrderDetails(order.id)">
+          <mat-icon>visibility</mat-icon> View Details
         </button>
         <button mat-button *ngIf="order.status === orderStatuses.Created || order.status === orderStatuses.Processing" 
                 color="warn" (click)="confirmCancelOrder(order.id)">
           <mat-icon>cancel</mat-icon> Cancel Order
         </button>
       </mat-card-actions>
-      
-      <div *ngIf="expandedOrderId === order.id" class="order-messages-section">
-        <app-order-messages [orderId]="order.id"></app-order-messages>
-      </div>
     </mat-card>
   </div>
 </div>

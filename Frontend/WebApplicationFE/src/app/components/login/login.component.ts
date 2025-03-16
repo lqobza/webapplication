@@ -17,6 +17,7 @@ export class LoginComponent {
   error: string = '';
   loading: boolean = false;
   returnUrl: string = '/';
+  errorMessage: string = '';
 
   constructor(
     private authService: AuthService,
@@ -37,6 +38,13 @@ export class LoginComponent {
 
   ngOnInit() {
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+
+    // Check if redirected due to expired token
+    this.route.queryParams.subscribe(params => {
+      if (params['expired'] === 'true') {
+        this.errorMessage = 'Your session has expired. Please log in again.';
+      }
+    });
   }
 
   onSubmit() {

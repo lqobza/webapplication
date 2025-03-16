@@ -1,5 +1,5 @@
 export interface CartItem {
-    id?: number;
+    id?: number | string;
     orderId?: number;
     merchandiseName?: string;
     name: string;
@@ -8,4 +8,9 @@ export interface CartItem {
     quantity: number;
     price: number;
     imageUrl?: string;
+    frontImage?: string;
+    backImage?: string;
+    isCustom?: boolean;
+    stockWarning?: boolean;
+    availableStock?: number;
 }

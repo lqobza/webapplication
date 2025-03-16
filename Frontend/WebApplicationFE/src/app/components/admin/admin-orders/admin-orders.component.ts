@@ -2,43 +2,32 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { MatCardModule } from '@angular/material/card';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
-import { MatPaginatorModule } from '@angular/material/paginator';
-import { MatSortModule } from '@angular/material/sort';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
-import { RouterModule } from '@angular/router';
 import { OrderDto, OrderStatus } from '../../../models/order.model';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { OrderMessagesComponent } from '../../order-messages/order-messages.component';
 import { OrderService } from '../../../services/order.service';
+import { OrderDetailsComponent } from '../../order-details/order-details.component';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 @Component({
   selector: 'app-admin-orders',
   standalone: true,
   imports: [
     CommonModule,
-    MatCardModule,
-    MatDividerModule,
-    MatProgressSpinnerModule,
-    MatIconModule,
-    MatButtonModule,
-    MatSelectModule,
     FormsModule,
     MatTableModule,
-    MatPaginatorModule,
-    MatSortModule,
-    MatMenuModule,
-    MatDialogModule,
-    RouterModule,
-    MatExpansionModule,
-    OrderMessagesComponent
+    MatButtonModule,
+    MatIconModule,
+    MatCardModule,
+    MatSelectModule,
+    MatProgressSpinnerModule,
+    MatTooltipModule,
+    MatDialogModule
   ],
   templateUrl: './admin-orders.component.html',
   styleUrls: ['./admin-orders.component.css']
@@ -49,7 +38,6 @@ export class AdminOrdersComponent implements OnInit {
   error: string | null = null;
   orderStatuses = OrderStatus;
   displayedColumns: string[] = ['id', 'customerName', 'orderDate', 'totalAmount', 'status', 'actions'];
-  expandedOrderId: number | null = null;
   updatingOrderId: number | null = null; // Track which order is being updated
   
   // Store original status values to detect changes
@@ -71,7 +59,6 @@ export class AdminOrdersComponent implements OnInit {
     
     this.orderService.getAllOrders().subscribe({
       next: (data: OrderDto[]) => {
-        console.log('Admin: Orders fetched successfully:', data);
         this.orders = data || [];
         
         // Store original status values
@@ -96,7 +83,6 @@ export class AdminOrdersComponent implements OnInit {
         this.loading = false;
       },
       error: (err: any) => {
-        console.error('Admin: Error fetching orders:', err);
         if (err.status === 401) {
           this.error = 'You are not authorized to view all orders. Admin access required.';
         } else {
@@ -144,7 +130,6 @@ export class AdminOrdersComponent implements OnInit {
       this.updateOrderStatus(order.id, newStatus);
     } else {
       // User cancelled, revert the select to original value
-      console.log(`User cancelled status change, reverting to ${originalStatus}`);
       
       // We need to use setTimeout to ensure this happens after the current event cycle
       setTimeout(() => {
@@ -158,8 +143,6 @@ export class AdminOrdersComponent implements OnInit {
     
     this.orderService.updateOrderStatus(orderId, newStatus).subscribe({
       next: () => {
-        console.log(`Successfully updated order ${orderId} status to ${newStatus}`);
-        
         // Update the order status in the local array and original statuses map
         const order = this.orders.find(o => o.id === orderId);
         if (order) {
@@ -170,8 +153,6 @@ export class AdminOrdersComponent implements OnInit {
         this.updatingOrderId = null;
       },
       error: (err: any) => {
-        console.error(`Error updating order ${orderId} status:`, err);
-        
         // Revert to original status in the UI
         const order = this.orders.find(o => o.id === orderId);
         if (order) {
@@ -184,11 +165,10 @@ export class AdminOrdersComponent implements OnInit {
     });
   }
 
-  toggleOrderMessages(orderId: number): void {
-    if (this.expandedOrderId === orderId) {
-      this.expandedOrderId = null;
-    } else {
-      this.expandedOrderId = orderId;
-    }
+  viewOrderDetails(orderId: number): void {
+    this.dialog.open(OrderDetailsComponent, {
+      width: '800px',
+      data: { orderId: orderId, isAdminMode: true }
+    });
   }
 } 

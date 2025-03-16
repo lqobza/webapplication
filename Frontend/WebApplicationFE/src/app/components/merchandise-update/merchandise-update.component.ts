@@ -41,7 +41,6 @@ export class MerchandiseUpdateComponent implements OnInit {
 
   loadMerchandise(merchId: number): void {
     this.isLoading = true;
-    console.log("Loading merchandise for update: " + merchId);
     this.merchandiseService.getMerchandiseById(merchId).subscribe({
       next: (data) => {
         this.merchandise = { ...data }; // Deep copy using spread syntax!
@@ -49,7 +48,6 @@ export class MerchandiseUpdateComponent implements OnInit {
         this.isLoading = false;
       },
       error: (error) => {
-        console.error("Error fetching merchandise for update:", error);
         this.errorMessage = error.message || "Error fetching merchandise";
         this.isLoading = false;
       }
@@ -66,7 +64,6 @@ export class MerchandiseUpdateComponent implements OnInit {
 
     this.merchandiseService.updateMerchandise(this.merchandise.id!, this.merchandise).subscribe({
       next: () => {
-        console.log("Merchandise updated successfully.");
         this.successMessage = "Merchandise updated successfully!"; // Set success message
         this.isLoading = false; // Set loading to false after successful update
         // Optionally, you can navigate back to the details page after a short delay:
@@ -75,7 +72,6 @@ export class MerchandiseUpdateComponent implements OnInit {
         }, 1500); // Delay of 1.5 seconds (adjust as needed)
       },
       error: (error) => {
-        console.error("Error updating merchandise:", error);
         this.errorMessage = error.message || "Error updating merchandise";
         this.isLoading = false; // Set loading to false after error
       }
@@ -84,7 +80,6 @@ export class MerchandiseUpdateComponent implements OnInit {
 
   onFormChange() {
     this.isFormDirty = this.hasChanges();
-    console.log(this.isFormDirty);
   }
 
   hasChanges(): boolean {

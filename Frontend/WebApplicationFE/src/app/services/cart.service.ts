@@ -22,7 +22,6 @@ export class CartService {
     private authService: AuthService,
     private router: Router
   ) {
-    console.log('[CartService] Initializing cart service');
     this.loadCartFromStorage();
   }
 
@@ -30,19 +29,15 @@ export class CartService {
    * Load cart items from localStorage on initialization.
    */
   private async loadCartFromStorage(): Promise<void> {
-    console.log('[CartService] Loading cart from storage');
     if (!this.authService.isLoggedIn()) {
-      console.log('[CartService] User not logged in, clearing cart');
       this.clearCart();
       return Promise.resolve();
     }
 
     const storedCartItems = localStorage.getItem('cartItems');
     if (storedCartItems) {
-      console.log('[CartService] Found stored cart items');
       try {
         this.cartItems = JSON.parse(storedCartItems);
-        console.log('[CartService] Parsed cart items:', this.cartItems);
         
         // First fetch merchandise details, then emit cart items
         await this.fetchMerchandiseDetails().catch((error) => {
@@ -53,8 +48,6 @@ export class CartService {
         console.error('[CartService] Error parsing stored cart items:', error);
         this.clearCart();
       }
-    } else {
-      console.log('[CartService] No stored cart items found');
     }
   }
 
@@ -62,7 +55,6 @@ export class CartService {
    * Get an observable of the cart items.
    */
   getCartItems(): Observable<CartItem[]> {
-    console.log('[CartService] Getting cart items observable');
     return this.cartItems$.asObservable();
   }
 
@@ -70,64 +62,68 @@ export class CartService {
    * Get a specific cart item by merchandise ID and size.
    */
   getCartItem(merchandiseId: number, size: string): CartItem | undefined {
-    console.log(`[CartService] Looking for cart item with merchId=${merchandiseId}, size=${size}`);
     const item = this.cartItems.find(
       (item) => item.merchId === merchandiseId && item.size === size
     );
-    console.log('[CartService] Found item:', item);
     return item;
   }
 
   /**
    * Add an item to the cart or update its quantity if it already exists.
    */
-  addToCart(product: any): void {
-    console.log('[CartService] Adding to cart:', product);
+  addToCart(item: any): void {
+    // Check if the item is a custom product
+    const isCustomProduct = (item.id && item.id.toString().startsWith('custom-')) || item.isCustom;
     
-    // For custom products, always add as new item
-    if (product.designUrl) {
-      console.log('[CartService] Adding custom product with design URL');
-      this.cartItems.push({
-        ...product,
-        quantity: 1
-      });
+    let cartItem: CartItem;
+    
+    if (isCustomProduct) {
+      // For custom merchandise, ensure we have a name
+      const designName = item.name || 'Custom T-Shirt Design';
+      
+      cartItem = {
+        id: item.id,
+        merchId: parseInt(item.id.split('-')[1]) || 0, // Extract the design ID, default to 0 if parsing fails
+        name: designName,
+        size: item.size || 'M',
+        quantity: item.quantity || 1,
+        price: item.price || 30,
+        frontImage: item.frontImage, // This contains the actual image data
+        backImage: item.backImage,
+        isCustom: true
+      };
     } else {
-      // Check if merchandise details are available
-      console.log(`[CartService] Looking for merchandise details for ID: ${product.merchandiseId || product.merchId}`);
-      const merchId = product.merchandiseId || product.merchId;
-      const merch = this.merchandiseDetails.get(merchId);
-      console.log('[CartService] Found merchandise details:', merch);
-      
-      let imageUrl: string | undefined;
-      
-      // Get image URL if available
-      if (merch?.images && merch.images.length > 0) {
-        const primaryImage = merch.images.find(img => img.isPrimary);
-        imageUrl = primaryImage ? primaryImage.imageUrl : merch.images[0].imageUrl;
-        console.log('[CartService] Using image URL:', imageUrl);
-      }
-      
-      // Existing logic for regular products
-      const existingItem = this.cartItems.find(item => 
-        item.merchId === merchId && item.size === product.size
-      );
-      
-      if (existingItem) {
-        console.log('[CartService] Updating existing item quantity');
-        existingItem.quantity += product.quantity || 1;
-      } else {
-        console.log('[CartService] Adding new item to cart');
-        this.cartItems.push({
-          ...product,
-          merchId: merchId,
-          quantity: product.quantity || 1,
-          imageUrl: imageUrl
-        });
-      }
+      // Handle regular merchandise
+      cartItem = {
+        merchId: item.id,
+        name: item.name,
+        size: item.size || 'M',
+        quantity: item.quantity || 1,
+        price: item.price,
+        imageUrl: item.imageUrl
+      };
     }
+
+    // Check if the item is already in the cart
+    const existingItemIndex = this.cartItems.findIndex(i => 
+      i.merchId === cartItem.merchId && 
+      i.size === cartItem.size && 
+      (i.isCustom === cartItem.isCustom) &&
+      (i.id === cartItem.id) // Also check the ID for custom items
+    );
+
+    if (existingItemIndex !== -1) {
+      // Update quantity if the item is already in the cart
+      this.cartItems[existingItemIndex].quantity += cartItem.quantity;
+    } else {
+      // Add new item to the cart
+      this.cartItems.push(cartItem);
+    }
+
+    // Update local storage
+    this.saveCart();
     
-    console.log('[CartService] Updated cart items:', this.cartItems);
-    localStorage.setItem('cartItems', JSON.stringify(this.cartItems));
+    // Notify subscribers
     this.cartItems$.next(this.cartItems);
   }
 
@@ -135,7 +131,6 @@ export class CartService {
    * Remove an item from the cart.
    */
   removeItem(item: CartItem): void {
-    console.log('[CartService] Removing item from cart:', item);
     this.cartItems = this.cartItems.filter((cartItem) => cartItem !== item);
     this.saveCart();
   }
@@ -144,7 +139,6 @@ export class CartService {
    * Clear the entire cart.
    */
   clearCart(): void {
-    console.log('[CartService] Clearing cart');
     this.cartItems = [];
     this.merchandiseDetails.clear();
     localStorage.removeItem('cartItems');
@@ -155,9 +149,7 @@ export class CartService {
    * Update the quantity of a specific cart item.
    */
   updateQuantity(item: CartItem, quantity: number): void {
-    console.log(`[CartService] Updating quantity for item to ${quantity}:`, item);
     if (quantity < 1 || quantity > 100) {
-      console.log(`[CartService] Invalid quantity: ${quantity}`);
       return; // Prevent invalid quantities
     }
     item.quantity = quantity;
@@ -169,36 +161,27 @@ export class CartService {
    */
   private async fetchMerchandiseDetails(): Promise<void> {
     const ids = Array.from(new Set(this.cartItems.map((item) => item.merchId)));
-    console.log('[CartService] Fetching merchandise details for IDs:', ids);
     
     if (ids.length === 0) {
-      console.log('[CartService] No merchandise IDs to fetch');
       return;
     }
     
     try {
       const merchandiseArray = await Promise.all(
         ids.map((id) => {
-          console.log(`[CartService] Fetching merchandise with ID: ${id}`);
           return this.merchandiseService.getMerchandiseById(id).toPromise();
         })
       );
       
-      console.log('[CartService] Fetched merchandise details:', merchandiseArray);
-      
       merchandiseArray.forEach((merch) => {
         if (merch) {
-          console.log(`[CartService] Processing merchandise: ${merch.id} - ${merch.name}`);
           this.merchandiseDetails.set(merch.id!, merch);
           
           // Update cart items with image URLs and names
           this.cartItems.forEach(item => {
             if (item.merchId === merch.id) {
-              console.log(`[CartService] Updating cart item with merchandise details: ${item.merchId}`);
-              
               // Update name if missing
               if (!item.name) {
-                console.log(`[CartService] Setting name to: ${merch.name}`);
                 item.name = merch.name;
               }
               
@@ -206,7 +189,6 @@ export class CartService {
               if (merch.images && merch.images.length > 0) {
                 const primaryImage = merch.images.find(img => img.isPrimary);
                 const imageUrl = primaryImage ? primaryImage.imageUrl : merch.images[0].imageUrl;
-                console.log(`[CartService] Setting image URL to: ${imageUrl}`);
                 item.imageUrl = imageUrl;
               }
             }
@@ -229,7 +211,6 @@ export class CartService {
     const total = this.cartItems.reduce((sum, item) => {
       return sum + Math.round(item.price * item.quantity);
     }, 0);
-    console.log(`[CartService] Calculated total price: ${total}`);
     return total;
   }
 
@@ -237,9 +218,7 @@ export class CartService {
    * Get merchandise details by ID.
    */
   getMerchandiseDetails(merchandiseId: number): Merchandise | undefined {
-    console.log(`[CartService] Getting merchandise details for ID: ${merchandiseId}`);
     const details = this.merchandiseDetails.get(merchandiseId);
-    console.log('[CartService] Found merchandise details:', details);
     return details;
   }
 
@@ -248,7 +227,6 @@ export class CartService {
    */
   isCartEmpty(): boolean {
     const isEmpty = this.cartItems.length === 0;
-    console.log(`[CartService] Cart is empty: ${isEmpty}`);
     return isEmpty;
   }
 
@@ -256,62 +234,83 @@ export class CartService {
    * Save the current cart state to localStorage and emit the updated cart items.
    */
   private saveCart(): void {
-    console.log('[CartService] Saving cart');
     if (this.authService.isLoggedIn()) {
-      localStorage.setItem('cartItems', JSON.stringify(this.cartItems));
-      console.log('[CartService] Cart saved to localStorage');
+      try {
+        localStorage.setItem('cartItems', JSON.stringify(this.cartItems));
+      } catch (e) {
+        console.error('Error saving cart to localStorage:', e);
+        // If the error is due to quota exceeded, try removing the images
+        if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+          // Create a copy without the large image data
+          const cartWithoutImages = this.cartItems.map(item => {
+            const copy = {...item};
+            if (copy.frontImage) {
+              // Store just the first 100 chars to identify it's a custom item
+              copy.frontImage = copy.frontImage.substring(0, 100);
+            }
+            if (copy.backImage) {
+              copy.backImage = copy.backImage.substring(0, 100);
+            }
+            return copy;
+          });
+          localStorage.setItem('cartItems', JSON.stringify(cartWithoutImages));
+        }
+      }
       this.cartItems$.next(this.cartItems); // Emit the updated cart items
-    } else {
-      console.log('[CartService] User not logged in, cart not saved');
     }
   }
 
   getItemPrice(item: CartItem): number {
     const price = Math.round(item.price * item.quantity);
-    console.log(`[CartService] Calculated item price: ${price} for item:`, item);
     return price;
   }
 
   createOrder(customerName: string, customerEmail: string, customerAddress: string): Observable<any> {
-    console.log('[CartService] Creating order with customer info:', { customerName, customerEmail, customerAddress });
-    
-    if (!this.authService.isLoggedIn()) {
-      console.log('[CartService] User not logged in, redirecting to login');
-      this.router.navigate(['/login']);
-      return EMPTY;
-    }
-
-    // Get the current user ID from the auth service
-    const userId = this.authService.getCurrentUserId();
-    console.log(`[CartService] Current user ID: ${userId}`);
-
-    const orderCreateDto = {
-      userId: userId,
-      customerName,
-      customerEmail,
-      customerAddress,
-      status: "Created",
-      items: this.cartItems.map((item) => {
-        const orderItem = {
-          merchId: item.merchId,
-          size: item.size,
-          quantity: item.quantity,
-          price: this.getItemPrice(item),
+    // Format cart items for the order
+    const orderItems = this.cartItems.map(item => {
+      // Check if this is a custom merchandise item
+      const isCustomItem = (item.id && item.id.toString().startsWith('custom-')) || item.isCustom;
+      
+      if (isCustomItem) {
+        // For custom items, extract the design ID from the custom ID
+        const designId = item.id ? parseInt(item.id.toString().split('-')[1]) : 0;
+        
+        return {
+          MerchId: designId,
+          Size: item.size,
+          Quantity: item.quantity,
+          Price: item.price * item.quantity,
+          MerchandiseName: item.name || 'Custom T-Shirt Design',
+          ImageUrl: item.frontImage,
+          IsCustom: true
         };
-        console.log('[CartService] Created order item:', orderItem);
-        return orderItem;
-      }),
+      } else {
+        // Regular merchandise item
+        return {
+          MerchId: item.merchId,
+          Size: item.size,
+          Quantity: item.quantity,
+          Price: item.price * item.quantity,
+          MerchandiseName: item.name,
+          ImageUrl: item.imageUrl,
+          IsCustom: false
+        };
+      }
+    });
+    
+    // Create the order object
+    const order = {
+      CustomerName: customerName,
+      CustomerEmail: customerEmail,
+      CustomerAddress: customerAddress,
+      Items: orderItems
     };
-
-    console.log('[CartService] Final order create DTO:', orderCreateDto);
-    const apiUrl = `${environment.apiUrl}/api/order/create`;
-    console.log(`[CartService] Sending POST request to: ${apiUrl}`);
-    return this.http.post(apiUrl, orderCreateDto);
+    
+    // Send the order to the backend
+    return this.http.post(`${environment.apiUrl}/api/order/create`, order);
   }
 
   updateMerchandiseDetails(merchandise: Merchandise): void {
-    console.log('[CartService] Updating merchandise details:', merchandise);
-    
     if (merchandise && merchandise.id) {
       // Check if we already have this merchandise with the same data
       const existingMerch = this.merchandiseDetails.get(merchandise.id);
@@ -319,23 +318,18 @@ export class CartService {
           existingMerch.name === merchandise.name && 
           JSON.stringify(existingMerch.images) === JSON.stringify(merchandise.images)) {
         // Skip update if the merchandise data hasn't changed
-        console.log('[CartService] Skipping update, merchandise data unchanged');
         return;
       }
       
       // Update the merchandise details
-      console.log(`[CartService] Updating merchandise details for ID: ${merchandise.id}`);
       this.merchandiseDetails.set(merchandise.id, merchandise);
       
       // Update cart items with image URLs and names if needed
       let cartUpdated = false;
       this.cartItems.forEach(item => {
         if (item.merchId === merchandise.id) {
-          console.log(`[CartService] Updating cart item with merchandise details: ${item.merchId}`);
-          
           // Update name if missing
           if (!item.name) {
-            console.log(`[CartService] Setting name to: ${merchandise.name}`);
             item.name = merchandise.name;
             cartUpdated = true;
           }
@@ -344,7 +338,6 @@ export class CartService {
           if (!item.imageUrl && merchandise.images && merchandise.images.length > 0) {
             const primaryImage = merchandise.images.find(img => img.isPrimary);
             item.imageUrl = primaryImage ? primaryImage.imageUrl : merchandise.images[0].imageUrl;
-            console.log(`[CartService] Setting image URL to: ${item.imageUrl}`);
             cartUpdated = true;
           }
         }
@@ -352,7 +345,6 @@ export class CartService {
       
       // Only save if cart was actually updated
       if (cartUpdated) {
-        console.log('[CartService] Cart updated with merchandise details, saving');
         this.saveCart();
       }
     }

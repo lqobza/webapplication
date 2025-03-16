@@ -17,18 +17,20 @@ import { AdminGuard } from './guards/admin.guard';
 import { AdminOrdersComponent } from './components/admin/admin-orders/admin-orders.component';
 import { AdminMerchandiseComponent } from './components/admin/admin-merchandise/admin-merchandise.component';
 import { MerchandiseFormComponent } from './components/admin/merchandise-form/merchandise-form.component';
+import { MyDesignsComponent } from './components/my-designs/my-designs.component';
 
 const routes: Routes = [
   { path: '', component: MerchandiseListComponent },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
-  { path: 'custom-design', component: CustomDesignPreviewComponent },
   { path: 'merchandise', component: MerchandiseListComponent },
   { path: 'merchandise/create', component: MerchandiseCreateComponent },
   { path: 'merchandise/:id', component: MerchandiseDetailComponent },
   { path: 'merchandise/:id/edit', component: MerchandiseUpdateComponent },
   { path: 'cart', component: CartComponent, canActivate: [AuthGuard] },
   { path: 'orders', component: OrderListComponent, canActivate: [AuthGuard] },
+  { path: 'my-designs', component: MyDesignsComponent, canActivate: [AuthGuard] },
+  { path: 'custom-design', component: CustomDesignPreviewComponent, canActivate: [AuthGuard] },
   { 
     path: 'admin/orders', 
     component: AdminOrdersComponent,

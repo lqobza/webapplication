@@ -4,7 +4,6 @@ export interface OrderMessage {
   content: string;
   timestamp: string;
   isFromAdmin: boolean;
-  isRead: boolean;
 }
 
 export interface OrderMessageCreate {

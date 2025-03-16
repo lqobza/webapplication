@@ -62,7 +62,6 @@ export class AdminMerchandiseComponent implements OnInit {
       next: (results) => {
         // Process categories
         this.categories = results.categories;
-        console.log('Fetched categories:', this.categories);
         
         // Create a map of category IDs to names for quick lookup
         // Filter out categories with undefined IDs
@@ -71,24 +70,15 @@ export class AdminMerchandiseComponent implements OnInit {
             .filter(category => category.id !== undefined)
             .map(category => [category.id as number, category.name])
         );
-        console.log('Category map:', Object.fromEntries(this.categoryMap));
         
         // Process merchandise
         this.merchandiseList = Array.isArray(results.merchandise) 
           ? results.merchandise 
           : results.merchandise.items || [];
         
-        console.log('Fetched merchandise list:', this.merchandiseList);
-        
-        // Log each item's category information
-        this.merchandiseList.forEach(item => {
-          console.log(`Merchandise ID ${item.id}: categoryId=${item.categoryId}, mapped category name=${this.getCategoryName(item.categoryId)}`);
-        });
-        
         this.loading = false;
       },
       error: (err) => {
-        console.error('Error fetching data:', err);
         this.error = 'Failed to load data. Please try again later.';
         this.loading = false;
       }
@@ -112,7 +102,6 @@ export class AdminMerchandiseComponent implements OnInit {
         this.merchandiseList = this.merchandiseList.filter(m => m.id !== id);
       },
       error: (err: any) => {
-        console.error('Error deleting merchandise:', err);
         alert('Failed to delete merchandise. Please try again later.');
       }
     });

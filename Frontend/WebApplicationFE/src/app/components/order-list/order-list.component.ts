@@ -10,9 +10,8 @@ import { environment } from '../../../environments/environment';
 import { OrderDto, OrderStatus } from '../../models/order.model';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { OrderMessagesComponent } from '../order-messages/order-messages.component';
 import { OrderService } from '../../services/order.service';
+import { OrderDetailsComponent } from '../order-details/order-details.component';
 
 @Component({
   selector: 'app-order-list',
@@ -20,17 +19,15 @@ import { OrderService } from '../../services/order.service';
   imports: [
     CommonModule,
     MatCardModule,
+    MatButtonModule,
+    MatIconModule,
     MatDividerModule,
     MatProgressSpinnerModule,
-    MatIconModule,
-    MatButtonModule,
     MatDialogModule,
     RouterModule,
-    MatExpansionModule,
-    OrderMessagesComponent
   ],
   templateUrl: './order-list.component.html',
-  styleUrl: './order-list.component.css'
+  styleUrls: ['./order-list.component.css']
 })
 export class OrderListComponent implements OnInit {
   orders: OrderDto[] = [];
@@ -38,7 +35,6 @@ export class OrderListComponent implements OnInit {
   error: string | null = null;
   orderStatuses = OrderStatus;
   isAuthenticated = false;
-  expandedOrderId: number | null = null;
 
   constructor(
     private orderService: OrderService,
@@ -46,17 +42,14 @@ export class OrderListComponent implements OnInit {
     private authService: AuthService,
     private router: Router
   ) {
-    console.log('[OrderList] Component initialized');
   }
 
   ngOnInit(): void {
-    console.log('[OrderList] ngOnInit called');
     this.isAuthenticated = this.authService.isLoggedIn();
     
     if (this.isAuthenticated) {
       this.fetchOrders();
     } else {
-      console.log('[OrderList] User not authenticated, redirecting to login');
       this.loading = false;
       this.error = 'You need to be logged in to view your orders.';
       // Optional: redirect to login page
@@ -65,42 +58,29 @@ export class OrderListComponent implements OnInit {
   }
 
   fetchOrders(): void {
-    console.log('[OrderList] Fetching orders');
     this.loading = true;
     
     this.orderService.getUserOrders().subscribe({
       next: (data: OrderDto[]) => {
-        console.log('[OrderList] Orders fetched successfully:', data);
         this.orders = data || [];
         
-        // Process image URLs to make them absolute
+        // Process image URLs and ensure merchandise data exists
         this.orders.forEach(order => {
           if (order.orderItems) {
             order.orderItems.forEach(item => {
-              if (item.merchandise && item.merchandise.primaryImageUrl) {
+              // Ensure merchandise object exists
+              if (!item.merchandise) {
+                item.merchandise = {
+                  id: item.merchandiseId,
+                  name: `Product #${item.merchandiseId}`,
+                  primaryImageUrl: ''
+                };
+              }
+              
+              // Process image URL
+              if (item.merchandise.primaryImageUrl) {
                 item.merchandise.primaryImageUrl = this.getFullImageUrl(item.merchandise.primaryImageUrl);
               }
-            });
-          }
-        });
-        
-        // Log details about each order for debugging
-        this.orders.forEach((order, index) => {
-          console.log(`[OrderList] Order #${index + 1} (ID: ${order.id}):`);
-          console.log(`  Status: ${order.status}`);
-          console.log(`  Date: ${order.orderDate}`);
-          console.log(`  Total: ${order.totalAmount}`);
-          console.log(`  Items: ${order.orderItems?.length || 0}`);
-          
-          if (order.orderItems && order.orderItems.length > 0) {
-            order.orderItems.forEach((item, itemIndex) => {
-              console.log(`  Item #${itemIndex + 1}:`);
-              console.log(`    MerchId: ${item.merchandiseId}`);
-              console.log(`    Name: ${item.merchandise?.name || 'N/A'}`);
-              console.log(`    Size: ${item.size}`);
-              console.log(`    Quantity: ${item.quantity}`);
-              console.log(`    Price: ${item.price}`);
-              console.log(`    Image URL: ${item.merchandise?.primaryImageUrl || 'N/A'}`);
             });
           }
         });
@@ -108,8 +88,6 @@ export class OrderListComponent implements OnInit {
         this.loading = false;
       },
       error: (err: any) => {
-        console.error('[OrderList] Error fetching orders:', err);
-        
         if (err.status === 401) {
           this.error = 'You need to be logged in to view your orders.';
           this.isAuthenticated = false;
@@ -137,12 +115,10 @@ export class OrderListComponent implements OnInit {
     const normalizedUrl = relativeUrl.startsWith('/') ? relativeUrl : `/${relativeUrl}`;
     
     // Combine with the API URL
-    console.log(`[OrderList] Converting relative URL ${relativeUrl} to absolute URL ${environment.apiUrl}${normalizedUrl}`);
     return `${environment.apiUrl}${normalizedUrl}`;
   }
 
   getOrderStatusClass(status: string): string {
-    console.log(`[OrderList] Getting status class for: ${status}`);
     let statusClass: string;
     
     switch (status.toLowerCase()) {
@@ -164,22 +140,18 @@ export class OrderListComponent implements OnInit {
         break;
     }
     
-    console.log(`[OrderList] Status class: ${statusClass}`);
     return statusClass;
   }
 
   formatDate(dateString: string | Date): string {
-    console.log(`[OrderList] Formatting date: ${dateString}`);
     try {
       const formatted = new Date(dateString).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
       });
-      console.log(`[OrderList] Formatted date: ${formatted}`);
       return formatted;
     } catch (error) {
-      console.error('[OrderList] Error formatting date:', error);
       return String(dateString);
     }
   }
@@ -205,15 +177,12 @@ export class OrderListComponent implements OnInit {
   }
 
   confirmCancelOrder(orderId: number): void {
-    console.log(`[OrderList] Opening confirmation dialog for cancelling order ${orderId}`);
-    
     const dialogRef = this.dialog.open(CancelOrderDialogComponent, {
       width: '350px',
       data: { orderId }
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      console.log(`[OrderList] Dialog result: ${result}`);
       if (result === true) {
         this.cancelOrder(orderId);
       }
@@ -221,22 +190,15 @@ export class OrderListComponent implements OnInit {
   }
 
   cancelOrder(orderId: number): void {
-    console.log(`[OrderList] Cancelling order with ID: ${orderId}`);
-    
     this.orderService.cancelOrder(orderId).subscribe({
       next: (response: any) => {
-        console.log(`[OrderList] Order ${orderId} cancelled successfully:`, response);
         // Update the order status in the local array
         const order = this.orders.find(o => o.id === orderId);
         if (order) {
-          console.log(`[OrderList] Updating order ${orderId} status to Cancelled`);
           order.status = OrderStatus.Cancelled;
-        } else {
-          console.log(`[OrderList] Could not find order ${orderId} in local array`);
         }
       },
       error: (err: any) => {
-        console.error(`[OrderList] Error cancelling order ${orderId}:`, err);
         let errorMessage = 'Failed to cancel order. Please try again later.';
         
         if (err.status === 400) {
@@ -257,12 +219,11 @@ export class OrderListComponent implements OnInit {
     this.router.navigate(['/login']);
   }
 
-  toggleOrderMessages(orderId: number): void {
-    if (this.expandedOrderId === orderId) {
-      this.expandedOrderId = null;
-    } else {
-      this.expandedOrderId = orderId;
-    }
+  viewOrderDetails(orderId: number): void {
+    this.dialog.open(OrderDetailsComponent, {
+      width: '800px',
+      data: { orderId: orderId }
+    });
   }
 }
 

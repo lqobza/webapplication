@@ -44,7 +44,6 @@ export class MerchandiseListComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    console.log('MerchandiseListComponent initialized');
     this.loadMerchandise();
   }
 
@@ -52,7 +51,6 @@ export class MerchandiseListComponent implements OnInit {
     this.isLoading = true;
     this.merchandiseService.getAllMerchandise(this.currentPage, this.pageSize).subscribe({
       next: (response) => {
-        console.log('Merchandise data received', response);
         this.merchandiseList = response.items;
         this.filteredList = [...this.merchandiseList];
         this.paginationInfo = response;

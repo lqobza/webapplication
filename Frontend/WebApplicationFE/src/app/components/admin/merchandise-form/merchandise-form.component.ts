@@ -96,9 +96,7 @@ export class MerchandiseFormComponent implements OnInit {
     
     // Listen for category changes to load available sizes and handle size array
     this.merchandiseForm.get('categoryId')?.valueChanges.subscribe(categoryId => {
-      if (categoryId) {
-        console.log('Category ID changed to:', categoryId);
-        
+      if (categoryId) {  
         // Skip the category change handling if we're in the middle of loading merchandise
         if (!this.loading) {
           // First load sizes for the category
@@ -110,7 +108,6 @@ export class MerchandiseFormComponent implements OnInit {
           // Finally update the disabled state of size controls
           this.updateSizeControlsState(categoryId);
         } else {
-          console.log('Skipping category change handling while loading merchandise');
           // Just load the sizes without modifying the form
           this.loadSizesForCategory(categoryId);
         }
@@ -124,10 +121,8 @@ export class MerchandiseFormComponent implements OnInit {
     this.merchandiseService.getBrands().subscribe({
       next: (brands) => {
         this.brands = brands;
-        console.log('Loaded brands:', brands);
       },
       error: (err) => {
-        console.error('Error loading brands:', err);
         this.snackBar.open('Failed to load brands', 'Close', { duration: 3000 });
       }
     });
@@ -154,17 +149,12 @@ export class MerchandiseFormComponent implements OnInit {
    * Handle category change by adjusting the sizes array based on the category
    */
   handleCategoryChange(categoryId: number): void {
-    console.log('Category changed to:', categoryId);
-    console.log('Current sizes array before handling change:', this.sizesArray.value);
-    
     // If switching to accessory category
     if (categoryId === this.ACCESSORY_CATEGORY_ID) {
       // Check if we already have a "One Size" entry (which can happen when editing)
       const hasOneSizeAlready = this.sizesArray.controls.some(
         control => control.get('size')?.value === 'One Size'
       );
-      
-      console.log('Has One Size already:', hasOneSizeAlready);
       
       if (!hasOneSizeAlready) {
         // Clear existing sizes
@@ -185,8 +175,6 @@ export class MerchandiseFormComponent implements OnInit {
           control => control.get('size')?.value === 'One Size'
         );
         
-        console.log('One Size index:', oneSizeIndex);
-        
         // Remove all other sizes
         for (let i = this.sizesArray.length - 1; i >= 0; i--) {
           if (i !== oneSizeIndex) {
@@ -206,25 +194,20 @@ export class MerchandiseFormComponent implements OnInit {
       // Add a default size
       this.addSize();
     }
-    
-    console.log('Sizes array after handling change:', this.sizesArray.value);
   }
 
   loadCategories(): void {
     this.merchandiseService.getCategories().subscribe({
       next: (categories) => {
         this.categories = categories;
-        console.log('Loaded categories:', categories);
       },
       error: (err) => {
-        console.error('Error loading categories:', err);
         this.snackBar.open('Failed to load categories', 'Close', { duration: 3000 });
       }
     });
   }
 
   loadSizesForCategory(categoryId: number): void {
-    console.log(`Loading sizes for category ID: ${categoryId}`);
     this.loadingSizes = true;
     this.availableSizes = []; // Clear existing sizes while loading
     
@@ -237,8 +220,6 @@ export class MerchandiseFormComponent implements OnInit {
     
     this.merchandiseService.getSizes(categoryId).subscribe({
       next: (response: any) => {
-        console.log('Sizes response:', response);
-        
         // Handle different response formats
         if (Array.isArray(response)) {
           if (response.length > 0 && typeof response[0] === 'object') {
@@ -258,8 +239,6 @@ export class MerchandiseFormComponent implements OnInit {
           this.availableSizes = [];
         }
         
-        console.log('Available sizes after processing:', this.availableSizes);
-        
         // If no sizes are available, use default sizes based on category
         if (this.availableSizes.length === 0) {
           this.useDefaultSizes(categoryId);
@@ -269,7 +248,6 @@ export class MerchandiseFormComponent implements OnInit {
         this.loadingSizes = false;
       },
       error: (err) => {
-        console.error('Error loading sizes for category:', err);
         this.snackBar.open('Failed to load sizes, using defaults', 'Close', { duration: 3000 });
         this.useDefaultSizes(categoryId);
         this.loadingSizes = false;
@@ -450,7 +428,6 @@ export class MerchandiseFormComponent implements OnInit {
           }
         },
         error: (err) => {
-          console.error('Error uploading image:', err);
           this.snackBar.open('Failed to upload image', 'Close', { duration: 3000 });
         }
       });
@@ -473,8 +450,6 @@ export class MerchandiseFormComponent implements OnInit {
     
     this.merchandiseService.getMerchandiseById(id).subscribe({
       next: (merchandise) => {
-        console.log('Loaded merchandise:', merchandise);
-        
         // Clear existing arrays
         while (this.sizesArray.length) {
           this.sizesArray.removeAt(0);
@@ -499,11 +474,8 @@ export class MerchandiseFormComponent implements OnInit {
 
         // Add sizes
         if (merchandise.sizes && merchandise.sizes.length > 0) {
-          console.log('Merchandise sizes:', merchandise.sizes);
-          
           // For accessories, only add the first size (which should be "One Size")
           if (merchandise.categoryId === this.ACCESSORY_CATEGORY_ID) {
-            console.log('Loading accessory with One Size');
             // Find the size with "One Size" or use the first size
             const accessorySize = merchandise.sizes.find(s => s.size === 'One Size') || merchandise.sizes[0];
             
@@ -518,9 +490,6 @@ export class MerchandiseFormComponent implements OnInit {
             
             // Add the size group to the form
             this.sizesArray.push(sizeGroup);
-            
-            // Log the current state of the sizes array
-            console.log('Sizes array after adding accessory size:', this.sizesArray.value);
           } else {
             // For other categories, add all sizes
             merchandise.sizes.forEach(size => {
@@ -550,13 +519,12 @@ export class MerchandiseFormComponent implements OnInit {
             }
           },
           error: (err) => {
-            console.error('Error loading merchandise images:', err);
             // Add a default empty image regardless of error type
             this.addImage();
             
             // If it's a 404 error, it means the merchandise has no images yet
             if (err.status === 404) {
-              console.log('No images found for this merchandise. This is normal for new items.');
+              // This is normal for new items
             } else {
               // For other errors, show a notification
               this.snackBar.open('Could not load images. You can add new ones.', 'Close', { duration: 3000 });
@@ -565,12 +533,8 @@ export class MerchandiseFormComponent implements OnInit {
         });
 
         this.loading = false;
-        
-        // Log the final state of the sizes array after loading
-        console.log('Final sizes array after loading merchandise:', this.sizesArray.value);
       },
       error: (err: any) => {
-        console.error('Error loading merchandise:', err);
         this.error = 'Failed to load merchandise. Please try again later.';
         this.loading = false;
       }
@@ -581,6 +545,15 @@ export class MerchandiseFormComponent implements OnInit {
     if (this.merchandiseForm.invalid) {
       // Mark all fields as touched to trigger validation messages
       this.merchandiseForm.markAllAsTouched();
+      console.error('Form is invalid:', this.merchandiseForm.errors);
+      
+      // Log specific validation errors
+      Object.keys(this.merchandiseForm.controls).forEach(key => {
+        const control = this.merchandiseForm.get(key);
+        if (control && control.invalid) {
+          console.error(`Control '${key}' is invalid:`, control.errors);
+        }
+      });
       return;
     }
 
@@ -658,7 +631,19 @@ export class MerchandiseFormComponent implements OnInit {
         },
         error: (err) => {
           console.error('Error creating merchandise:', err);
-          this.snackBar.open('Failed to create merchandise', 'Close', { duration: 3000 });
+          console.error('Error details:', err.error);
+          console.error('Status:', err.status);
+          console.error('Status text:', err.statusText);
+          
+          // Try to extract more detailed error information
+          let errorMessage = 'Failed to create merchandise';
+          if (err.error && typeof err.error === 'string') {
+            errorMessage += ': ' + err.error;
+          } else if (err.error && err.error.message) {
+            errorMessage += ': ' + err.error.message;
+          }
+          
+          this.snackBar.open(errorMessage, 'Close', { duration: 5000 });
           this.submitting = false;
         }
       });

@@ -5,6 +5,7 @@ using WebApplication1.Models.Enums;
 using WebApplication1.Services.Interface;
 using System.Security.Claims;
 using Microsoft.IdentityModel.JsonWebTokens;
+using System.Data.SqlClient;
 
 namespace WebApplication1.Controllers;
 
@@ -25,25 +26,10 @@ public class OrderController : ControllerBase
     public async Task<IActionResult> GetAllOrders()
     {
         _logger.LogInformation("GetAllOrders endpoint called");
-
-        // Log all claims for debugging
-        foreach (var claim in User.Claims)
-        {
-            _logger.LogInformation("Claim: Type = {ClaimType}, Value = {ClaimValue}", claim.Type, claim.Value);
-        }
-
-        // TEMPORARY: Skip admin check for debugging
-        // Remove this and uncomment the proper check below when fixed
-        //bool isAdmin = true;
-
         
         // Check for admin role in various possible claim types
         bool isAdmin = User.Claims.Any(c => 
-            (c.Type == "Role" && c.Value == "Admin") ||
-            (c.Type == "role" && c.Value == "Admin") ||
-            (c.Type == ClaimTypes.Role && c.Value == "Admin") ||
-            (c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role" && c.Value == "Admin") ||
-            (c.Type == "roles" && c.Value.Contains("Admin"))
+            (c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role" && c.Value == "Admin")
         );
         
 
@@ -132,29 +118,88 @@ public class OrderController : ControllerBase
             return BadRequest(ModelState);
         }
         
-        if (!ModelState.IsValid)
+        // Filter out invalid items
+        var validItems = new List<OrderItemDto>();
+        
+        foreach (var item in orderCreateDto.Items)
         {
-            _logger.LogWarning("Invalid model state for order creation");
-            return BadRequest(ModelState);
+            _logger.LogInformation("Processing order item: MerchId={MerchId}, Size={Size}, IsCustom={IsCustom}", 
+                item.MerchId, item.Size, item.IsCustom);
+            
+            if (item.IsCustom)
+            {
+                // For custom items, MerchId should be null
+                item.MerchId = null;
+                
+                // Ensure we have the necessary information
+                if (string.IsNullOrEmpty(item.MerchandiseName))
+                {
+                    item.MerchandiseName = "Custom T-Shirt Design";
+                }
+                
+                validItems.Add(item);
+            }
+            else
+            {
+                // For regular merchandise, ensure MerchId is valid
+                if (item.MerchId == null || item.MerchId <= 0)
+                {
+                    _logger.LogWarning("Invalid MerchId: {MerchId} for regular merchandise - skipping item", item.MerchId);
+                    continue; // Skip this item
+                }
+                
+                validItems.Add(item);
+            }
+        }
+        
+        // Replace the items with the valid ones
+        orderCreateDto.Items = validItems;
+        
+        // Check if we have any items left
+        if (orderCreateDto.Items.Count == 0)
+        {
+            _logger.LogWarning("No valid items in order");
+            return BadRequest(new { message = "Order must contain at least one valid item" });
         }
 
-        var insertResult = await _orderService.CreateOrderAsync(orderCreateDto);
-
-        if (insertResult == InsertResult.Success)
+        try
         {
-            _logger.LogInformation("Order created successfully: {Order}", orderCreateDtoJson);
-            return Ok(new { message = "Order created successfully" });
-        }
+            var insertResult = await _orderService.CreateOrderAsync(orderCreateDto);
 
-        if (insertResult == InsertResult.Error)
+            if (insertResult == InsertResult.Success)
+            {
+                _logger.LogInformation("Order created successfully");
+                return Ok(new { message = "Order created successfully" });
+            }
+
+            if (insertResult == InsertResult.Error)
+            {
+                _logger.LogError("Internal server error while creating order: {Order}", orderCreateDtoJson);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new { message = "Order creation failed due to internal server error. Please try again later or contact support." });
+            }
+
+            _logger.LogError("Unexpected error during order creation");
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Internal server error" });
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("Insufficient stock") || ex.Message.Contains("not found in stock"))
         {
-            _logger.LogError("Internal server error while creating order: {Order}", orderCreateDtoJson);
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Order creation failed due to internal server error" });
+            _logger.LogWarning("Order creation failed due to stock issue: {ErrorMessage}", ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
-
-        _logger.LogError("Unexpected error during order creation");
-        return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Internal server error" });
+        catch (SqlException ex)
+        {
+            _logger.LogError(ex, "SQL error during order creation: {ErrorMessage}", ex.Message);
+            return StatusCode(StatusCodes.Status500InternalServerError, 
+                new { message = "Database error occurred while processing your order. Please try again later." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected exception during order creation: {ErrorType} - {ErrorMessage}", 
+                ex.GetType().Name, ex.Message);
+            return StatusCode(StatusCodes.Status500InternalServerError, 
+                new { message = "An unexpected error occurred while processing your order. Please try again later." });
+        }
     }
 
     [HttpPost("{id}/cancel")]
@@ -253,44 +298,21 @@ public class OrderController : ControllerBase
     {
         _logger.LogInformation("AddOrderMessage endpoint called for order {OrderId}", id);
         
-        // Validate the message
-        if (string.IsNullOrWhiteSpace(messageDto.Content))
+        // Ensure the message is for the correct order
+        if (messageDto.OrderId != id)
         {
-            return BadRequest("Message cannot be empty");
+            return BadRequest("Order ID in the URL and message body do not match");
         }
-        
-        // Check if the order exists
-        var order = await _orderService.GetOrderByIdAsync(id);
-        if (order == null)
-        {
-            _logger.LogWarning("Order with ID {OrderId} not found", id);
-            return NotFound($"Order with ID {id} not found");
-        }
-        
-        // Set the order ID in the message DTO
-        messageDto.OrderId = id;
-        
-        // Add the message
-        var message = await _orderService.AddOrderMessageAsync(messageDto);
-        
-        // Return the full message object
-        return Ok(message);
-    }
-    
-    [HttpPut("messages/{id}/read")]
-    public async Task<IActionResult> MarkMessageAsRead(int id)
-    {
-        _logger.LogInformation("MarkMessageAsRead endpoint called for message {MessageId}", id);
         
         try
         {
-            await _orderService.MarkMessageAsReadAsync(id);
-            return Ok(new { message = "Message marked as read" });
+            var message = await _orderService.AddOrderMessageAsync(messageDto);
+            return Ok(message);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error marking message {MessageId} as read", id);
-            return StatusCode(500, "An error occurred while marking the message as read");
+            _logger.LogError(ex, "Error adding message to order {OrderId}", id);
+            return StatusCode(500, "An error occurred while adding the message");
         }
     }
 }

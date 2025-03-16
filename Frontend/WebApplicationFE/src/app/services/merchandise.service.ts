@@ -26,7 +26,6 @@ export class MerchandiseService {
   }
 
   getMerchandiseById(merchId: number): Observable<Merchandise> {
-    console.log('Fetching merchandise: ' + merchId);
     return this.http.get<Merchandise>(`${this.apiUrl}/${merchId}`);
   }
 
@@ -51,11 +50,9 @@ export class MerchandiseService {
   }
 
   getSizes(categoryId: number): Observable<any[]> {
-    console.log(`Fetching sizes for category ID: ${categoryId}`);
     return this.http.get<any[]>(`${this.apiUrl}/sizes/${categoryId}`)
       .pipe(
         catchError(error => {
-          console.error('Error fetching sizes:', error);
           return new Observable<any[]>(observer => {
             observer.next([]);
             observer.complete();
@@ -66,6 +63,17 @@ export class MerchandiseService {
 
   getBrands(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/brands`);
+  }
+
+  /**
+   * Check if there is sufficient stock for a merchandise item
+   * @param merchId The merchandise ID
+   * @param size The size
+   * @param quantity The quantity to check
+   * @returns Observable with the check result
+   */
+  checkStockAvailability(merchId: number, size: string, quantity: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${merchId}/stock/${size}?quantity=${quantity}`);
   }
 
   uploadImage(merchandiseId: number, image: File): Observable<any> {
@@ -79,19 +87,15 @@ export class MerchandiseService {
   }
 
   getMerchandiseImages(merchandiseId: number): Observable<MerchandiseImage[]> {
-    console.log(`[MerchandiseService] Fetching images for merchandise ID: ${merchandiseId}`);
     return this.http.get<MerchandiseImage[]>(`${this.apiUrl}/images/${merchandiseId}`)
       .pipe(
         catchError((error) => {
-          // If it's a 404 error, it means the merchandise has no images yet
           if (error.status === 404) {
-            console.log(`[MerchandiseService] No images found for merchandise ID: ${merchandiseId}. This is normal for new items.`);
             return new Observable<MerchandiseImage[]>(observer => {
               observer.next([]);
               observer.complete();
             });
           }
-          // For other errors, use the general error handler
           return this.errorHandlingService.handleError<MerchandiseImage[]>('getMerchandiseImages', [])(error);
         })
       );
@@ -102,6 +106,16 @@ export class MerchandiseService {
   }
 
   createMerchandise(merchandise: Omit<Merchandise, 'id'>): Observable<Merchandise> {
-    return this.http.post<Merchandise>(`${this.apiUrl}`, merchandise);
+    return new Observable<Merchandise>(observer => {
+      this.http.post<Merchandise>(`${this.apiUrl}`, merchandise).subscribe({
+        next: (response) => {
+          observer.next(response);
+          observer.complete();
+        },
+        error: (error) => {
+          observer.error(error);
+        }
+      });
+    });
   }
 }

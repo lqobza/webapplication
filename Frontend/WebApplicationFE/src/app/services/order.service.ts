@@ -19,15 +19,121 @@ export class OrderService {
   }
 
   getAllOrders(): Observable<OrderDto[]> {
-    return this.http.get<OrderDto[]>(`${this.apiUrl}`);
+    return this.http.get<any[]>(`${this.apiUrl}`).pipe(
+      map(response => {
+        return response.map(order => {
+          // Map the API response to the expected OrderDto structure
+          const orderDto: OrderDto = {
+            id: order.id,
+            userId: order.userId || '',
+            customerName: order.customerName,
+            customerEmail: order.customerEmail,
+            customerAddress: order.customerAddress,
+            orderDate: order.orderDate,
+            totalAmount: order.totalAmount,
+            status: order.status,
+            orderItems: []
+          };
+          
+          // Map items to orderItems with the expected structure
+          if (order.items && Array.isArray(order.items)) {
+            orderDto.orderItems = order.items.map((item: any) => ({
+              id: item.id,
+              orderId: item.orderId,
+              merchandiseId: item.merchId,
+              merchandise: {
+                id: item.merchId,
+                name: item.merchandiseName || (item.isCustom ? 'Custom Design' : `Product #${item.merchId}`),
+                primaryImageUrl: this.getImageUrlForItem(item)
+              },
+              size: item.size,
+              quantity: item.quantity,
+              price: item.price
+            }));
+          }
+          
+          return orderDto;
+        });
+      })
+    );
   }
 
   getOrderById(id: number): Observable<OrderDto> {
-    return this.http.get<OrderDto>(`${this.apiUrl}/orders/${id}`);
+    return this.http.get<any>(`${this.apiUrl}/orders/${id}`).pipe(
+      map(response => {
+        // Map the API response to the expected OrderDto structure
+        const orderDto: OrderDto = {
+          id: response.id,
+          userId: response.userId || '',
+          customerName: response.customerName,
+          customerEmail: response.customerEmail,
+          customerAddress: response.customerAddress,
+          orderDate: response.orderDate,
+          totalAmount: response.totalAmount,
+          status: response.status,
+          orderItems: []
+        };
+        
+        // Map items to orderItems with the expected structure
+        if (response.items && Array.isArray(response.items)) {
+          orderDto.orderItems = response.items.map((item: any) => ({
+            id: item.id,
+            orderId: item.orderId,
+            merchandiseId: item.merchId,
+            merchandise: {
+              id: item.merchId,
+              name: item.merchandiseName || (item.isCustom ? 'Custom Design' : `Product #${item.merchId}`),
+              primaryImageUrl: this.getImageUrlForItem(item)
+            },
+            size: item.size,
+            quantity: item.quantity,
+            price: item.price
+          }));
+        }
+        
+        return orderDto;
+      })
+    );
   }
 
   getUserOrders(): Observable<OrderDto[]> {
-    return this.http.get<OrderDto[]>(`${this.apiUrl}/orders`);
+    return this.http.get<any[]>(`${this.apiUrl}/orders`).pipe(
+      map(response => {
+        return response.map(order => {
+          // Map the API response to the expected OrderDto structure
+          const orderDto: OrderDto = {
+            id: order.id,
+            userId: order.userId || '',
+            customerName: order.customerName,
+            customerEmail: order.customerEmail,
+            customerAddress: order.customerAddress,
+            orderDate: order.orderDate,
+            totalAmount: order.totalAmount,
+            status: order.status,
+            orderItems: []
+          };
+          
+          // Map items to orderItems with the expected structure
+          if (order.items && Array.isArray(order.items)) {
+            orderDto.orderItems = order.items.map((item: any) => ({
+              id: item.id,
+              orderId: item.orderId,
+              merchandiseId: item.merchId,
+              merchandise: {
+                id: item.merchId,
+                name: item.merchandiseName || (item.isCustom ? 'Custom Design' : `Product #${item.merchId}`),
+                primaryImageUrl: this.getImageUrlForItem(item)
+              },
+              size: item.size,
+              quantity: item.quantity,
+              price: item.price
+            }));
+          }
+          
+          return orderDto;
+        });
+      })
+    );
   }
 
   cancelOrder(id: number): Observable<any> {
@@ -51,14 +157,29 @@ export class OrderService {
             orderId: response.orderId || orderId,
             content: response.content,
             timestamp: response.timestamp || new Date().toISOString(),
-            isFromAdmin: response.isFromAdmin,
-            isRead: response.isRead || false
+            isFromAdmin: response.isFromAdmin
           };
         })
       );
   }
 
-  markMessageAsRead(messageId: number): Observable<any> {
-    return this.http.put(`${this.apiUrl}/messages/${messageId}/read`, {});
+  // Helper method to get the appropriate image URL based on item type
+  private getImageUrlForItem(item: any): string {
+    // If the item has an imageUrl, use it
+    if (item.imageUrl) {
+      // If it's a base64 encoded image, return it directly
+      if (item.imageUrl.startsWith('data:image')) {
+        return item.imageUrl;
+      }
+      return item.imageUrl;
+    }
+    
+    // For custom items, use the item ID instead of merchId (which is null)
+    if (item.isCustom) {
+      return `/uploads/custom/${item.id}.jpg`;
+    }
+    
+    // Default empty string for regular items without images
+    return '';
   }
 } 

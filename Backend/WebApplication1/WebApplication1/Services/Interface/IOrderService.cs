@@ -14,5 +14,4 @@ public interface IOrderService
     // Order Messages
     Task<OrderMessageDto> AddOrderMessageAsync(OrderMessageCreateDto messageDto);
     Task<List<OrderMessageDto>> GetOrderMessagesAsync(int orderId);
-    Task MarkMessageAsReadAsync(int messageId);
 }

@@ -1,0 +1,81 @@
+<div class="my-designs-container">
+  <div class="header">
+    <h1>My Custom Designs</h1>
+    <button mat-raised-button color="primary" (click)="createNewDesign()">
+      <mat-icon>add</mat-icon>
+      Create New Design
+    </button>
+  </div>
+
+  <!-- Loading state -->
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Loading your designs...</p>
+  </div>
+
+  <!-- Error state -->
+  <div *ngIf="error" class="error-container">
+    <mat-icon color="warn">error</mat-icon>
+    <p>{{ error }}</p>
+    <button mat-raised-button color="primary" (click)="loadDesigns()">Try Again</button>
+  </div>
+
+  <!-- Empty state -->
+  <div *ngIf="!loading && !error && designs.length === 0" class="empty-container">
+    <mat-icon>brush</mat-icon>
+    <h2>No Designs Found</h2>
+    <p>You haven't created any custom designs yet.</p>
+    <button mat-raised-button color="primary" (click)="createNewDesign()">Create Your First Design</button>
+  </div>
+
+  <!-- Designs grid -->
+  <div *ngIf="!loading && !error && designs.length > 0" class="designs-grid">
+    <mat-card *ngFor="let design of designs" class="design-card">
+      <mat-card-header>
+        <mat-card-title>{{ design.name }}</mat-card-title>
+        <mat-card-subtitle>Created on {{ formatDate(design.createdAt) }}</mat-card-subtitle>
+      </mat-card-header>
+      
+      <mat-tab-group animationDuration="300ms" class="design-tabs">
+        <mat-tab label="Front">
+          <div class="tab-content">
+            <img [src]="design.frontImage" [alt]="design.name + ' front'" class="design-image">
+          </div>
+        </mat-tab>
+        <mat-tab label="Back">
+          <div class="tab-content">
+            <img [src]="design.backImage" [alt]="design.name + ' back'" class="design-image">
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+      
+      <!-- Add size and quantity selectors -->
+      <div class="product-options">
+        <mat-form-field appearance="fill" class="size-selector">
+          <mat-label>Size</mat-label>
+          <mat-select [(value)]="design.selectedSize">
+            <mat-option *ngFor="let size of availableSizes" [value]="size">
+              {{size}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+        
+        <mat-form-field appearance="fill" class="quantity-selector">
+          <mat-label>Quantity</mat-label>
+          <input matInput type="number" [(ngModel)]="design.selectedQuantity" min="1" max="100">
+        </mat-form-field>
+      </div>
+      
+      <mat-card-actions>
+        <button mat-button color="primary" (click)="addToCart(design)">
+          <mat-icon>add_shopping_cart</mat-icon>
+          Add to Cart
+        </button>
+        <button mat-button color="warn" (click)="deleteDesign(design.id)">
+          <mat-icon>delete</mat-icon>
+          Delete
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+</div> 

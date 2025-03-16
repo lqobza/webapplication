@@ -4,15 +4,43 @@
     <button class="close-error" (click)="errorMessage = null">×</button>
   </div>
 
-  <ng-container *ngIf="cartItems.length > 0; else emptyCart">
+  <!-- Order Success Message -->
+  <div *ngIf="orderSuccess" class="success-message">
+    <div class="success-icon">✓</div>
+    <h2>Order Placed Successfully!</h2>
+    <p>Thank you for your order. We've received your purchase request and will process it shortly.</p>
+    <p>A confirmation email will be sent to <strong>{{ customerEmail }}</strong>.</p>
+    <div class="success-actions">
+      <button class="continue-shopping" (click)="goToShop()">Continue Shopping</button>
+    </div>
+  </div>
+
+  <div *ngIf="orderError" class="error-message">
+    <div class="error-icon">⚠️</div>
+    <div class="error-content">
+      <h3>Order Error</h3>
+      <p>{{ orderError }}</p>
+    </div>
+    <button class="close-error" (click)="orderError = null">×</button>
+  </div>
+
+  <ng-container *ngIf="cartItems.length > 0 && !orderSuccess; else emptyCart">
     <h2>Shopping Cart</h2>
     <ul>
       <li *ngFor="let item of cartItems; let i = index" class="cart-item">
         <img
-          [src]="getImageUrl(item)"
+          *ngIf="item.isCustom && item.frontImage; else regularImage"
+          [src]="item.frontImage"
           class="cart-item-image"
-          alt="{{ item.name || 'Product image' }}"
+          alt="{{ item.name || 'Custom design' }}"
         />
+        <ng-template #regularImage>
+          <img
+            [src]="getImageUrl(item)"
+            class="cart-item-image"
+            alt="{{ item.name || 'Product image' }}"
+          />
+        </ng-template>
         <div class="cart-item-details">
           <p class="cart-item-name">{{ item.name }}</p>
           <p>Size: {{ item.size }}</p>
@@ -25,6 +53,10 @@
               max="100"
               aria-label="Quantity"
             />
+            <span *ngIf="item.stockWarning" class="stock-warning">
+              <span class="warning-icon">⚠️</span>
+              Only {{ item.availableStock }} in stock
+            </span>
           </div>
           <p>Price: ${{ getItemPrice(item) | number: '1.0-0' }}</p>
         </div>
@@ -51,11 +83,11 @@
             #nameInput="ngModel"
             placeholder="Your name"
             required
-            pattern="^(?=.*[a-zA-Z].*[a-zA-Z].*[a-zA-Z].*[a-zA-Z].*[a-zA-Z]).*$"
+            pattern="^(?=.*[a-zA-Z].*[a-zA-Z].*[a-zA-Z]).*$"
           />
           <div *ngIf="nameInput.invalid && (nameInput.dirty || nameInput.touched)" class="validation-error">
             <div *ngIf="nameInput.errors?.['required']">Name is required.</div>
-            <div *ngIf="nameInput.errors?.['pattern']">Name must contain at least 5 letters.</div>
+            <div *ngIf="nameInput.errors?.['pattern']">Name must contain at least 3 letters.</div>
           </div>
         </div>
         <div class="form-group">
@@ -94,8 +126,13 @@
         </div>
         <div class="cart-actions">
           <button type="button" class="clear-cart-button" (click)="clearCart()">Clear Cart</button>
-          <button type="submit" class="create-order-button" [disabled]="orderForm.invalid">
-            Create Order
+          <button 
+            type="submit" 
+            class="create-order-button" 
+            [disabled]="orderForm.invalid || orderSubmitting"
+          >
+            <span *ngIf="!orderSubmitting">Create Order</span>
+            <span *ngIf="orderSubmitting" class="button-spinner"></span>
           </button>
         </div>
       </form>
@@ -103,7 +140,7 @@
   </ng-container>
 
   <ng-template #emptyCart>
-    <div class="empty-cart">
+    <div *ngIf="!orderSuccess" class="empty-cart">
       <span class="material-icons">shopping_cart</span>
       <h2>Your cart is empty</h2>
       <p>Looks like you haven't added any items to your cart yet.</p>

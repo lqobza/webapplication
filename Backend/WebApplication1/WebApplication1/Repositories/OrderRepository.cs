@@ -2,83 +2,213 @@
 using System.Security.Cryptography;
 using WebApplication1.Models.DTOs;
 using WebApplication1.Repositories.Interface;
+using Microsoft.Extensions.Logging;
 
 namespace WebApplication1.Repositories;
 
 public class OrderRepository : IOrderRepository
 {
     private readonly string? _connectionString;
+    private readonly ILogger<OrderRepository> _logger;
 
-    public OrderRepository(IConfiguration configuration)
+    public OrderRepository(IConfiguration configuration, ILogger<OrderRepository> logger)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection");
+        _logger = logger;
     }
 
     public async Task<int> InsertOrderAsync(OrderCreateDto orderCreateDto, decimal totalAmount)
     {
+        _logger.LogInformation("Creating order for customer {CustomerName}, total amount: {TotalAmount}",
+            orderCreateDto.CustomerName, totalAmount);
+        
         var query = @"
             INSERT INTO Orders (order_date, total_amount, customer_name, customer_email, customer_address, status, user_id)
             OUTPUT INSERTED.ID
             VALUES (GETDATE(), @totalAmount, @customerName, @customerEmail, @customerAddress, @status, @userId)";
 
-        await using var connection = new SqlConnection(_connectionString);
-        await using var command = new SqlCommand(query, connection);
-
-        command.Parameters.AddWithValue("@totalAmount", totalAmount);
-        command.Parameters.AddWithValue("@customerName", orderCreateDto.CustomerName);
-        command.Parameters.AddWithValue("@customerEmail", orderCreateDto.CustomerEmail);
-        command.Parameters.AddWithValue("@customerAddress", orderCreateDto.CustomerAddress);
-        command.Parameters.AddWithValue("@status", "Created");
-        command.Parameters.AddWithValue("@userId", orderCreateDto.UserId);
-
-        await connection.OpenAsync();
-        var result = await command.ExecuteScalarAsync();
-        if (result == null)
+        try
         {
-            throw new InvalidOperationException("Failed to get the inserted order ID");
+            await using var connection = new SqlConnection(_connectionString);
+            await using var command = new SqlCommand(query, connection);
+
+            command.Parameters.AddWithValue("@totalAmount", totalAmount);
+            command.Parameters.AddWithValue("@customerName", orderCreateDto.CustomerName);
+            command.Parameters.AddWithValue("@customerEmail", orderCreateDto.CustomerEmail);
+            command.Parameters.AddWithValue("@customerAddress", orderCreateDto.CustomerAddress);
+            command.Parameters.AddWithValue("@status", "Created");
+            command.Parameters.AddWithValue("@userId", orderCreateDto.UserId);
+
+            await connection.OpenAsync();
+            var result = await command.ExecuteScalarAsync();
+            if (result == null)
+            {
+                throw new InvalidOperationException("Failed to get the inserted order ID");
+            }
+            
+            int orderId = (int)result;
+            _logger.LogInformation("Order created successfully with ID: {OrderId}", orderId);
+            return orderId;
         }
-        return (int)result;
+        catch (SqlException ex)
+        {
+            _logger.LogError(ex, "SQL error creating order: {ErrorMessage}", ex.Message);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating order: {ErrorMessage}", ex.Message);
+            throw;
+        }
     }
 
     public async Task InsertOrderItemAsync(int orderId, OrderItemDto item)
     {
-        var query = @"
-        INSERT INTO OrderItems (order_id, merch_id, size, quantity, price)
-        VALUES (@orderId, @merchId, @size, @quantity, @price)";
+        _logger.LogInformation("Inserting order item for order {OrderId}: MerchId={MerchId}, Size={Size}, Quantity={Quantity}",
+            orderId, item.MerchId, item.Size, item.Quantity);
+        
+        // For items with null MerchId, we need to use a different query
+        // because it would violate the foreign key constraint
+        string query;
+        
+        if (item.MerchId == null)
+        {
+            query = @"
+            INSERT INTO OrderItems (order_id, size, quantity, price, merchandise_name, image_url, is_custom)
+            VALUES (@orderId, @size, @quantity, @price, @merchandiseName, @imageUrl, @isCustom)";
+        }
+        else
+        {
+            query = @"
+            INSERT INTO OrderItems (order_id, merch_id, size, quantity, price, merchandise_name, image_url, is_custom)
+            VALUES (@orderId, @merchId, @size, @quantity, @price, @merchandiseName, @imageUrl, @isCustom)";
+        }
 
-        await using var connection = new SqlConnection(_connectionString);
-        await using var command = new SqlCommand(query, connection);
+        try
+        {
+            await using var connection = new SqlConnection(_connectionString);
+            await using var command = new SqlCommand(query, connection);
 
-        command.Parameters.AddWithValue("@orderId", orderId);
-        command.Parameters.AddWithValue("@merchId", item.MerchId);
-        command.Parameters.AddWithValue("@size", item.Size);
-        command.Parameters.AddWithValue("@quantity", item.Quantity);
-        command.Parameters.AddWithValue("@price", item.Price);
+            command.Parameters.AddWithValue("@orderId", orderId);
+            if (item.MerchId != null)
+            {
+                command.Parameters.AddWithValue("@merchId", item.MerchId);
+            }
+            command.Parameters.AddWithValue("@size", item.Size);
+            command.Parameters.AddWithValue("@quantity", item.Quantity);
+            command.Parameters.AddWithValue("@price", item.Price);
+            command.Parameters.AddWithValue("@merchandiseName", item.MerchandiseName ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@imageUrl", item.ImageUrl ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@isCustom", item.IsCustom);
 
-        await connection.OpenAsync();
-        await command.ExecuteNonQueryAsync();
+            await connection.OpenAsync();
+            int rowsAffected = await command.ExecuteNonQueryAsync();
+            
+            if (rowsAffected == 0)
+            {
+                throw new InvalidOperationException($"Failed to insert order item for order {orderId}");
+            }
+            
+            _logger.LogInformation("Successfully inserted order item for order {OrderId}", orderId);
+        }
+        catch (SqlException ex)
+        {
+            _logger.LogError(ex, "SQL error inserting order item for order {OrderId}: {ErrorMessage}", orderId, ex.Message);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error inserting order item for order {OrderId}: {ErrorMessage}", orderId, ex.Message);
+            throw;
+        }
     }
 
     public async Task UpdateStockAsync(OrderItemDto item)
     {
-        var query = @"
-            UPDATE MerchSize
-            SET instock = instock - @quantity
-            WHERE merch_id = @merchId AND size = @size AND instock >= @quantity";
+        // Skip stock update for custom merchandise items or items with null MerchId
+        if (item.IsCustom || item.MerchId == null || item.MerchId <= 0)
+        {
+            return;
+        }
+
+        _logger.LogInformation("Updating stock for item: MerchId={MerchId}, Size={Size}, Quantity={Quantity}", 
+            item.MerchId, item.Size, item.Quantity);
+
+        // First check if there's enough stock
+        var checkStockQuery = @"
+            SELECT ms.instock, m.name
+            FROM MerchSize ms
+            JOIN Merch m ON ms.merch_id = m.id
+            WHERE ms.merch_id = @merchId AND UPPER(ms.size) = UPPER(@size)";
 
         await using var connection = new SqlConnection(_connectionString);
-        await using var command = new SqlCommand(query, connection);
-
-        command.Parameters.AddWithValue("@merchId", item.MerchId);
-        command.Parameters.AddWithValue("@size", item.Size);
-        command.Parameters.AddWithValue("@quantity", item.Quantity);
-
         await connection.OpenAsync();
-        var rowsAffected = await command.ExecuteNonQueryAsync();
+
+        // Check available stock
+        int availableStock = 0;
+        string merchandiseName = "";
+        
+        await using (var command = new SqlCommand(checkStockQuery, connection))
+        {
+            command.Parameters.AddWithValue("@merchId", item.MerchId);
+            command.Parameters.AddWithValue("@size", item.Size);
+
+            _logger.LogInformation("Executing stock check query for MerchId={MerchId}, Size={Size}", 
+                item.MerchId, item.Size);
+
+            await using var reader = await command.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                availableStock = reader.GetInt32(0);
+                merchandiseName = reader.GetString(1);
+                _logger.LogInformation("Found stock information: MerchId={MerchId}, Size={Size}, Available={Available}", 
+                    item.MerchId, item.Size, availableStock);
+            }
+            else
+            {
+                // Item not found in stock
+                _logger.LogWarning("Item with ID {MerchId} and size {Size} not found in stock", 
+                    item.MerchId, item.Size);
+                throw new InvalidOperationException($"Item with ID {item.MerchId} and size {item.Size} not found in stock");
+            }
+        }
+
+        // Check if there's enough stock
+        if (availableStock < item.Quantity)
+        {
+            _logger.LogWarning("Insufficient stock for '{MerchandiseName}' (Size: {Size}). Requested: {Requested}, Available: {Available}", 
+                merchandiseName, item.Size, item.Quantity, availableStock);
+            throw new InvalidOperationException(
+                $"Insufficient stock for '{merchandiseName}' (Size: {item.Size}). " +
+                $"Requested: {item.Quantity}, Available: {availableStock}");
+        }
+
+        // Update the stock
+        var updateStockQuery = @"
+            UPDATE MerchSize
+            SET instock = instock - @quantity
+            WHERE merch_id = @merchId AND UPPER(size) = UPPER(@size)";
+
+        await using var updateCommand = new SqlCommand(updateStockQuery, connection);
+        updateCommand.Parameters.AddWithValue("@merchId", item.MerchId);
+        updateCommand.Parameters.AddWithValue("@size", item.Size);
+        updateCommand.Parameters.AddWithValue("@quantity", item.Quantity);
+
+        _logger.LogInformation("Executing stock update query for MerchId={MerchId}, Size={Size}, Quantity={Quantity}", 
+            item.MerchId, item.Size, item.Quantity);
+
+        var rowsAffected = await updateCommand.ExecuteNonQueryAsync();
 
         if (rowsAffected == 0)
-            throw new InvalidOperationException("Insufficient stock for merch ID " + item.MerchId +
-                                               " with size " + item.Size);
+        {
+            _logger.LogWarning("Failed to update stock for '{MerchandiseName}' (Size: {Size})", 
+                merchandiseName, item.Size);
+            throw new InvalidOperationException(
+                $"Failed to update stock for '{merchandiseName}' (Size: {item.Size})");
+        }
+
+        _logger.LogInformation("Successfully updated stock for '{MerchandiseName}' (Size: {Size}). New stock: {NewStock}", 
+            merchandiseName, item.Size, availableStock - item.Quantity);
     }
 
     public async Task<List<OrderDto>> GetAllOrdersAsync()
@@ -143,19 +273,12 @@ public class OrderRepository : IOrderRepository
         return null;
     }
 
-    private async Task<List<OrderItemDto>> GetOrderItemsByIdAsync(int orderId)
+    public async Task<List<OrderItemDto>> GetOrderItemsByIdAsync(int orderId)
     {
-        var query = @"
-            SELECT oi.*, m.name as merchandise_name
-            FROM OrderItems oi
-            LEFT JOIN Merchandise m ON oi.merch_id = m.id
-            WHERE oi.order_id = @orderId";
-        query = @"
-                SELECT oi.*, m.name as merchandise_name, mi.ImageUrl as image_url
-                FROM OrderItems oi
-                LEFT JOIN Merch m ON oi.merch_id = m.id
-                LEFT JOIN MerchandiseImages mi ON oi.merch_id = mi.MerchId
-                WHERE oi.order_id = @orderId";
+        const string query = @"
+            SELECT id, order_id, merch_id, size, quantity, price, merchandise_name, image_url, is_custom
+            FROM OrderItems
+            WHERE order_id = @orderId";
 
         var orderItemList = new List<OrderItemDto>();
         await using var connection = new SqlConnection(_connectionString);
@@ -172,13 +295,13 @@ public class OrderRepository : IOrderRepository
             {
                 Id = (int)reader["id"],
                 OrderId = (int)reader["order_id"],
-                MerchId = (int)reader["merch_id"],
+                MerchId = reader["merch_id"] != DBNull.Value ? (int?)reader["merch_id"] : null,
                 Size = (string)reader["size"],
                 Quantity = (int)reader["quantity"],
                 Price = (decimal)reader["price"],
-                MerchandiseName =
-                    reader["merchandise_name"] != DBNull.Value ? (string)reader["merchandise_name"] : null,
-                ImageUrl = reader["image_url"] != DBNull.Value ? (string)reader["image_url"] : null
+                MerchandiseName = reader["merchandise_name"] != DBNull.Value ? (string)reader["merchandise_name"] : null,
+                ImageUrl = reader["image_url"] != DBNull.Value ? (string)reader["image_url"] : null,
+                IsCustom = reader["is_custom"] != DBNull.Value && (bool)reader["is_custom"]
             };
 
             orderItemList.Add(orderItem);
@@ -237,9 +360,9 @@ public class OrderRepository : IOrderRepository
     public async Task<OrderMessageDto> AddOrderMessageAsync(OrderMessageCreateDto messageDto)
     {
         var query = @"
-            INSERT INTO OrderMessages (OrderId, Content, Timestamp, IsFromAdmin, IsRead)
-            OUTPUT INSERTED.Id, INSERTED.OrderId, INSERTED.Content, INSERTED.Timestamp, INSERTED.IsFromAdmin, INSERTED.IsRead
-            VALUES (@orderId, @content, GETUTCDATE(), @isFromAdmin, 0)";
+            INSERT INTO OrderMessages (OrderId, Content, Timestamp, IsFromAdmin)
+            OUTPUT INSERTED.Id, INSERTED.OrderId, INSERTED.Content, INSERTED.Timestamp, INSERTED.IsFromAdmin
+            VALUES (@orderId, @content, GETUTCDATE(), @isFromAdmin)";
 
         await using var connection = new SqlConnection(_connectionString);
         await using var command = new SqlCommand(query, connection);
@@ -260,7 +383,6 @@ public class OrderRepository : IOrderRepository
             message.Content = (string)reader["Content"];
             message.Timestamp = (DateTime)reader["Timestamp"];
             message.IsFromAdmin = (bool)reader["IsFromAdmin"];
-            message.IsRead = (bool)reader["IsRead"];
         }
         else
         {
@@ -273,46 +395,112 @@ public class OrderRepository : IOrderRepository
     public async Task<List<OrderMessageDto>> GetOrderMessagesAsync(int orderId)
     {
         var query = @"
-            SELECT * FROM OrderMessages 
+            SELECT Id, OrderId, Content, Timestamp, IsFromAdmin
+            FROM OrderMessages
             WHERE OrderId = @orderId
             ORDER BY Timestamp ASC";
 
         var messageList = new List<OrderMessageDto>();
-        await using var connection = new SqlConnection(_connectionString);
-        await using var command = new SqlCommand(query, connection);
 
-        command.Parameters.AddWithValue("@orderId", orderId);
-
-        await connection.OpenAsync();
-        await using var reader = await command.ExecuteReaderAsync();
-
-        while (await reader.ReadAsync())
+        using (var connection = new SqlConnection(_connectionString))
         {
-            var message = new OrderMessageDto
+            await connection.OpenAsync();
+            using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@orderId", orderId);
+
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
             {
-                Id = (int)reader["Id"],
-                OrderId = (int)reader["OrderId"],
-                Content = (string)reader["Content"],
-                Timestamp = (DateTime)reader["Timestamp"],
-                IsFromAdmin = (bool)reader["IsFromAdmin"],
-                IsRead = (bool)reader["IsRead"]
-            };
-            messageList.Add(message);
+                var message = new OrderMessageDto
+                {
+                    Id = (int)reader["Id"],
+                    OrderId = (int)reader["OrderId"],
+                    Content = (string)reader["Content"],
+                    Timestamp = (DateTime)reader["Timestamp"],
+                    IsFromAdmin = (bool)reader["IsFromAdmin"]
+                };
+
+                messageList.Add(message);
+            }
         }
 
         return messageList;
     }
 
-    public async Task MarkMessageAsReadAsync(int messageId)
+    public async Task DeleteOrderAsync(int orderId)
     {
-        var query = @"UPDATE OrderMessages SET IsRead = 1 WHERE Id = @messageId";
-
+        _logger.LogInformation("Deleting order with ID: {OrderId}", orderId);
+        
+        // First delete all order items
+        var deleteItemsQuery = @"DELETE FROM OrderItems WHERE order_id = @orderId";
+        
+        // Then delete any order messages if the table exists
+        var deleteMessagesQuery = @"
+        IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'OrderMessages')
+        BEGIN
+            IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'OrderMessages' AND COLUMN_NAME = 'order_id')
+            BEGIN
+                DELETE FROM OrderMessages WHERE order_id = @orderId
+            END
+            ELSE IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'OrderMessages' AND COLUMN_NAME = 'OrderId')
+            BEGIN
+                DELETE FROM OrderMessages WHERE OrderId = @orderId
+            END
+        END";
+        
+        // Finally delete the order itself
+        var deleteOrderQuery = @"DELETE FROM Orders WHERE id = @orderId";
+        
         await using var connection = new SqlConnection(_connectionString);
-        await using var command = new SqlCommand(query, connection);
-
-        command.Parameters.AddWithValue("@messageId", messageId);
-
         await connection.OpenAsync();
-        await command.ExecuteNonQueryAsync();
+        
+        // Use a transaction to ensure all operations succeed or fail together
+        await using var transaction = await connection.BeginTransactionAsync();
+        
+        try
+        {
+            // Delete order items
+            await using (var command = new SqlCommand(deleteItemsQuery, connection, transaction as SqlTransaction))
+            {
+                command.Parameters.AddWithValue("@orderId", orderId);
+                var itemsDeleted = await command.ExecuteNonQueryAsync();
+                _logger.LogInformation("Deleted {Count} order items for order {OrderId}", itemsDeleted, orderId);
+            }
+            
+            try
+            {
+                // Delete order messages
+                await using (var command = new SqlCommand(deleteMessagesQuery, connection, transaction as SqlTransaction))
+                {
+                    command.Parameters.AddWithValue("@orderId", orderId);
+                    await command.ExecuteNonQueryAsync();
+                    _logger.LogInformation("Deleted order messages for order {OrderId} (if any)", orderId);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the error but continue with the deletion process
+                _logger.LogWarning(ex, "Error deleting order messages for order {OrderId}. This is not critical and the deletion process will continue.", orderId);
+            }
+            
+            // Delete the order
+            await using (var command = new SqlCommand(deleteOrderQuery, connection, transaction as SqlTransaction))
+            {
+                command.Parameters.AddWithValue("@orderId", orderId);
+                var orderDeleted = await command.ExecuteNonQueryAsync();
+                _logger.LogInformation("Deleted order {OrderId}: {Success}", orderId, orderDeleted > 0);
+            }
+            
+            // Commit the transaction
+            await transaction.CommitAsync();
+            _logger.LogInformation("Order {OrderId} deleted successfully", orderId);
+        }
+        catch (Exception ex)
+        {
+            // Rollback the transaction if any operation fails
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "Error deleting order {OrderId}", orderId);
+            throw;
+        }
     }
 }

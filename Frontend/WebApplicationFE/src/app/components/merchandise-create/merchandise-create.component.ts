@@ -51,7 +51,6 @@ export class MerchandiseCreateComponent {
     this.merchandiseService.getSizes(selectedCategoryId).subscribe(
       sizes => {
         this.sizes = sizes;
-        console.log('Sizes fetched:', sizes);
   
         if (sizes.length > 0) {
           this.merchandiseForm.get('size')?.enable();
@@ -62,12 +61,9 @@ export class MerchandiseCreateComponent {
       },
       error => {
         if (error.status === 400) {
-          console.error('Invalid CategoryId');
   
           this.merchandiseForm.get('size')?.disable();
           this.merchandiseForm.get('size')?.setValue('');
-        } else {
-          console.error('Error fetching sizes:', error);
         }
       }
     );
@@ -78,9 +74,6 @@ export class MerchandiseCreateComponent {
       const newMerchandise: Merchandise = this.merchandiseForm.value;
   
       // add the selected size
-      //TODO rework using the size model
-      //newMerchandise.size = this.merchandiseForm.get('size')?.value;
-  
       this.merchandiseService.insertMerchandise(newMerchandise).subscribe(
         () => this.router.navigate(['/merchandise']),
         error => console.error('Error creating merchandise', error)

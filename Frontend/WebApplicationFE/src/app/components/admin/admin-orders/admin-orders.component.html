@@ -63,8 +63,8 @@
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef>Actions</th>
         <td mat-cell *matCellDef="let order">
-          <button mat-icon-button (click)="toggleOrderMessages(order.id)" matTooltip="Messages">
-            <mat-icon>chat</mat-icon>
+          <button mat-icon-button (click)="viewOrderDetails(order.id)" matTooltip="View Details">
+            <mat-icon>visibility</mat-icon>
           </button>
         </td>
       </ng-container>
@@ -72,20 +72,5 @@
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
       <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
     </table>
-    
-    <!-- Order Messages Section -->
-    <div *ngIf="expandedOrderId" class="order-messages-section">
-      <mat-card>
-        <mat-card-header>
-          <mat-card-title>Order #{{ expandedOrderId }} Messages</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <app-order-messages [orderId]="expandedOrderId" [isAdminMode]="true"></app-order-messages>
-        </mat-card-content>
-        <mat-card-actions align="end">
-          <button mat-button color="primary" (click)="expandedOrderId = null">Close</button>
-        </mat-card-actions>
-      </mat-card>
-    </div>
   </div>
 </div> 

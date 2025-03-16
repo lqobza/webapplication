@@ -4,6 +4,7 @@ using WebApplication1.Models.DTOs;
 using WebApplication1.Models.Enums;
 using WebApplication1.Services.Interface;
 using Microsoft.EntityFrameworkCore;
+using WebApplication1.Repositories.Interface;
 using WebApplication1.Utils;
 
 namespace WebApplication1.Controllers;
@@ -16,13 +17,15 @@ public class MerchandiseController : ControllerBase
     private readonly IMerchandiseService _merchandiseService;
     private readonly IImageStorageService _imageStorageService;
     private readonly ApplicationDbContext _context;
+    private readonly IMerchandiseRepository _merchandiseRepository;
 
-    public MerchandiseController(IMerchandiseService merchandiseService, ILogger<MerchandiseController> logger, IImageStorageService imageStorageService, ApplicationDbContext context)
+    public MerchandiseController(IMerchandiseService merchandiseService, ILogger<MerchandiseController> logger, IImageStorageService imageStorageService, ApplicationDbContext context, IMerchandiseRepository merchandiseRepository)
     {
         _merchandiseService = merchandiseService;
         _logger = logger;
         _imageStorageService = imageStorageService;
         _context = context;
+        _merchandiseRepository = merchandiseRepository;
     }
 
     [HttpGet]
@@ -116,25 +119,34 @@ public class MerchandiseController : ControllerBase
         if (!ModelState.IsValid)
         {
             _logger.LogWarning("Invalid input data: {ModelStateErrors}", ModelState);
-            return BadRequest(ModelState); // Keep returning ModelState for detailed error info
+            return BadRequest(ModelState);
         }
 
-        var insertMerchResult = _merchandiseService.InsertMerchandise(merchandiseCreateDto);
-
-        switch (insertMerchResult)
+        try
         {
-            case InsertResult.Success:
-                _logger.LogInformation("Merchandise inserted successfully: {Merchandise}", merchandiseCreateDto);
-                return Ok(new { message = "Merchandise inserted successfully." });
-            case InsertResult.AlreadyExists:
-                _logger.LogWarning("Merchandise already exists: {Merchandise}", merchandiseCreateDto);
-                return Conflict(new { message = $"Merchandise {merchandiseCreateDto.Name} already exists." });
-            case InsertResult.Error:
-            default:
-                _logger.LogError("Internal server error while inserting merchandise: {Merchandise}",
-                    merchandiseCreateDto);
-                return StatusCode(StatusCodes.Status500InternalServerError,
-                    new { message = "Internal server error during merchandise insert." });
+            var insertMerchResult = _merchandiseService.InsertMerchandise(merchandiseCreateDto);
+
+            switch (insertMerchResult)
+            {
+                case InsertResult.Success:
+                    _logger.LogInformation("Merchandise inserted successfully: {Merchandise}", merchandiseCreateDto);
+                    return Ok(new { message = "Merchandise inserted successfully." });
+                case InsertResult.AlreadyExists:
+                    _logger.LogWarning("Merchandise already exists: {Merchandise}", merchandiseCreateDto);
+                    return Conflict(new { message = $"Merchandise {merchandiseCreateDto.Name} already exists." });
+                case InsertResult.Error:
+                default:
+                    _logger.LogError("Internal server error while inserting merchandise: {Merchandise}",
+                        merchandiseCreateDto);
+                    return StatusCode(StatusCodes.Status500InternalServerError,
+                        new { message = "Internal server error during merchandise insert." });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception while inserting merchandise: {Merchandise}", merchandiseCreateDto);
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = $"Exception during merchandise insert: {ex.Message}", stackTrace = ex.StackTrace });
         }
     }
     
@@ -372,5 +384,63 @@ public class MerchandiseController : ControllerBase
         
         var imageFileStream = System.IO.File.OpenRead(imagePath);
         return File(imageFileStream, "image/jpeg"); // Adjust content type as needed
+    }
+
+    [HttpGet("{id:int}/stock/{size}")]
+    public IActionResult CheckStockAvailability(int id, string size, [FromQuery] int quantity = 1)
+    {
+        _logger.LogInformation("CheckStockAvailability endpoint called for merchandise ID: {Id}, size: {Size}, quantity: {Quantity}", 
+            id, size, quantity);
+        
+        try
+        {
+            // First check if the merchandise exists
+            var merchandise = _merchandiseService.GetMerchandiseById(id);
+            if (merchandise == null)
+            {
+                _logger.LogWarning("Merchandise with ID {Id} not found", id);
+                return NotFound(new { message = $"Merchandise with ID {id} not found" });
+            }
+            
+            // Get the merchandise name
+            string merchandiseName = merchandise.Name;
+            
+            // Get the sizes for this merchandise
+            var sizes = _merchandiseService.GetSizesByCategoryId(merchandise.CategoryId);
+            if (sizes == null || !sizes.Contains(size))
+            {
+                _logger.LogWarning("Size {Size} not available for merchandise ID {Id}", size, id);
+                return NotFound(new { message = $"Size {size} not available for merchandise with ID {id}" });
+            }
+            
+            // Get the stock information
+            var merchSizes = _merchandiseRepository.GetSizesByMerchId(id);
+            var sizeInfo = merchSizes.FirstOrDefault(s => s.Size == size);
+            
+            if (sizeInfo == null)
+            {
+                _logger.LogWarning("Size {Size} not found in stock for merchandise ID {Id}", size, id);
+                return NotFound(new { message = $"Size {size} not found in stock for merchandise with ID {id}" });
+            }
+            
+            // Check if there's enough stock
+            bool isAvailable = sizeInfo.InStock >= quantity;
+            
+            _logger.LogInformation("Stock check for {MerchandiseName} (ID: {Id}, Size: {Size}): Available: {Available}, Requested: {Requested}",
+                merchandiseName, id, size, sizeInfo.InStock, quantity);
+            
+            return Ok(new { 
+                isAvailable = isAvailable,
+                available = sizeInfo.InStock,
+                requested = quantity,
+                merchandiseName = merchandiseName,
+                size = size
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking stock availability for merchandise ID: {Id}, size: {Size}", id, size);
+            return StatusCode(500, new { message = "An error occurred while checking stock availability" });
+        }
     }
 }

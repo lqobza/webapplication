@@ -578,7 +578,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
     }
 
     // Helper function to get sizes for a specific merchandise
-    private List<MerchSizeDto> GetSizesByMerchId(int merchId)
+    public List<MerchSizeDto> GetSizesByMerchId(int merchId)
     {
         var query = @"
         SELECT id, merch_id, size, instock
@@ -599,7 +599,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
             var sizeDto = new MerchSizeDto
             {
                 Id = (int)reader["id"],
-                MerchId = (int)reader["merch_id"],
+                MerchId = reader["merch_id"] != DBNull.Value ? (int)reader["merch_id"] : 0,
                 Size = reader["size"] == DBNull.Value ? null : (string)reader["size"],
                 InStock = (int)reader["instock"]
             };
