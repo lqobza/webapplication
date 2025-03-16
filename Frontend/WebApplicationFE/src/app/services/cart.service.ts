@@ -95,7 +95,7 @@ export class CartService {
     } else {
       // Handle regular merchandise
       cartItem = {
-        merchId: item.id,
+        merchId: item.merchId || item.id, // Use merchId if available, otherwise use id
         name: item.name,
         size: item.size || 'M',
         quantity: item.quantity || 1,

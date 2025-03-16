@@ -165,6 +165,7 @@ export class MerchandiseDetailComponent implements OnInit {
     }
     
     const cartItem = {
+      id: this.merchandise.id,
       merchId: this.merchandise.id,
       name: this.merchandise.name,
       size: this.selectedSize,
