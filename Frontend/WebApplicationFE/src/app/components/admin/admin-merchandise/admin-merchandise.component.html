@@ -14,7 +14,7 @@
   <div *ngIf="error" class="error-container">
     <mat-icon color="warn">error</mat-icon>
     <p>{{ error }}</p>
-    <button mat-raised-button color="primary" (click)="fetchMerchandise()">Try Again</button>
+    <button mat-raised-button color="primary" (click)="fetchMerchandise(pageIndex + 1, pageSize)">Try Again</button>
   </div>
 
   <div *ngIf="!loading && !error && merchandiseList.length === 0" class="empty-state">
@@ -65,6 +65,14 @@
       <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
     </table>
 
-    <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]" showFirstLastButtons></mat-paginator>
+    <mat-paginator 
+      [length]="totalItems"
+      [pageSize]="pageSize"
+      [pageSizeOptions]="pageSizeOptions"
+      [pageIndex]="pageIndex"
+      (page)="handlePageEvent($event)"
+      showFirstLastButtons
+      aria-label="Select page of merchandise">
+    </mat-paginator>
   </div>
 </div> 

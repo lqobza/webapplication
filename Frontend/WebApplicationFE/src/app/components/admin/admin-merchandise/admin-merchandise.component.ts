@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -6,7 +6,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
-import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatPaginatorModule, MatPaginator, PageEvent } from '@angular/material/paginator';
 import { MatSortModule } from '@angular/material/sort';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
@@ -14,6 +14,7 @@ import { Merchandise } from '../../../models/merchandise.model';
 import { MerchandiseService } from '../../../services/merchandise.service';
 import { Category } from '../../../models/category.model';
 import { forkJoin } from 'rxjs';
+import { PaginatedResponse } from '../../../models/paginated-response.model';
 
 @Component({
   selector: 'app-admin-merchandise',
@@ -34,7 +35,7 @@ import { forkJoin } from 'rxjs';
   templateUrl: './admin-merchandise.component.html',
   styleUrls: ['./admin-merchandise.component.css']
 })
-export class AdminMerchandiseComponent implements OnInit {
+export class AdminMerchandiseComponent implements OnInit, AfterViewInit {
   merchandiseList: Merchandise[] = [];
   loading = true;
   error: string | null = null;
@@ -42,45 +43,82 @@ export class AdminMerchandiseComponent implements OnInit {
   categories: Category[] = [];
   categoryMap: Map<number, string> = new Map();
   
+  // Pagination properties
+  totalItems = 0;
+  pageSize = 10;
+  pageIndex = 0;
+  pageSizeOptions = [5, 10, 25, 50, 100];
+  
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
+  
   constructor(
     private merchandiseService: MerchandiseService,
     private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
-    this.fetchMerchandise();
+    this.fetchCategories();
+    this.fetchMerchandise(1, this.pageSize);
+  }
+  
+  ngAfterViewInit(): void {
+    // This ensures the paginator is initialized before we try to use it
+    if (this.paginator) {
+      this.paginator.page.subscribe((event: PageEvent) => {
+        this.pageSize = event.pageSize;
+        this.pageIndex = event.pageIndex;
+        this.fetchMerchandise(this.pageIndex + 1, this.pageSize);
+      });
+    }
   }
 
-  fetchMerchandise(): void {
-    this.loading = true;
-    
-    // Fetch both merchandise and categories in parallel
-    forkJoin({
-      merchandise: this.merchandiseService.getAllMerchandise(),
-      categories: this.merchandiseService.getCategories()
-    }).subscribe({
-      next: (results) => {
-        // Process categories
-        this.categories = results.categories;
+  fetchCategories(): void {
+    this.merchandiseService.getCategories().subscribe({
+      next: (categories) => {
+        this.categories = categories;
         
         // Create a map of category IDs to names for quick lookup
-        // Filter out categories with undefined IDs
         this.categoryMap = new Map(
           this.categories
             .filter(category => category.id !== undefined)
             .map(category => [category.id as number, category.name])
         );
+      },
+      error: (err) => {
+        console.error('Error fetching categories:', err);
+      }
+    });
+  }
+
+  fetchMerchandise(page: number = 1, pageSize: number = 10): void {
+    this.loading = true;
+    this.error = null;
+    
+    this.merchandiseService.getAllMerchandise(page, pageSize).subscribe({
+      next: (response: PaginatedResponse<Merchandise>) => {
+        this.merchandiseList = response.items;
+        this.totalItems = response.totalCount;
         
-        // Process merchandise
-        this.merchandiseList = Array.isArray(results.merchandise) 
-          ? results.merchandise 
-          : results.merchandise.items || [];
+        // Update paginator if it exists and the values don't match
+        if (this.paginator) {
+          // Only update if different to avoid infinite loop
+          if (this.paginator.pageIndex !== page - 1) {
+            this.paginator.pageIndex = page - 1;
+          }
+          if (this.paginator.pageSize !== pageSize) {
+            this.paginator.pageSize = pageSize;
+          }
+          if (this.paginator.length !== response.totalCount) {
+            this.paginator.length = response.totalCount;
+          }
+        }
         
         this.loading = false;
       },
       error: (err) => {
-        this.error = 'Failed to load data. Please try again later.';
+        this.error = 'Failed to load merchandise data. Please try again later.';
         this.loading = false;
+        console.error('Error fetching merchandise:', err);
       }
     });
   }
@@ -99,11 +137,19 @@ export class AdminMerchandiseComponent implements OnInit {
     
     this.merchandiseService.deleteMerchandise(id).subscribe({
       next: () => {
-        this.merchandiseList = this.merchandiseList.filter(m => m.id !== id);
+        // Refresh the current page after deletion
+        this.fetchMerchandise(this.pageIndex + 1, this.pageSize);
       },
       error: (err: any) => {
         alert('Failed to delete merchandise. Please try again later.');
+        console.error('Error deleting merchandise:', err);
       }
     });
+  }
+  
+  handlePageEvent(event: PageEvent): void {
+    this.pageSize = event.pageSize;
+    this.pageIndex = event.pageIndex;
+    this.fetchMerchandise(this.pageIndex + 1, this.pageSize);
   }
 }

@@ -22,6 +22,16 @@
       </div>
     </div>
     
+    <div class="design-info">
+      <mat-slide-toggle [(ngModel)]="showModifiableArea" (change)="renderCanvas()" color="primary">
+        Show design area
+      </mat-slide-toggle>
+      <p class="design-area-info" *ngIf="showModifiableArea">
+        <mat-icon class="info-icon">info</mat-icon>
+        Place your design elements within the dashed blue area
+      </p>
+    </div>
+    
     <div class="element-controls" *ngIf="activeElement">
       <h3>Element Controls</h3>
       <div class="control-buttons">

@@ -11,6 +11,7 @@ import { MatSliderModule } from '@angular/material/slider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../services/auth.service';
@@ -77,7 +78,8 @@ type TShirtSide = 'front' | 'back';
     MatSliderModule, 
     MatIconModule,
     MatSnackBarModule,
-    MatButtonToggleModule
+    MatButtonToggleModule,
+    MatSlideToggleModule
   ]
 })
 export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
@@ -125,6 +127,13 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
   // Canvas dimensions
   canvasWidth = 600;
   canvasHeight = 700;
+  
+  // Modifiable area constraints
+  modifiableAreaX = 150;
+  modifiableAreaY = 100;
+  modifiableAreaWidth = 300;
+  modifiableAreaHeight = 580;
+  showModifiableArea = true;
   
   // Product info
   customProduct: CustomProduct = {
@@ -297,6 +306,20 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     
     // Draw the modified image to the main canvas
     ctx.drawImage(tempCanvas, 0, 0);
+    
+    // Draw the modifiable area if enabled
+    if (this.showModifiableArea) {
+      ctx.strokeStyle = '#3f51b5';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.strokeRect(
+        this.modifiableAreaX, 
+        this.modifiableAreaY, 
+        this.modifiableAreaWidth, 
+        this.modifiableAreaHeight
+      );
+      ctx.setLineDash([]);
+    }
   }
   
   // Helper method to determine if a color is dark
@@ -430,9 +453,35 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     
+    // Calculate new position
+    let newX = x - this.dragStartX;
+    let newY = y - this.dragStartY;
+    
+    // Constrain to modifiable area
+    if ('width' in this.activeElement) {
+      // For images, constrain based on the image dimensions
+      const halfWidth = this.activeElement.width / 2;
+      const halfHeight = this.activeElement.height / 2;
+      
+      newX = Math.max(this.modifiableAreaX + halfWidth, Math.min(newX, this.modifiableAreaX + this.modifiableAreaWidth - halfWidth));
+      newY = Math.max(this.modifiableAreaY + halfHeight, Math.min(newY, this.modifiableAreaY + this.modifiableAreaHeight - halfHeight));
+    } else {
+      // For text, use an approximate constraint
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.font = `${this.activeElement.fontSize}px ${this.activeElement.fontFamily}`;
+        const metrics = ctx.measureText(this.activeElement.text);
+        const halfWidth = metrics.width / 2;
+        const halfHeight = this.activeElement.fontSize / 2;
+        
+        newX = Math.max(this.modifiableAreaX + halfWidth, Math.min(newX, this.modifiableAreaX + this.modifiableAreaWidth - halfWidth));
+        newY = Math.max(this.modifiableAreaY + halfHeight, Math.min(newY, this.modifiableAreaY + this.modifiableAreaHeight - halfHeight));
+      }
+    }
+    
     // Update element position
-    this.activeElement.x = x - this.dragStartX;
-    this.activeElement.y = y - this.dragStartY;
+    this.activeElement.x = newX;
+    this.activeElement.y = newY;
     
     this.renderCanvas();
   }
@@ -534,8 +583,8 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
           const newImage: ImageElement = {
             id: 'img-' + Date.now(),
             url: img.src,
-            x: this.canvasWidth / 2,
-            y: this.canvasHeight / 2,
+            x: this.modifiableAreaX + (this.modifiableAreaWidth / 2),
+            y: this.modifiableAreaY + (this.modifiableAreaHeight / 2),
             width: width,
             height: height,
             rotation: 0,
@@ -566,8 +615,8 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     const newTextElement: TextElement = {
       id: 'text-' + Date.now(),
       text: this.newText,
-      x: this.canvasWidth / 2,
-      y: this.canvasHeight / 2,
+      x: this.modifiableAreaX + (this.modifiableAreaWidth / 2),
+      y: this.modifiableAreaY + (this.modifiableAreaHeight / 2),
       fontSize: this.fontSize,
       fontFamily: this.fontFamily,
       color: this.textColor,
