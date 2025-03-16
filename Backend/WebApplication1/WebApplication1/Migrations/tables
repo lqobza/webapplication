@@ -13,7 +13,6 @@ CREATE TABLE Category (
     name nvarchar(255) NOT NULL UNIQUE
 );
 
-
 CREATE TABLE Merch (
     id int identity(1,1) primary key,
     category_id int NOT NULL foreign key references Category(id),
@@ -23,16 +22,17 @@ CREATE TABLE Merch (
     brand_id int NOT NULL foreign key references Brand(id)
 );
 
-
 CREATE TABLE MerchTheme (
-    merch_id int foreign key references Merch(id) NOT NULL,
-    theme_id int foreign key references Theme(id) NOT NULL,
-    PRIMARY KEY (merch_id, theme_id)
+    merch_id int NOT NULL,
+    theme_id int NOT NULL,
+    PRIMARY KEY (merch_id, theme_id),
+    FOREIGN KEY (merch_id) REFERENCES Merch(id),
+    FOREIGN KEY (theme_id) REFERENCES Theme(id)
 );
 
 CREATE TABLE Ratings (
     id int identity(1,1) primary key,
-    merch_id int foreign key references Merch(id) NOT NULL,
+    merch_id int NOT NULL foreign key references Merch(id),
     rating int check (rating >= 1 AND rating <= 5) NOT NULL,
     description nvarchar(255),
     created_at datetime default getdate()
@@ -40,7 +40,7 @@ CREATE TABLE Ratings (
 
 CREATE TABLE MerchSize (
     id int identity(1,1) primary key,
-    merch_id int foreign key references Merch(id) NOT NULL,
+    merch_id int NOT NULL foreign key references Merch(id),
     size nvarchar(255) NULL,
     instock int NOT NULL
 );
@@ -51,62 +51,32 @@ CREATE TABLE Orders (
     total_amount decimal(10, 2) NOT NULL,
     customer_name nvarchar(255) NOT NULL,
     customer_email nvarchar(255) NOT NULL,
-    customer_address nvarchar(255) NOT NULL
+    customer_address nvarchar(255) NOT NULL,
+    user_id INT NULL
 );
 
 CREATE TABLE OrderItems (
     id int IDENTITY(1,1) PRIMARY KEY,
-    order_id int NOT NULL FOREIGN KEY REFERENCES Orders(id) ON DELETE CASCADE,
-    merch_id int NOT NULL FOREIGN KEY REFERENCES Merch(id),
+    order_id int NOT NULL,
+    merch_id int NULL,
     size nvarchar(255) NOT NULL,
     quantity int NOT NULL,
-    price decimal(10, 2) NOT NULL
+    price decimal(10, 2) NOT NULL,
+    is_custom BIT NOT NULL DEFAULT 0,
+    merchandise_name NVARCHAR(255) NULL,
+    image_url NVARCHAR(MAX) NULL,
+    CONSTRAINT FK_OrderItems_Orders FOREIGN KEY (order_id) REFERENCES Orders(id) ON DELETE CASCADE,
+    CONSTRAINT FK_OrderItems_Merch FOREIGN KEY (merch_id) REFERENCES Merch(id)
 );
 
 CREATE TABLE MerchandiseImages (
     id int identity(1,1) primary key,
-    merch_id int foreign key references Merch(id) NOT NULL,
+    merch_id int NOT NULL,
     image_url nvarchar(500) NOT NULL,
     is_primary bit NOT NULL DEFAULT 0,
-    created_at datetime DEFAULT GETDATE()
+    created_at datetime DEFAULT GETDATE(),
+    CONSTRAINT FK_MerchandiseImages_Merch_MerchId FOREIGN KEY (merch_id) REFERENCES Merch(id)
 );
-
--- Create indexes on foreign key columns
--- Index on Merch.category_id
-CREATE INDEX idx_merch_category_id ON Merch(category_id);
-
--- Index on Merch.brand_id
-CREATE INDEX idx_merch_brand_id ON Merch(brand_id);
-
--- Index on MerchTheme.merch_id
-CREATE INDEX idx_merchtheme_merch_id ON MerchTheme(merch_id);
-
--- Index on MerchTheme.theme_id
-CREATE INDEX idx_merchtheme_theme_id ON MerchTheme(theme_id);
-
--- Index on Ratings.merch_id
-CREATE INDEX idx_ratings_merch_id ON Ratings(merch_id);
-
--- Index on MerchSize.merch_id
-CREATE INDEX idx_merchsize_merch_id ON MerchSize(merch_id);
-
--- Add index for faster lookups
-CREATE INDEX idx_merchimages_merch_id ON MerchandiseImages(merch_id);
-
--- Drop the existing constraint
-ALTER TABLE MerchandiseImages DROP CONSTRAINT FK_MerchandiseImages_Merchandise_MerchId;
-
--- Add the correct constraint pointing to the Merch table
-ALTER TABLE MerchandiseImages 
-ADD CONSTRAINT FK_MerchandiseImages_Merch_MerchId 
-FOREIGN KEY (MerchId) REFERENCES Merch(id);
-
-ALTER TABLE Orders
-ADD user_id INT NULL;
-
-UPDATE Orders
-SET user_id = 1
-WHERE user_id IS NULL;
 
 CREATE TABLE OrderMessages (
     Id INT PRIMARY KEY IDENTITY(1,1),
@@ -126,91 +96,29 @@ CREATE TABLE CustomDesigns (
     created_at DATETIME2 NOT NULL DEFAULT GETDATE()
 );
 
+-- Create indexes on foreign key columns
+CREATE INDEX idx_merch_category_id ON Merch(category_id);
+CREATE INDEX idx_merch_brand_id ON Merch(brand_id);
+CREATE INDEX idx_merchtheme_merch_id ON MerchTheme(merch_id);
+CREATE INDEX idx_merchtheme_theme_id ON MerchTheme(theme_id);
+CREATE INDEX idx_ratings_merch_id ON Ratings(merch_id);
+CREATE INDEX idx_merchsize_merch_id ON MerchSize(merch_id);
+CREATE INDEX idx_merchimages_merch_id ON MerchandiseImages(merch_id);
 CREATE INDEX IX_CustomDesigns_UserId ON CustomDesigns(user_id);
 
--- Add is_custom column to OrderItems table if it doesn't exist
-IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[OrderItems]') AND name = 'is_custom')
+-- Helper stored procedure for future column additions
+CREATE OR ALTER PROCEDURE AddColumnIfNotExists
+    @tableName NVARCHAR(128),
+    @columnName NVARCHAR(128),
+    @columnDefinition NVARCHAR(MAX)
+AS
 BEGIN
-    ALTER TABLE OrderItems
-    ADD is_custom BIT NOT NULL DEFAULT 0;
-    PRINT 'Added is_custom column to OrderItems table';
-END
-ELSE
-BEGIN
-    PRINT 'is_custom column already exists in OrderItems table';
-END
-
--- Add merchandise_name column if it doesn't exist
-IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[OrderItems]') AND name = 'merchandise_name')
-BEGIN
-    ALTER TABLE OrderItems
-    ADD merchandise_name NVARCHAR(255) NULL;
-    PRINT 'Added merchandise_name column to OrderItems table';
-END
-ELSE
-BEGIN
-    PRINT 'merchandise_name column already exists in OrderItems table';
-END
-
--- Add image_url column if it doesn't exist
-IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[OrderItems]') AND name = 'image_url')
-BEGIN
-    ALTER TABLE OrderItems
-    ADD image_url NVARCHAR(MAX) NULL;
-    PRINT 'Added image_url column to OrderItems table';
-END
-ELSE
-BEGIN
-    PRINT 'image_url column already exists in OrderItems table';
-END
-
--- First, drop the foreign key constraint
-IF EXISTS (SELECT * FROM sys.foreign_keys WHERE object_id = OBJECT_ID(N'[dbo].[FK__OrderItem__merch__6A30C649]') AND parent_object_id = OBJECT_ID(N'[dbo].[OrderItems]'))
+    DECLARE @sql NVARCHAR(MAX)
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(@tableName) AND name = @columnName)
     BEGIN
-        ALTER TABLE OrderItems DROP CONSTRAINT [FK__OrderItem__merch__6A30C649]
-        PRINT 'Dropped foreign key constraint FK__OrderItem__merch__6A30C649'
-    END
-
--- Then, modify the merch_id column to allow NULL values
-IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[OrderItems]') AND name = 'merch_id' AND is_nullable = 0)
-BEGIN
-    ALTER TABLE OrderItems ALTER COLUMN merch_id INT NULL
-    PRINT 'Modified merch_id column to allow NULL values'
-END
-
--- Finally, recreate the foreign key constraint with the NULL option
-IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE object_id = OBJECT_ID(N'[dbo].[FK__OrderItem__merch__6A30C649]') AND parent_object_id = OBJECT_ID(N'[dbo].[OrderItems]'))
-BEGIN
-    ALTER TABLE OrderItems 
-    ADD CONSTRAINT [FK__OrderItem__merch__6A30C649] 
-    FOREIGN KEY (merch_id) 
-    REFERENCES Merch(id);
-    PRINT 'Recreated foreign key constraint FK__OrderItem__merch__6A30C649'
-END 
-
--- Check if the IsRead column exists in the OrderMessages table
-IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[OrderMessages]') AND name = 'IsRead')
-BEGIN
-    -- First, find and drop the default constraint on the IsRead column
-    DECLARE @constraintName NVARCHAR(200)
-    
-    SELECT @constraintName = dc.name
-    FROM sys.default_constraints dc
-    JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id
-    WHERE c.object_id = OBJECT_ID(N'[dbo].[OrderMessages]') AND c.name = 'IsRead'
-    
-    IF @constraintName IS NOT NULL
-    BEGIN
-        DECLARE @sql NVARCHAR(MAX) = N'ALTER TABLE [dbo].[OrderMessages] DROP CONSTRAINT ' + QUOTENAME(@constraintName)
+        SET @sql = N'ALTER TABLE ' + QUOTENAME(@tableName) + 
+                   N' ADD ' + QUOTENAME(@columnName) + N' ' + @columnDefinition
         EXEC sp_executesql @sql
-        PRINT 'Dropped default constraint ' + @constraintName + ' on IsRead column'
+        PRINT 'Added ' + @columnName + ' column to ' + @tableName + ' table'
     END
-    
-    -- Now drop the IsRead column
-    ALTER TABLE OrderMessages DROP COLUMN IsRead;
-    PRINT 'Removed IsRead column from OrderMessages table';
-END
-ELSE
-BEGIN
-    PRINT 'IsRead column does not exist in OrderMessages table';
-END 
+END; 
