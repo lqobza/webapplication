@@ -67,8 +67,6 @@ public class OrderRepository : IOrderRepository
         _logger.LogInformation("Inserting order item for order {OrderId}: MerchId={MerchId}, Size={Size}, Quantity={Quantity}",
             orderId, item.MerchId, item.Size, item.Quantity);
         
-        // For items with null MerchId, we need to use a different query
-        // because it would violate the foreign key constraint
         string query;
         
         if (item.MerchId == null)
@@ -125,7 +123,6 @@ public class OrderRepository : IOrderRepository
 
     public async Task UpdateStockAsync(OrderItemDto item)
     {
-        // Skip stock update for custom merchandise items or items with null MerchId
         if (item.IsCustom || item.MerchId == null || item.MerchId <= 0)
         {
             return;
@@ -134,7 +131,6 @@ public class OrderRepository : IOrderRepository
         _logger.LogInformation("Updating stock for item: MerchId={MerchId}, Size={Size}, Quantity={Quantity}", 
             item.MerchId, item.Size, item.Quantity);
 
-        // First check if there's enough stock
         var checkStockQuery = @"
             SELECT ms.instock, m.name
             FROM MerchSize ms
@@ -144,7 +140,6 @@ public class OrderRepository : IOrderRepository
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync();
 
-        // Check available stock
         int availableStock = 0;
         string merchandiseName = "";
         
@@ -166,14 +161,12 @@ public class OrderRepository : IOrderRepository
             }
             else
             {
-                // Item not found in stock
                 _logger.LogWarning("Item with ID {MerchId} and size {Size} not found in stock", 
                     item.MerchId, item.Size);
                 throw new InvalidOperationException($"Item with ID {item.MerchId} and size {item.Size} not found in stock");
             }
         }
 
-        // Check if there's enough stock
         if (availableStock < item.Quantity)
         {
             _logger.LogWarning("Insufficient stock for '{MerchandiseName}' (Size: {Size}). Requested: {Requested}, Available: {Available}", 
@@ -183,7 +176,6 @@ public class OrderRepository : IOrderRepository
                 $"Requested: {item.Quantity}, Available: {availableStock}");
         }
 
-        // Update the stock
         var updateStockQuery = @"
             UPDATE MerchSize
             SET instock = instock - @quantity
@@ -356,7 +348,6 @@ public class OrderRepository : IOrderRepository
         return orderList;
     }
 
-    // Order Messages Implementation
     public async Task<OrderMessageDto> AddOrderMessageAsync(OrderMessageCreateDto messageDto)
     {
         var query = @"
@@ -431,10 +422,8 @@ public class OrderRepository : IOrderRepository
     {
         _logger.LogInformation("Deleting order with ID: {OrderId}", orderId);
         
-        // First delete all order items
         var deleteItemsQuery = @"DELETE FROM OrderItems WHERE order_id = @orderId";
         
-        // Then delete any order messages if the table exists
         var deleteMessagesQuery = @"
         IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'OrderMessages')
         BEGIN
@@ -448,18 +437,15 @@ public class OrderRepository : IOrderRepository
             END
         END";
         
-        // Finally delete the order itself
         var deleteOrderQuery = @"DELETE FROM Orders WHERE id = @orderId";
         
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync();
         
-        // Use a transaction to ensure all operations succeed or fail together
         await using var transaction = await connection.BeginTransactionAsync();
         
         try
         {
-            // Delete order items
             await using (var command = new SqlCommand(deleteItemsQuery, connection, transaction as SqlTransaction))
             {
                 command.Parameters.AddWithValue("@orderId", orderId);
@@ -469,7 +455,6 @@ public class OrderRepository : IOrderRepository
             
             try
             {
-                // Delete order messages
                 await using (var command = new SqlCommand(deleteMessagesQuery, connection, transaction as SqlTransaction))
                 {
                     command.Parameters.AddWithValue("@orderId", orderId);
@@ -479,11 +464,9 @@ public class OrderRepository : IOrderRepository
             }
             catch (Exception ex)
             {
-                // Log the error but continue with the deletion process
                 _logger.LogWarning(ex, "Error deleting order messages for order {OrderId}. This is not critical and the deletion process will continue.", orderId);
             }
             
-            // Delete the order
             await using (var command = new SqlCommand(deleteOrderQuery, connection, transaction as SqlTransaction))
             {
                 command.Parameters.AddWithValue("@orderId", orderId);
@@ -491,13 +474,11 @@ public class OrderRepository : IOrderRepository
                 _logger.LogInformation("Deleted order {OrderId}: {Success}", orderId, orderDeleted > 0);
             }
             
-            // Commit the transaction
             await transaction.CommitAsync();
             _logger.LogInformation("Order {OrderId} deleted successfully", orderId);
         }
         catch (Exception ex)
         {
-            // Rollback the transaction if any operation fails
             await transaction.RollbackAsync();
             _logger.LogError(ex, "Error deleting order {OrderId}", orderId);
             throw;

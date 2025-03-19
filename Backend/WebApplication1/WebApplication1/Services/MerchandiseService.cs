@@ -147,7 +147,6 @@ public class MerchandiseService : IMerchandiseService
 
     public bool MerchandiseExists(int id)
     {
-        // Use raw SQL to check the Merch table directly
         var sql = "SELECT COUNT(1) FROM Merch WHERE id = @id";
         var parameters = new[] { new System.Data.SqlClient.SqlParameter("@id", id) };
         var exists = _merchandiseRepository.ExecuteScalar<int>(sql, parameters) > 0;
@@ -161,7 +160,6 @@ public class MerchandiseService : IMerchandiseService
             throw new ArgumentException("No image file provided");
         }
         
-        // Check if merchandise exists
         if (!MerchandiseExists(merchandiseId))
         {
             throw new KeyNotFoundException($"Merchandise with ID {merchandiseId} not found");
@@ -169,20 +167,16 @@ public class MerchandiseService : IMerchandiseService
         
         try
         {
-            // Save the image file
             var imageUrl = await _imageStorageService.SaveImageAsync(image, merchandiseId.ToString());
             
-            // Add image record to database
             var imageDto = await _imageRepository.AddImage(merchandiseId, imageUrl);
             
             return imageDto;
         }
         catch (Exception ex)
         {
-            // If database operation fails, clean up the saved file
             if (ex is DbUpdateException && ex.InnerException?.Message.Contains("FOREIGN KEY constraint") == true)
             {
-                // Try to get the image URL from exception data
                 var imageUrl = ex.Data["ImageUrl"] as string;
                 if (!string.IsNullOrEmpty(imageUrl))
                 {
@@ -190,7 +184,7 @@ public class MerchandiseService : IMerchandiseService
                 }
             }
             
-            throw; // Re-throw the exception to be handled by the controller
+            throw;
         }
     }
 }

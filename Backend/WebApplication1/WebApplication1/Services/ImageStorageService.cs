@@ -28,7 +28,6 @@ public class FileSystemImageService : IImageStorageService
 
     public async Task DeleteImageAsync(string path)
     {
-        // Convert URL path to file system path
         if (path.StartsWith("/images/merchandise/"))
         {
             path = path.Replace("/images/merchandise/", "");

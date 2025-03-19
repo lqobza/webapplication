@@ -38,7 +38,6 @@ namespace WebApplication1.Repositories
         {
             try
             {
-                // First verify the merchandise exists using direct SQL
                 var sql = "SELECT COUNT(1) FROM Merch WHERE id = @id";
                 var parameter = new Microsoft.Data.SqlClient.SqlParameter("@id", merchandiseId);
                 var count = await _context.Database.ExecuteSqlRawAsync(sql, parameter);
@@ -50,7 +49,6 @@ namespace WebApplication1.Repositories
 
                 if (isPrimary)
                 {
-                    // Reset any existing primary image
                     var existingPrimary = await _context.MerchandiseImages
                         .Where(mi => mi.MerchId == merchandiseId && mi.IsPrimary)
                         .FirstOrDefaultAsync();
@@ -83,7 +81,6 @@ namespace WebApplication1.Repositories
             }
             catch (Exception ex)
             {
-                // Store the image URL in the exception data for cleanup
                 ex.Data["ImageUrl"] = imageUrl;
                 throw;
             }

@@ -103,7 +103,6 @@ export class MyDesignsComponent implements OnInit {
   }
 
   addToCart(design: CustomDesign): void {
-    // Ensure we have valid values
     if (!design.selectedSize) {
       design.selectedSize = 'M';
     }
@@ -112,8 +111,6 @@ export class MyDesignsComponent implements OnInit {
       design.selectedQuantity = 1;
     }
     
-    // Truncate the image data for storage if it's too large
-    // This is just for logging, the actual image will be handled by the cart service
     const truncatedFrontImage = design.frontImage ? 
       (design.frontImage.length > 100 ? design.frontImage.substring(0, 100) + '...' : design.frontImage) : null;
     
@@ -122,7 +119,7 @@ export class MyDesignsComponent implements OnInit {
       name: design.name,
       frontImage: design.frontImage,
       backImage: design.backImage,
-      tshirtColor: '#ffffff', // Default color
+      tshirtColor: '#ffffff',
       size: design.selectedSize,
       price: 30,
       quantity: design.selectedQuantity,

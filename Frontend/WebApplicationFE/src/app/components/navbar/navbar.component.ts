@@ -30,7 +30,7 @@ export class NavbarComponent {
 
   logout() {
     this.authService.logout();
-    this.cartService.clearCart(); // Clear cart on logout
+    this.cartService.clearCart();
     this.router.navigate(['/']);
   }
 

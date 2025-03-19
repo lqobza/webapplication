@@ -31,7 +31,6 @@ export class MerchandiseListComponent implements OnInit {
     hasPreviousPage: false
   };
   
-  // Filtering and sorting properties
   categories: string[] = [];
   selectedCategory: string = '';
   priceRange: { min: number, max: number } = { min: 0, max: 1000 };
@@ -57,7 +56,6 @@ export class MerchandiseListComponent implements OnInit {
         this.isLoading = false;
         this.errorMessage = undefined;
         
-        // Extract unique categories
         this.extractCategories();
       },
       error: (error) => {
@@ -80,12 +78,10 @@ export class MerchandiseListComponent implements OnInit {
 
   applyFilters(): void {
     this.filteredList = this.merchandiseList.filter(item => {
-      // Category filter
       if (this.selectedCategory && item.categoryName !== this.selectedCategory) {
         return false;
       }
       
-      // Price range filter
       if (item.price < this.priceRange.min || item.price > this.priceRange.max) {
         return false;
       }
@@ -121,7 +117,7 @@ export class MerchandiseListComponent implements OnInit {
         this.filteredList.sort((a, b) => b.name.localeCompare(a.name));
         break;
       default:
-        // No sorting
+        //no sorting
         break;
     }
   }
@@ -138,7 +134,6 @@ export class MerchandiseListComponent implements OnInit {
     if (newPage >= 1 && (!this.paginationInfo || newPage <= this.paginationInfo.totalPages)) {
       this.currentPage = newPage;
       this.loadMerchandise();
-      // Scroll to top of the list
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }

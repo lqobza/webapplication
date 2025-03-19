@@ -20,7 +20,6 @@ public class RatingRepository : BaseRepository, IRatingRepository
         using var connection = CreateConnection();
         connection.Open();
 
-        // Check if the merch_id exists
         var checkMerchQuery = "SELECT COUNT(*) FROM Merch WHERE id = @MerchId";
         using var checkCommand = new SqlCommand(checkMerchQuery, connection);
         
@@ -33,7 +32,6 @@ public class RatingRepository : BaseRepository, IRatingRepository
             throw new ArgumentException("Invalid Merch ID");
         }
 
-        // Insert the rating
         var query = "INSERT INTO Ratings (merch_id, rating, description) VALUES (@MerchId, @Rating, @Description)";
         using var command = new SqlCommand(query, connection);
         

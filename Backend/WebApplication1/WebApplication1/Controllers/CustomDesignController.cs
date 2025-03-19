@@ -135,7 +135,6 @@ public class CustomDesignController : ControllerBase
                 return NotFound($"Design with ID {id} not found");
             }
             
-            // Check if the current user is the owner of the design
             var currentUserId = User.FindFirst("userId")?.Value;
             if (currentUserId != design.UserId)
             {

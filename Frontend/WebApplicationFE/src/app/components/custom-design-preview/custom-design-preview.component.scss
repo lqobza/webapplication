@@ -229,7 +229,6 @@
   }
 }
 
-// Override color picker styles
 ::ng-deep {
   .color-picker {
     z-index: 1000;
@@ -241,7 +240,6 @@
     display: none !important;
   }
   
-  // Style the button toggle group
   .mat-button-toggle-group {
     border-radius: 4px;
     overflow: hidden;
@@ -265,7 +263,6 @@
   }
 }
 
-// Add a checkerboard background to show transparency
 .selected-color::before {
   content: '';
   position: absolute;
@@ -273,14 +270,10 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: 
-    linear-gradient(45deg, #ccc 25%, transparent 25%) -2px -2px / 4px 4px repeat-x,
-    linear-gradient(-45deg, #ccc 25%, transparent 25%) -2px -2px / 4px 4px repeat-x;
   border-radius: 50%;
   z-index: -1;
 }
 
-// Ensure color picker container doesn't break layout
 ::ng-deep .color-picker-container {
   position: fixed !important;
 }

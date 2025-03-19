@@ -76,7 +76,6 @@ public class MerchandiseController : ControllerBase
             return BadRequest(new { message = "Size cannot be empty" });
         }
 
-        // Normalize size to uppercase for consistency
         size = size.Trim().ToUpper();
         
         _logger.LogInformation("GetMerchandiseBySize endpoint called with size: {Size}", size);
@@ -290,7 +289,7 @@ public class MerchandiseController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(themeCreateDto.Name) || !ModelState.IsValid)
         {
-            return BadRequest(ModelState); // Return BadRequest with ModelState
+            return BadRequest(ModelState);
         }
 
         var insertThemeResult = _merchandiseService.AddThemeToDb(themeCreateDto);
@@ -383,7 +382,7 @@ public class MerchandiseController : ControllerBase
         }
         
         var imageFileStream = System.IO.File.OpenRead(imagePath);
-        return File(imageFileStream, "image/jpeg"); // Adjust content type as needed
+        return File(imageFileStream, "image/jpeg");
     }
 
     [HttpGet("{id:int}/stock/{size}")]
@@ -394,7 +393,6 @@ public class MerchandiseController : ControllerBase
         
         try
         {
-            // First check if the merchandise exists
             var merchandise = _merchandiseService.GetMerchandiseById(id);
             if (merchandise == null)
             {
@@ -402,10 +400,8 @@ public class MerchandiseController : ControllerBase
                 return NotFound(new { message = $"Merchandise with ID {id} not found" });
             }
             
-            // Get the merchandise name
             string merchandiseName = merchandise.Name;
             
-            // Get the sizes for this merchandise
             var sizes = _merchandiseService.GetSizesByCategoryId(merchandise.CategoryId);
             if (sizes == null || !sizes.Contains(size))
             {
@@ -413,7 +409,6 @@ public class MerchandiseController : ControllerBase
                 return NotFound(new { message = $"Size {size} not available for merchandise with ID {id}" });
             }
             
-            // Get the stock information
             var merchSizes = _merchandiseRepository.GetSizesByMerchId(id);
             var sizeInfo = merchSizes.FirstOrDefault(s => s.Size == size);
             
@@ -423,7 +418,6 @@ public class MerchandiseController : ControllerBase
                 return NotFound(new { message = $"Size {size} not found in stock for merchandise with ID {id}" });
             }
             
-            // Check if there's enough stock
             bool isAvailable = sizeInfo.InStock >= quantity;
             
             _logger.LogInformation("Stock check for {MerchandiseName} (ID: {Id}, Size: {Size}): Available: {Available}, Requested: {Requested}",

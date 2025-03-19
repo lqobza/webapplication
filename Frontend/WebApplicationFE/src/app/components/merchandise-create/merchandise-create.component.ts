@@ -73,7 +73,6 @@ export class MerchandiseCreateComponent {
     if (this.merchandiseForm.valid) {
       const newMerchandise: Merchandise = this.merchandiseForm.value;
   
-      // add the selected size
       this.merchandiseService.insertMerchandise(newMerchandise).subscribe(
         () => this.router.navigate(['/merchandise']),
         error => console.error('Error creating merchandise', error)

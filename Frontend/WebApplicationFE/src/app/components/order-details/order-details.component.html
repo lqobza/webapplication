@@ -27,13 +27,11 @@
     </mat-card>
 
     <mat-tab-group>
-      <!-- Order Items Tab -->
       <mat-tab label="Items">
         <div class="tab-content">
           <div class="order-items">
             <div *ngFor="let item of order.orderItems" class="order-item">
               <div class="item-image">
-                <!-- Custom merchandise indicator -->
                 <div *ngIf="item.merchandiseId === null" class="custom-badge">Custom</div>
                 
                 <img *ngIf="item.merchandise?.primaryImageUrl" [src]="getImageUrl(item.merchandise.primaryImageUrl)" alt="{{ item.merchandise.name || 'Product Image' }}">
@@ -56,7 +54,6 @@
         </div>
       </mat-tab>
 
-      <!-- Customer Details Tab -->
       <mat-tab label="Customer Details">
         <div class="tab-content">
           <div class="customer-details">
@@ -75,8 +72,7 @@
           </div>
         </div>
       </mat-tab>
-
-      <!-- Messages Tab -->
+      
       <mat-tab label="Messages">
         <div class="tab-content">
           <app-order-messages [orderId]="order.id" [isAdminMode]="isAdminMode"></app-order-messages>

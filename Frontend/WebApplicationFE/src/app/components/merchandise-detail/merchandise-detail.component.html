@@ -8,7 +8,6 @@
 
 <div class="merchandise-details" *ngIf="merchandise">
   <div class="merchandise-container">
-    <!-- Left column: Images -->
     <div class="merchandise-images-column">
       <div class="primary-image">
         <img [src]="getPrimaryImageUrl()" alt="{{ merchandise.name }}" />
@@ -23,7 +22,6 @@
       </div>
     </div>
 
-    <!-- Right column: Details -->
     <div class="merchandise-info-column">
       <div class="details-header">
         <h2>{{ merchandise.name }}</h2>

@@ -59,7 +59,6 @@ interface ImageElement {
   isDragging: boolean;
 }
 
-// Define a type for the t-shirt side
 type TShirtSide = 'front' | 'back';
 
 @Component({
@@ -86,35 +85,28 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
   @ViewChild('designCanvas') designCanvas!: ElementRef<HTMLCanvasElement>;
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
-  // T-shirt properties
   selectedColor: string = '#ffffff';
   selectedSize: string = 'M';
   availableSizes = ['S', 'M', 'L', 'XL', 'XXL'];
   tshirtFrontImage: HTMLImageElement = new Image();
   tshirtBackImage: HTMLImageElement = new Image();
   
-  // Current side being edited
   currentSide: TShirtSide = 'front';
   
-  // Design elements for both sides
   frontTextElements: TextElement[] = [];
   frontImageElements: ImageElement[] = [];
   backTextElements: TextElement[] = [];
   backImageElements: ImageElement[] = [];
   
-  // Active element for editing
   activeElement: TextElement | ImageElement | null = null;
   
-  // New text properties
   newText: string = '';
   fontSize: number = 24;
   fontFamily: string = 'Arial';
   textColor: string = '#000000';
   
-  // Design name for saving
   designName: string = '';
   
-  // Available font families
   fontFamilies = [
     'Arial', 
     'Verdana', 
@@ -124,18 +116,15 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     'Comic Sans MS'
   ];
   
-  // Canvas dimensions
   canvasWidth = 600;
   canvasHeight = 700;
   
-  // Modifiable area constraints
   modifiableAreaX = 150;
   modifiableAreaY = 100;
   modifiableAreaWidth = 300;
   modifiableAreaHeight = 580;
   showModifiableArea = true;
   
-  // Product info
   customProduct: CustomProduct = {
     id: 'custom-' + Date.now(),
     name: this.designName,
@@ -147,11 +136,9 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     quantity: 1
   };
 
-  // Drag state
   dragStartX = 0;
   dragStartY = 0;
   
-  // Loading state
   isLoading = false;
 
   constructor(
@@ -162,7 +149,6 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
   ) {}
 
   ngOnInit(): void {
-    // Load the t-shirt images
     this.tshirtFrontImage.src = 'assets/images/tshirt-front.png';
     this.tshirtBackImage.src = 'assets/images/tshirt-back.png';
     
@@ -171,7 +157,6 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     };
     
     this.tshirtBackImage.onload = () => {
-      // Only render if we're viewing the back
       if (this.currentSide === 'back') {
         this.renderCanvas();
       }
@@ -179,7 +164,6 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    // Set up canvas event listeners after view is initialized
     const canvas = this.designCanvas.nativeElement;
     
     canvas.addEventListener('mousedown', this.handleCanvasMouseDown.bind(this));
@@ -187,11 +171,9 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     canvas.addEventListener('mouseup', this.handleCanvasMouseUp.bind(this));
     canvas.addEventListener('mouseleave', this.handleCanvasMouseUp.bind(this));
     
-    // Initial render
     this.renderCanvas();
   }
 
-  // Get the current elements based on which side is active
   get currentTextElements(): TextElement[] {
     return this.currentSide === 'front' ? this.frontTextElements : this.backTextElements;
   }
@@ -200,11 +182,10 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     return this.currentSide === 'front' ? this.frontImageElements : this.backImageElements;
   }
 
-  // Switch between front and back views
   switchSide(side: TShirtSide): void {
     if (this.currentSide !== side) {
       this.currentSide = side;
-      this.activeElement = null; // Clear active element when switching sides
+      this.activeElement = null;
       this.renderCanvas();
     }
   }
@@ -214,27 +195,19 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw t-shirt with selected color based on current side
     this.drawTshirtWithColor(ctx);
-
-    // Draw all image elements for the current side
+    
     this.currentImageElements.forEach(img => this.drawImageElement(ctx, img));
-
-    // Draw all text elements for the current side
     this.currentTextElements.forEach(text => this.drawTextElement(ctx, text));
   }
 
   drawTshirtWithColor(ctx: CanvasRenderingContext2D): void {
-    // Choose the correct image based on current side
     const tshirtImage = this.currentSide === 'front' ? this.tshirtFrontImage : this.tshirtBackImage;
     
-    // Clear the canvas
     ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
     
-    // Create a temporary canvas to manipulate the image
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = this.canvasWidth;
     tempCanvas.height = this.canvasHeight;
@@ -242,15 +215,11 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     
     if (!tempCtx) return;
     
-    // Draw the t-shirt image on the temporary canvas
     tempCtx.drawImage(tshirtImage, 0, 0, this.canvasWidth, this.canvasHeight);
     
-    // Get the image data
     const imageData = tempCtx.getImageData(0, 0, this.canvasWidth, this.canvasHeight);
     const data = imageData.data;
     
-    // Modify the image data to apply the color to the t-shirt body
-    // Convert the selected color from hex to RGB
     const hexToRgb = (hex: string): {r: number, g: number, b: number} => {
       const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
       return result ? {
@@ -262,22 +231,16 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     
     const color = hexToRgb(this.selectedColor);
     
-    // Loop through all pixels
     for (let i = 0; i < data.length; i += 4) {
-      // Get the alpha value (transparency)
       const alpha = data[i + 3];
       
-      // Skip fully transparent pixels
       if (alpha === 0) continue;
       
-      // Check if this is a white or light gray pixel (part of the t-shirt body)
-      // We use a threshold to identify "white-ish" pixels
       const isWhitePixel = 
         data[i] > 230 && 
         data[i + 1] > 230 && 
         data[i + 2] > 230;
       
-      // Check if this is a black or dark pixel (part of the outline)
       const isDarkPixel = 
         data[i] < 50 && 
         data[i + 1] < 50 && 
@@ -287,9 +250,7 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
         data[i] < 10 && 
         data[i + 1] < 10 && 
         data[i + 2] < 10;
-      // Only color the white/light parts of the t-shirt (the body)
       if (isWhitePixel && !isDarkPixel) {
-        // Apply the selected color
         data[i] = color.r;
         data[i + 1] = color.g;
         data[i + 2] = color.b;
@@ -301,13 +262,10 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
       }
     }
     
-    // Put the modified image data back on the temporary canvas
     tempCtx.putImageData(imageData, 0, 0);
     
-    // Draw the modified image to the main canvas
     ctx.drawImage(tempCanvas, 0, 0);
     
-    // Draw the modifiable area if enabled
     if (this.showModifiableArea) {
       ctx.strokeStyle = '#3f51b5';
       ctx.lineWidth = 2;
@@ -322,36 +280,28 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     }
   }
   
-  // Helper method to determine if a color is dark
   isColorDark(hexColor: string): boolean {
-    // Convert hex to RGB
     const r = parseInt(hexColor.slice(1, 3), 16);
     const g = parseInt(hexColor.slice(3, 5), 16);
     const b = parseInt(hexColor.slice(5, 7), 16);
     
-    // Calculate brightness (using the formula for relative luminance)
     const brightness = (r * 299 + g * 587 + b * 114) / 1000;
     
-    // Return true if the color is dark (brightness < 128)
     return brightness < 128;
   }
 
   drawTextElement(ctx: CanvasRenderingContext2D, element: TextElement): void {
     ctx.save();
     
-    // Move to the text position and apply rotation
     ctx.translate(element.x, element.y);
     ctx.rotate(element.rotation * Math.PI / 180);
     
-    // Set text properties
     ctx.font = `${element.fontSize}px ${element.fontFamily}`;
     ctx.fillStyle = element.color;
     ctx.textAlign = 'center';
     
-    // Draw the text
     ctx.fillText(element.text, 0, 0);
     
-    // Draw selection box if this is the active element
     if (this.activeElement === element) {
       const metrics = ctx.measureText(element.text);
       const height = element.fontSize;
@@ -361,7 +311,6 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
       ctx.lineWidth = 2;
       ctx.strokeRect(-width/2 - 5, -height/2 - 5, width + 10, height + 10);
       
-      // Draw rotation handle
       ctx.fillStyle = '#0099ff';
       ctx.beginPath();
       ctx.arc(0, -height/2 - 20, 5, 0, Math.PI * 2);
@@ -372,11 +321,9 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
   }
 
   drawImageElement(ctx: CanvasRenderingContext2D, element: ImageElement): void {
-    // Create an image object if we only have the URL
     const img = new Image();
     img.src = element.url;
     
-    // Only proceed if the image is loaded
     if (!img.complete) {
       img.onload = () => this.renderCanvas();
       return;
@@ -384,20 +331,16 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     
     ctx.save();
     
-    // Move to the image position and apply rotation
     ctx.translate(element.x, element.y);
     ctx.rotate(element.rotation * Math.PI / 180);
     
-    // Draw the image centered at its position
     ctx.drawImage(img, -element.width/2, -element.height/2, element.width, element.height);
     
-    // Draw selection box if this is the active element
     if (this.activeElement === element) {
       ctx.strokeStyle = '#0099ff';
       ctx.lineWidth = 2;
       ctx.strokeRect(-element.width/2 - 5, -element.height/2 - 5, element.width + 10, element.height + 10);
       
-      // Draw rotation handle
       ctx.fillStyle = '#0099ff';
       ctx.beginPath();
       ctx.arc(0, -element.height/2 - 20, 5, 0, Math.PI * 2);
@@ -413,10 +356,8 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     
-    // Check if we clicked on any element (in reverse order to select top elements first)
     this.activeElement = null;
     
-    // Check text elements
     for (let i = this.currentTextElements.length - 1; i >= 0; i--) {
       const text = this.currentTextElements[i];
       if (this.isPointInText(x, y, text)) {
@@ -428,7 +369,6 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
       }
     }
     
-    // Check image elements if no text element was clicked
     if (!this.activeElement) {
       for (let i = this.currentImageElements.length - 1; i >= 0; i--) {
         const img = this.currentImageElements[i];
@@ -453,20 +393,16 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     
-    // Calculate new position
     let newX = x - this.dragStartX;
     let newY = y - this.dragStartY;
     
-    // Constrain to modifiable area
     if ('width' in this.activeElement) {
-      // For images, constrain based on the image dimensions
       const halfWidth = this.activeElement.width / 2;
       const halfHeight = this.activeElement.height / 2;
       
       newX = Math.max(this.modifiableAreaX + halfWidth, Math.min(newX, this.modifiableAreaX + this.modifiableAreaWidth - halfWidth));
       newY = Math.max(this.modifiableAreaY + halfHeight, Math.min(newY, this.modifiableAreaY + this.modifiableAreaHeight - halfHeight));
     } else {
-      // For text, use an approximate constraint
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.font = `${this.activeElement.fontSize}px ${this.activeElement.fontFamily}`;
@@ -479,7 +415,6 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
       }
     }
     
-    // Update element position
     this.activeElement.x = newX;
     this.activeElement.y = newY;
     
@@ -502,14 +437,12 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     const width = metrics.width;
     const height = text.fontSize;
     
-    // Account for rotation
     const rotatedPoint = this.rotatePoint(
       x - text.x, 
       y - text.y, 
       -text.rotation * Math.PI / 180
     );
     
-    // Check if point is inside text bounding box
     return (
       rotatedPoint.x >= -width/2 - 5 &&
       rotatedPoint.x <= width/2 + 5 &&
@@ -519,14 +452,12 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
   }
 
   isPointInImage(x: number, y: number, img: ImageElement): boolean {
-    // Account for rotation
     const rotatedPoint = this.rotatePoint(
       x - img.x, 
       y - img.y, 
       -img.rotation * Math.PI / 180
     );
     
-    // Check if point is inside image bounding box
     return (
       rotatedPoint.x >= -img.width/2 - 5 &&
       rotatedPoint.x <= img.width/2 + 5 &&
@@ -562,7 +493,6 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
       reader.onload = (e) => {
         const img = new Image();
         img.onload = () => {
-          // Calculate appropriate size while maintaining aspect ratio
           const maxWidth = this.canvasWidth * 0.3;
           const maxHeight = this.canvasHeight * 0.3;
           
@@ -579,7 +509,6 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
             height = maxHeight;
           }
           
-          // Add new image element to the current side
           const newImage: ImageElement = {
             id: 'img-' + Date.now(),
             url: img.src,
@@ -604,7 +533,6 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
       };
       reader.readAsDataURL(input.files[0]);
       
-      // Reset file input
       input.value = '';
     }
   }
@@ -624,7 +552,6 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
       isDragging: false
     };
     
-    // Add to the current side
     if (this.currentSide === 'front') {
       this.frontTextElements.push(newTextElement);
     } else {
@@ -664,21 +591,16 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     this.renderCanvas();
   }
 
-  // Capture the current canvas as a data URL
   captureCanvasImage(): string {
     const canvas = this.designCanvas.nativeElement;
     
-    // Store the current active element
     const tempActiveElement = this.activeElement;
     
-    // Temporarily remove selection to avoid capturing selection indicators
     this.activeElement = null;
     this.renderCanvas();
     
-    // Capture the canvas
     const dataUrl = canvas.toDataURL('image/png');
     
-    // Restore the active element
     this.activeElement = tempActiveElement;
     this.renderCanvas();
     
@@ -701,28 +623,21 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
       
       this.isLoading = true;
       
-      // Store the current active element and side
       const originalActiveElement = this.activeElement;
       const originalSide = this.currentSide;
       
-      // We need to capture both sides of the t-shirt
-      // First, capture the current side
       const currentSideImage = this.captureCanvasImage();
       
-      // Then switch to the other side, render it, and capture
       const otherSide = originalSide === 'front' ? 'back' : 'front';
       
       this.switchSide(otherSide);
-      // Need to wait for the canvas to render
       setTimeout(() => {
         const otherSideImage = this.captureCanvasImage();
         
-        // Switch back to the original side and restore active element
         this.switchSide(originalSide);
         this.activeElement = originalActiveElement;
         this.renderCanvas();
         
-        // Create the design object with both sides
         const design = {
           userId: this.authService.getCurrentUserId().toString(),
           name: this.designName,
@@ -730,7 +645,6 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
           backImage: originalSide === 'back' ? currentSideImage : otherSideImage
         };
         
-        // Send to the backend
         this.http.post<{id: number}>(`${environment.apiUrl}/api/customdesign`, design, {
           headers: {
             'Content-Type': 'application/json'
@@ -757,7 +671,7 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
             reject(errorMessage);
           }
         });
-      }, 100); // Small delay to ensure canvas renders
+      }, 100);
     });
   }
 
@@ -774,16 +688,13 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     
     this.isLoading = true;
     
-    // Save the design first and get the ID
     this.saveDesign()
       .then(designId => {
-        // Fetch the saved design from the backend
         this.http.get<CustomDesign>(`${environment.apiUrl}/api/customdesign/${designId}`)
           .subscribe({
             next: (savedDesign) => {
               this.isLoading = false;
               
-              // Create a custom product from the saved design
               const customProduct: CustomProduct = {
                 id: 'custom-' + savedDesign.id,
                 name: savedDesign.name,
@@ -795,7 +706,6 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
                 quantity: 1
               };
               
-              // Add to cart
               this.cartService.addToCart(customProduct);
               this.snackBar.open('Design saved and added to cart!', 'Close', { duration: 3000 });
             },
@@ -813,7 +723,6 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
   }
 
   clearDesign(): void {
-    // Clear only the current side
     if (this.currentSide === 'front') {
       this.frontTextElements = [];
       this.frontImageElements = [];
@@ -828,7 +737,6 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
   }
 
   clearAllDesigns(): void {
-    // Clear both sides
     this.frontTextElements = [];
     this.frontImageElements = [];
     this.backTextElements = [];

@@ -22,7 +22,6 @@ export class OrderService {
     return this.http.get<any[]>(`${this.apiUrl}`).pipe(
       map(response => {
         return response.map(order => {
-          // Map the API response to the expected OrderDto structure
           const orderDto: OrderDto = {
             id: order.id,
             userId: order.userId || '',
@@ -35,7 +34,6 @@ export class OrderService {
             orderItems: []
           };
           
-          // Map items to orderItems with the expected structure
           if (order.items && Array.isArray(order.items)) {
             orderDto.orderItems = order.items.map((item: any) => ({
               id: item.id,
@@ -61,7 +59,6 @@ export class OrderService {
   getOrderById(id: number): Observable<OrderDto> {
     return this.http.get<any>(`${this.apiUrl}/orders/${id}`).pipe(
       map(response => {
-        // Map the API response to the expected OrderDto structure
         const orderDto: OrderDto = {
           id: response.id,
           userId: response.userId || '',
@@ -74,7 +71,6 @@ export class OrderService {
           orderItems: []
         };
         
-        // Map items to orderItems with the expected structure
         if (response.items && Array.isArray(response.items)) {
           orderDto.orderItems = response.items.map((item: any) => ({
             id: item.id,
@@ -100,7 +96,6 @@ export class OrderService {
     return this.http.get<any[]>(`${this.apiUrl}/orders`).pipe(
       map(response => {
         return response.map(order => {
-          // Map the API response to the expected OrderDto structure
           const orderDto: OrderDto = {
             id: order.id,
             userId: order.userId || '',
@@ -113,7 +108,6 @@ export class OrderService {
             orderItems: []
           };
           
-          // Map items to orderItems with the expected structure
           if (order.items && Array.isArray(order.items)) {
             orderDto.orderItems = order.items.map((item: any) => ({
               id: item.id,
@@ -163,23 +157,18 @@ export class OrderService {
       );
   }
 
-  // Helper method to get the appropriate image URL based on item type
   private getImageUrlForItem(item: any): string {
-    // If the item has an imageUrl, use it
     if (item.imageUrl) {
-      // If it's a base64 encoded image, return it directly
       if (item.imageUrl.startsWith('data:image')) {
         return item.imageUrl;
       }
       return item.imageUrl;
     }
     
-    // For custom items, use the item ID instead of merchId (which is null)
     if (item.isCustom) {
       return `/uploads/custom/${item.id}.jpg`;
     }
     
-    // Default empty string for regular items without images
     return '';
   }
 } 

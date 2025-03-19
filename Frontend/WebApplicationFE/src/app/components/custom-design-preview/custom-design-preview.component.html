@@ -2,7 +2,6 @@
   <div class="preview-section">
     <h2>Custom T-Shirt Designer</h2>
     
-    <!-- T-shirt side toggle -->
     <div class="side-toggle">
       <mat-button-toggle-group [value]="currentSide" (change)="switchSide($event.value)">
         <mat-button-toggle value="front">Front</mat-button-toggle>
@@ -49,7 +48,6 @@
   </div>
 
   <div class="customization-section">
-    <!-- T-shirt Color Selection -->
     <div class="color-section">
       <h3>T-Shirt Color</h3>
       <div class="color-picker-wrapper">
@@ -65,7 +63,6 @@
       </div>
     </div>
 
-    <!-- Size Selection -->
     <div class="size-section">
       <h3>Size</h3>
       <mat-form-field appearance="fill">
@@ -78,7 +75,6 @@
       </mat-form-field>
     </div>
 
-    <!-- Add Image -->
     <div class="add-image-section">
       <h3>Add Image</h3>
       <button mat-raised-button color="primary" (click)="fileInput.click()">
@@ -92,7 +88,6 @@
              class="file-input">
     </div>
 
-    <!-- Add Text -->
     <div class="add-text-section">
       <h3>Add Text</h3>
       <mat-form-field appearance="fill" class="full-width">
@@ -133,7 +128,6 @@
       </button>
     </div>
 
-    <!-- Save Design -->
     <div class="save-design-section">
       <h3>Name Your Design</h3>
       <mat-form-field appearance="fill" class="full-width">
@@ -149,7 +143,6 @@
       </button>
     </div>
 
-    <!-- Action Buttons -->
     <div class="action-buttons">
       <button mat-raised-button color="warn" (click)="clearDesign()">
         <mat-icon>delete_sweep</mat-icon>

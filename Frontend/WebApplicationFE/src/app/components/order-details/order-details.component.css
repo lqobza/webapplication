@@ -176,7 +176,6 @@
   z-index: 1;
 }
 
-/* Improve tab styling */
 ::ng-deep .mat-tab-body-content {
   padding: 0 !important;
 }
@@ -185,7 +184,6 @@
   font-weight: 500;
 }
 
-/* Dialog styling improvements */
 :host ::ng-deep .mat-dialog-container {
   padding: 0;
   overflow: hidden;
@@ -199,7 +197,6 @@
   align-items: flex-start;
 }
 
-/* Fix for mat-card-header layout */
 ::ng-deep .mat-card-header-text {
   margin: 0 !important;
   flex: 1;
@@ -214,7 +211,6 @@
   margin-bottom: 0 !important;
 }
 
-/* Improve spacing in messages tab */
 ::ng-deep app-order-messages .messages-container {
   padding: 0;
 }

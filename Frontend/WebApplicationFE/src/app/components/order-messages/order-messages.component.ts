@@ -30,7 +30,7 @@ import { switchMap } from 'rxjs/operators';
 })
 export class OrderMessagesComponent implements OnInit, OnDestroy, OnChanges {
   @Input() orderId!: number;
-  @Input() isAdminMode: boolean = false; // Default to false, set to true in admin component
+  @Input() isAdminMode: boolean = false;
   
   messages: OrderMessage[] = [];
   newMessage: string = '';
@@ -46,11 +46,9 @@ export class OrderMessagesComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    // If orderId changes, reload messages
     if (changes['orderId'] && !changes['orderId'].firstChange) {
       this.loadMessages();
       
-      // Reset the auto-refresh with the new orderId
       if (this.refreshSubscription) {
         this.refreshSubscription.unsubscribe();
       }
@@ -65,7 +63,6 @@ export class OrderMessagesComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   setupAutoRefresh(): void {
-    // Set up auto-refresh every 30 seconds
     this.refreshSubscription = interval(30000)
       .pipe(
         switchMap(() => this.orderService.getOrderMessages(this.orderId))
@@ -75,7 +72,6 @@ export class OrderMessagesComponent implements OnInit, OnDestroy, OnChanges {
           this.messages = messages;
         },
         error: () => {
-          // Don't show error on auto-refresh to avoid disrupting the UI
         }
       });
   }
@@ -83,7 +79,7 @@ export class OrderMessagesComponent implements OnInit, OnDestroy, OnChanges {
   loadMessages(): void {
     this.loading = true;
     this.error = null;
-    this.messages = []; // Clear existing messages while loading
+    this.messages = [];
     
     this.orderService.getOrderMessages(this.orderId).subscribe({
       next: (messages) => {
@@ -112,7 +108,6 @@ export class OrderMessagesComponent implements OnInit, OnDestroy, OnChanges {
     
     this.orderService.addOrderMessage(this.orderId, messageToSend).subscribe({
       next: (message) => {
-        // Add the new message to the messages array
         if (message && message.id) {
           this.messages = [...this.messages, message];
         }

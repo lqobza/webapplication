@@ -1,46 +1,43 @@
-/* Merchandise List Container */
 .merchandise-list-container {
     border: 1px solid #ddd;
     padding: 20px;
     background-color: #fff;
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
-    margin: 20px; /* Added margin */
-  }
+    margin: 20px;
+}
   
-  .merchandise-list-container h2 {
-    font-weight: 600;
-    margin-bottom: 20px;
-    color: #555;
-  }
+.merchandise-list-container h2 {
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #555;
+}
+
+.loading, .error, .no-merchandise {
+  text-align: center;
+  color: #777;
+  margin-top: 10px;
+}
   
-  /* Loading and Error Messages */
-  .loading, .error, .no-merchandise {
-    text-align: center;
-    color: #777;
-    margin-top: 10px;
-  }
-  
-  /* Merchandise List */
 .merchandise-list {
     list-style: none;
     padding: 0;
-    display: grid; /* Enable CSS Grid */
-    grid-template-columns: repeat(3, 1fr); /* 3 equal-width columns */
-    gap: 20px; /* Spacing between grid items */
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
   }
   
   .merchandise-item {
     display: flex;
-    flex-direction: column; /* Stack image and details vertically */
-    align-items: stretch; /* Stretch items to fill grid cell */
+    flex-direction: column;
+    align-items: stretch;
     padding: 15px;
-    border: 1px solid #eee; /* Add border to each item */
-    border-radius: 8px; /* Rounded corners for items */
+    border: 1px solid #eee;
+    border-radius: 8px;
     cursor: pointer;
     transition: background-color 0.2s;
-    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.05); /* Subtle shadow */
-    height: 100%; /* Make sure all grid items have the same height */
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.05);
+    height: 100%;
   }
   
   .merchandise-item:hover {
@@ -69,7 +66,7 @@
   }
   
   .merchandise-details {
-    flex-grow: 1; /* Allow details to take up remaining space */
+    flex-grow: 1;
   }
   
   .merchandise-name {
@@ -88,7 +85,6 @@
     font-size: 0.9em;
   }
 
-/* Pagination Controls */
 .pagination-controls {
   display: flex;
   justify-content: center;
@@ -216,11 +212,10 @@
   background-color: #e0e0e0;
 }
 
-/* Search Input */
 #search-input {
   padding: 8px;
   border: 1px solid #ddd;
   border-radius: 4px;
-  width: 100%; /* Full width */
-  margin-bottom: 15px; /* Space below the search input */
+  width: 100%;
+  margin-bottom: 15px;
 }

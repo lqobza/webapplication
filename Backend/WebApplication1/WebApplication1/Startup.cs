@@ -45,7 +45,6 @@ public class Startup
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer(_configuration.GetConnectionString("DefaultConnection")));
  
-        // Other service configurations...
         services.AddControllers();
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen();
@@ -95,14 +94,12 @@ public class Startup
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IMerchandiseImageRepository, MerchandiseImageRepository>();
         services.AddScoped<IImageStorageService, FileSystemImageService>();
-        // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
         app.UseCors("AllowAngularApp");
 
-        // Configure the HTTP request pipeline.
         if (env.IsDevelopment())
         {
             app.UseSwagger();
@@ -116,8 +113,6 @@ public class Startup
             app.UseHttpsRedirection();
         }
 
-        // Other app configurations...
-        // Other middleware configurations...
         // app.UseHttpsRedirection();
         app.UseRouting();
         app.UseAuthentication();

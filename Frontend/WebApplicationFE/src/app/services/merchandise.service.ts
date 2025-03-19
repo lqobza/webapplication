@@ -65,13 +65,6 @@ export class MerchandiseService {
     return this.http.get<any[]>(`${this.apiUrl}/brands`);
   }
 
-  /**
-   * Check if there is sufficient stock for a merchandise item
-   * @param merchId The merchandise ID
-   * @param size The size
-   * @param quantity The quantity to check
-   * @returns Observable with the check result
-   */
   checkStockAvailability(merchId: number, size: string, quantity: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/${merchId}/stock/${size}?quantity=${quantity}`);
   }

@@ -7,20 +7,17 @@
     </button>
   </div>
 
-  <!-- Loading state -->
   <div *ngIf="loading" class="loading-container">
     <mat-spinner diameter="50"></mat-spinner>
     <p>Loading your designs...</p>
   </div>
 
-  <!-- Error state -->
   <div *ngIf="error" class="error-container">
     <mat-icon color="warn">error</mat-icon>
     <p>{{ error }}</p>
     <button mat-raised-button color="primary" (click)="loadDesigns()">Try Again</button>
   </div>
 
-  <!-- Empty state -->
   <div *ngIf="!loading && !error && designs.length === 0" class="empty-container">
     <mat-icon>brush</mat-icon>
     <h2>No Designs Found</h2>
@@ -28,7 +25,6 @@
     <button mat-raised-button color="primary" (click)="createNewDesign()">Create Your First Design</button>
   </div>
 
-  <!-- Designs grid -->
   <div *ngIf="!loading && !error && designs.length > 0" class="designs-grid">
     <mat-card *ngFor="let design of designs" class="design-card">
       <mat-card-header>
@@ -49,7 +45,6 @@
         </mat-tab>
       </mat-tab-group>
       
-      <!-- Add size and quantity selectors -->
       <div class="product-options">
         <mat-form-field appearance="fill" class="size-selector">
           <mat-label>Size</mat-label>

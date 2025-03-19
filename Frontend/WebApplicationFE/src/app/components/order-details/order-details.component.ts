@@ -48,7 +48,6 @@ export class OrderDetailsComponent implements OnInit {
     @Optional() public dialogRef: MatDialogRef<OrderDetailsComponent>,
     @Optional() @Inject(MAT_DIALOG_DATA) private dialogData: DialogData
   ) {
-    // If component is opened as a dialog, get the orderId from dialog data
     if (this.dialogData) {
       this.orderId = this.dialogData.orderId;
       this.isAdminMode = this.dialogData.isAdminMode || false;
@@ -72,11 +71,9 @@ export class OrderDetailsComponent implements OnInit {
       next: (order) => {
         this.order = order;
         
-        // Ensure merchandise data is properly loaded for each item
         if (this.order && this.order.orderItems) {
           
           this.order.orderItems.forEach((item, index) => {
-            // If merchandise is missing or incomplete, create a default object
             if (!item.merchandise) {
               item.merchandise = {
                 id: item.merchandiseId,
@@ -124,22 +121,18 @@ export class OrderDetailsComponent implements OnInit {
       return '/assets/images/placeholder.png';
     }
     
-    // If it's a base64 encoded image, return it directly
     if (imageUrl.startsWith('data:image')) {
       return imageUrl;
     }
     
-    // If it's already an absolute URL, return it as is
     if (imageUrl.startsWith('http')) {
       return imageUrl;
     }
     
-    // If it's a custom merchandise image with 'null' in the path, it's invalid
     if (imageUrl.includes('null.jpg')) {
       return '/assets/images/placeholder.png';
     }
     
-    // For regular merchandise images
     return `${this.apiUrl}${imageUrl}`;
   }
 

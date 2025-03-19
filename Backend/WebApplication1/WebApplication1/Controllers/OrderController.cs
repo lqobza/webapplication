@@ -27,7 +27,6 @@ public class OrderController : ControllerBase
     {
         _logger.LogInformation("GetAllOrders endpoint called");
         
-        // Check for admin role in various possible claim types
         bool isAdmin = User.Claims.Any(c => 
             (c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role" && c.Value == "Admin")
         );
@@ -57,7 +56,6 @@ public class OrderController : ControllerBase
     {
         _logger.LogInformation("GetOrdersByUserId endpoint called");
 
-        // Try to get user ID from various possible claim types
         var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "userId") ??
                           User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier) ??
                           User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub);
@@ -118,7 +116,6 @@ public class OrderController : ControllerBase
             return BadRequest(ModelState);
         }
         
-        // Filter out invalid items
         var validItems = new List<OrderItemDto>();
         
         foreach (var item in orderCreateDto.Items)
@@ -128,10 +125,8 @@ public class OrderController : ControllerBase
             
             if (item.IsCustom)
             {
-                // For custom items, MerchId should be null
                 item.MerchId = null;
                 
-                // Ensure we have the necessary information
                 if (string.IsNullOrEmpty(item.MerchandiseName))
                 {
                     item.MerchandiseName = "Custom T-Shirt Design";
@@ -141,21 +136,18 @@ public class OrderController : ControllerBase
             }
             else
             {
-                // For regular merchandise, ensure MerchId is valid
                 if (item.MerchId == null || item.MerchId <= 0)
                 {
                     _logger.LogWarning("Invalid MerchId: {MerchId} for regular merchandise - skipping item", item.MerchId);
-                    continue; // Skip this item
+                    continue; 
                 }
                 
                 validItems.Add(item);
             }
         }
         
-        // Replace the items with the valid ones
         orderCreateDto.Items = validItems;
         
-        // Check if we have any items left
         if (orderCreateDto.Items.Count == 0)
         {
             _logger.LogWarning("No valid items in order");
@@ -209,7 +201,6 @@ public class OrderController : ControllerBase
         {
             _logger.LogInformation("CancelOrder endpoint called for order {OrderId}", id);
             
-            // First check if the order exists
             var order = await _orderService.GetOrderByIdAsync(id);
             if (order == null)
             {
@@ -217,14 +208,12 @@ public class OrderController : ControllerBase
                 return NotFound($"Order with ID {id} not found");
             }
 
-            // Check if the order can be cancelled (only Created or Processing orders can be cancelled)
             if (order.Status != "Created" && order.Status != "Processing")
             {
                 _logger.LogWarning("Cannot cancel order {OrderId} with status '{Status}'", id, order.Status);
                 return BadRequest($"Cannot cancel order with status '{order.Status}'");
             }
 
-            // Update the order status to Cancelled
             await _orderService.UpdateOrderStatusAsync(id, "Cancelled");
             _logger.LogInformation("Order {OrderId} cancelled successfully", id);
 
@@ -244,7 +233,6 @@ public class OrderController : ControllerBase
         {
             _logger.LogInformation("UpdateOrderStatus endpoint called for order {OrderId} with status {Status}", id, statusDto.Status);
             
-            // First check if the order exists
             var order = await _orderService.GetOrderByIdAsync(id);
             if (order == null)
             {
@@ -252,14 +240,12 @@ public class OrderController : ControllerBase
                 return NotFound($"Order with ID {id} not found");
             }
 
-            // Validate the status
             if (string.IsNullOrWhiteSpace(statusDto.Status))
             {
                 _logger.LogWarning("Invalid status provided for order {OrderId}", id);
                 return BadRequest("Status cannot be empty");
             }
 
-            // Update the order status
             await _orderService.UpdateOrderStatusAsync(id, statusDto.Status);
             _logger.LogInformation("Order {OrderId} status updated to {Status} successfully", id, statusDto.Status);
 
@@ -272,14 +258,11 @@ public class OrderController : ControllerBase
         }
     }
     
-    // Order Messages Endpoints
-    
     [HttpGet("{id}/messages")]
     public async Task<IActionResult> GetOrderMessages(int id)
     {
         _logger.LogInformation("GetOrderMessages endpoint called for order {OrderId}", id);
         
-        // Check if the order exists
         var order = await _orderService.GetOrderByIdAsync(id);
         if (order == null)
         {
@@ -287,7 +270,6 @@ public class OrderController : ControllerBase
             return NotFound($"Order with ID {id} not found");
         }
         
-        // Get messages for the order
         var messages = await _orderService.GetOrderMessagesAsync(id);
         
         return Ok(messages);
@@ -298,7 +280,6 @@ public class OrderController : ControllerBase
     {
         _logger.LogInformation("AddOrderMessage endpoint called for order {OrderId}", id);
         
-        // Ensure the message is for the correct order
         if (messageDto.OrderId != id)
         {
             return BadRequest("Order ID in the URL and message body do not match");

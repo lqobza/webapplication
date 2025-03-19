@@ -103,12 +103,10 @@ export class MerchandiseDetailComponent implements OnInit {
   get isAddToCartEnabled(): boolean {
     if (!this.merchandise) return false;
 
-    // If multiple sizes exist, check selected size
     if (this.hasMultipleSizes) {
       return !!this.selectedSize && !!this.merchandise.sizes?.find(s => s.size === this.selectedSize)?.inStock;
     }
 
-    // If only one size exists and size is null, check its stock
     if (this.merchandise.sizes?.length === 1) {
       return this.merchandise.sizes[0]?.inStock > 0;
     }
@@ -126,11 +124,10 @@ export class MerchandiseDetailComponent implements OnInit {
       this.quantity = 1;
     }
 
-    // Check if quantity exceeds max and adjust or disable Add to Cart
     if (this.quantity > this.maxQuantity) {
-      this.isAddToCartDisabled = true; // Add a property isAddToCartDisabled to the component
+      this.isAddToCartDisabled = true;
     } else {
-      this.isAddToCartDisabled = false; // Re-enable if quantity is valid
+      this.isAddToCartDisabled = false;
     }
   }
 
@@ -140,7 +137,6 @@ export class MerchandiseDetailComponent implements OnInit {
       return inStock && inStock > 0 ? inStock : 1;
     }
 
-    // If only one size exists and size is null, use its inStock value
     if (this.merchandise?.sizes?.length === 1) {
       return this.merchandise.sizes[0]?.inStock > 0 ? this.merchandise.sizes[0].inStock : 1;
     }
@@ -201,7 +197,7 @@ export class MerchandiseDetailComponent implements OnInit {
     };
   
     this.merchandise.ratings = this.merchandise.ratings || [];
-    this.merchandise.ratings.push(newRating); // Optimistic update
+    this.merchandise.ratings.push(newRating);
   
     this.ratingService.insertRating(newRating).subscribe({
       next: () => {
@@ -228,7 +224,7 @@ export class MerchandiseDetailComponent implements OnInit {
           next: (images) => {
             if (this.merchandise) {
               this.merchandise.images = images;
-              this.selectedImage = null; // Reset selected image
+              this.selectedImage = null;
             }
           },
           error: (error) => {
@@ -285,7 +281,6 @@ export class MerchandiseDetailComponent implements OnInit {
   }
 
   getFullImageUrl(relativeUrl: string): string {
-    // Convert relative URL to absolute URL pointing to the backend
     if (relativeUrl && relativeUrl.startsWith('/')) {
       return `${environment.apiUrl}${relativeUrl}`;
     }

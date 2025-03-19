@@ -13,7 +13,6 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { Merchandise } from '../../../models/merchandise.model';
 import { MerchandiseService } from '../../../services/merchandise.service';
 import { Category } from '../../../models/category.model';
-import { forkJoin } from 'rxjs';
 import { PaginatedResponse } from '../../../models/paginated-response.model';
 
 @Component({
@@ -43,7 +42,6 @@ export class AdminMerchandiseComponent implements OnInit, AfterViewInit {
   categories: Category[] = [];
   categoryMap: Map<number, string> = new Map();
   
-  // Pagination properties
   totalItems = 0;
   pageSize = 10;
   pageIndex = 0;
@@ -62,7 +60,6 @@ export class AdminMerchandiseComponent implements OnInit, AfterViewInit {
   }
   
   ngAfterViewInit(): void {
-    // This ensures the paginator is initialized before we try to use it
     if (this.paginator) {
       this.paginator.page.subscribe((event: PageEvent) => {
         this.pageSize = event.pageSize;
@@ -77,7 +74,6 @@ export class AdminMerchandiseComponent implements OnInit, AfterViewInit {
       next: (categories) => {
         this.categories = categories;
         
-        // Create a map of category IDs to names for quick lookup
         this.categoryMap = new Map(
           this.categories
             .filter(category => category.id !== undefined)
@@ -99,9 +95,7 @@ export class AdminMerchandiseComponent implements OnInit, AfterViewInit {
         this.merchandiseList = response.items;
         this.totalItems = response.totalCount;
         
-        // Update paginator if it exists and the values don't match
         if (this.paginator) {
-          // Only update if different to avoid infinite loop
           if (this.paginator.pageIndex !== page - 1) {
             this.paginator.pageIndex = page - 1;
           }
@@ -137,7 +131,6 @@ export class AdminMerchandiseComponent implements OnInit, AfterViewInit {
     
     this.merchandiseService.deleteMerchandise(id).subscribe({
       next: () => {
-        // Refresh the current page after deletion
         this.fetchMerchandise(this.pageIndex + 1, this.pageSize);
       },
       error: (err: any) => {

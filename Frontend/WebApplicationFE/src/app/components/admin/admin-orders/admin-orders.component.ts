@@ -38,9 +38,8 @@ export class AdminOrdersComponent implements OnInit {
   error: string | null = null;
   orderStatuses = OrderStatus;
   displayedColumns: string[] = ['id', 'customerName', 'orderDate', 'totalAmount', 'status', 'actions'];
-  updatingOrderId: number | null = null; // Track which order is being updated
+  updatingOrderId: number | null = null;
   
-  // Store original status values to detect changes
   private originalStatuses: Map<number, string> = new Map();
   
   constructor(
@@ -61,17 +60,14 @@ export class AdminOrdersComponent implements OnInit {
       next: (data: OrderDto[]) => {
         this.orders = data || [];
         
-        // Store original status values
         this.orders.forEach(order => {
           this.originalStatuses.set(order.id, order.status);
         });
         
-        // Process image URLs if needed
         this.orders.forEach(order => {
           if (order.orderItems) {
             order.orderItems.forEach(item => {
               if (item.merchandise && item.merchandise.primaryImageUrl) {
-                // Make sure image URLs are absolute
                 if (!item.merchandise.primaryImageUrl.startsWith('http')) {
                   item.merchandise.primaryImageUrl = `${this.orderService.getApiUrl()}${item.merchandise.primaryImageUrl}`;
                 }
@@ -111,27 +107,21 @@ export class AdminOrdersComponent implements OnInit {
   onStatusChange(order: OrderDto, newStatus: string): void {
     const originalStatus = this.originalStatuses.get(order.id) || order.status;
     
-    // If status hasn't changed, do nothing
     if (originalStatus === newStatus) {
       return;
     }
     
-    // Create warning message if needed
     let warningMessage = '';
     if (originalStatus === 'Delivered' || originalStatus === 'Cancelled') {
       warningMessage = `\n\nWarning: Changing from ${originalStatus} status is unusual and may cause issues.`;
     }
     
-    // Use simple confirm dialog
+    
     const confirmed = confirm(`Are you sure you want to change the order status from ${originalStatus} to ${newStatus}?${warningMessage}`);
     
     if (confirmed) {
-      // User confirmed, update the status
       this.updateOrderStatus(order.id, newStatus);
     } else {
-      // User cancelled, revert the select to original value
-      
-      // We need to use setTimeout to ensure this happens after the current event cycle
       setTimeout(() => {
         order.status = originalStatus;
       });
@@ -143,7 +133,6 @@ export class AdminOrdersComponent implements OnInit {
     
     this.orderService.updateOrderStatus(orderId, newStatus).subscribe({
       next: () => {
-        // Update the order status in the local array and original statuses map
         const order = this.orders.find(o => o.id === orderId);
         if (order) {
           order.status = newStatus;
@@ -153,7 +142,6 @@ export class AdminOrdersComponent implements OnInit {
         this.updatingOrderId = null;
       },
       error: (err: any) => {
-        // Revert to original status in the UI
         const order = this.orders.find(o => o.id === orderId);
         if (order) {
           order.status = this.originalStatuses.get(orderId) || order.status;

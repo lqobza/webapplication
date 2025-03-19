@@ -13,7 +13,6 @@ export class ErrorHandlingService {
     return (error: HttpErrorResponse): Observable<T> => {
       console.error(`${operation} failed: ${error.message}`);
       
-      // Let the app keep running by returning an empty result
       return of(result as T);
     };
   }

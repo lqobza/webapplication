@@ -11,7 +11,6 @@ public interface IOrderService
     Task<OrderDto?> GetOrderByIdAsync(int id);
     Task UpdateOrderStatusAsync(int orderId, string status);
     
-    // Order Messages
     Task<OrderMessageDto> AddOrderMessageAsync(OrderMessageCreateDto messageDto);
     Task<List<OrderMessageDto>> GetOrderMessagesAsync(int orderId);
 }

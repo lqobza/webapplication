@@ -54,7 +54,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
 
         while (reader.Read())
         {
-            totalCount = (int)reader["TotalCount"]; // Get total count from first row
+            totalCount = (int)reader["TotalCount"];
             var merchandise = merchList.FirstOrDefault(m => m.Id == (int)reader["id"]);
 
             if (merchandise == null)
@@ -144,7 +144,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
             {
                 var ratingId = (int)reader["rating_id"];
                 if (merchandise.Ratings != null &&
-                    merchandise.Ratings.All(r => r.Id != ratingId)) // Check BEFORE adding
+                    merchandise.Ratings.All(r => r.Id != ratingId))
                 {
                     merchandise.Ratings.Add(new RatingDto
                     {
@@ -162,7 +162,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
             if (reader["theme_id"] != DBNull.Value)
             {
                 var themeId = (int)reader["theme_id"];
-                if (merchandise.Themes != null && merchandise.Themes.All(t => t.Id != themeId)) // Check BEFORE adding
+                if (merchandise.Themes != null && merchandise.Themes.All(t => t.Id != themeId))
                 {
                     merchandise.Themes.Add(new ThemeDto
                     {
@@ -175,7 +175,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
             if (reader["size_id"] != DBNull.Value)
             {
                 var sizeId = (int)reader["size_id"];
-                if (merchandise.Sizes != null && merchandise.Sizes.All(s => s.Id != sizeId)) // Check BEFORE adding
+                if (merchandise.Sizes != null && merchandise.Sizes.All(s => s.Id != sizeId))
                 {
                     merchandise.Sizes.Add(new MerchSizeDto
                     {
@@ -221,7 +221,6 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
                 Sizes = new List<MerchSizeDto>()
             });
 
-        // Populate Ratings, Themes, and Sizes for each merchandise
         foreach (var merchandise in merchList)
         {
             merchandise.Ratings = _ratingRepository.GetRatingsForMerchandise(merchandise.Id);
@@ -263,10 +262,8 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
             merchList.Add(merchandise);
         }
 
-        // Populate Ratings, Themes, and Sizes for each merchandise
         foreach (var merchandise in merchList)
         {
-            //TODO talán egyben, egyszerre le lehetne kérni az adatokat, hogy ne kelljen sokszor connection openelni
             merchandise.Ratings = _ratingRepository.GetRatingsForMerchandise(merchandise.Id);
             merchandise.Themes = GetThemesByMerchId(merchandise.Id);
             merchandise.Sizes = GetSizesByMerchId(merchandise.Id);
@@ -304,7 +301,6 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
 
         if (merchandise.ThemeIds != null)
         {
-            // Add Themes Table-Valued Parameter if available
             var themesTable = new DataTable();
             themesTable.Columns.Add("ThemeId", typeof(int));
             foreach (var themeId in merchandise.ThemeIds)
@@ -530,7 +526,6 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
         catch (Exception ex)
         {
             _logger.LogError(ex, "A database error occurred while executing non-query.");
-            //dbTransaction.Rollback();
             throw;
         }
     }
@@ -549,7 +544,6 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
     }
 
 
-    // Helper function to get themes for a specific merchandise
     private List<ThemeDto> GetThemesByMerchId(int merchId)
     {
         var query = @"
@@ -577,7 +571,6 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
         return themes;
     }
 
-    // Helper function to get sizes for a specific merchandise
     public List<MerchSizeDto> GetSizesByMerchId(int merchId)
     {
         var query = @"
@@ -619,7 +612,6 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
         return (T)result;
     }
 
-    // Add this method to fetch images for a merchandise item
     private List<MerchandiseImage> GetImagesForMerchandise(int merchandiseId)
     {
         var query = @"

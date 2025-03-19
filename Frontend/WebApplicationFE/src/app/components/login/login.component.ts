@@ -30,7 +30,6 @@ export class LoginComponent {
       password: ['', Validators.required]
     });
 
-    // redirect to home if already logged in
     if (this.authService.currentUserValue) {
       this.router.navigate(['/']);
     }
@@ -39,7 +38,6 @@ export class LoginComponent {
   ngOnInit() {
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
 
-    // Check if redirected due to expired token
     this.route.queryParams.subscribe(params => {
       if (params['expired'] === 'true') {
         this.errorMessage = 'Your session has expired. Please log in again.';

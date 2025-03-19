@@ -25,14 +25,12 @@ public class AuthService : IAuthService
 
     public async Task<string> RegisterUserAsync(RegisterDto registerDto)
     {
-        // Check if the user already exists
         var existingUser = await _context.Users.SingleOrDefaultAsync(u => u.Email == registerDto.Email);
         if (existingUser != null)
         {
             throw new ArgumentException("User already exists.");
         }
 
-        // Generate salt and hash the password
         byte[] salt = new byte[128 / 8];
         using (var rng = RandomNumberGenerator.Create())
         {
@@ -41,7 +39,6 @@ public class AuthService : IAuthService
         var saltString = Convert.ToBase64String(salt);
         var passwordHash = HashPassword(registerDto.Password, salt);
 
-        // Create the user
         var user = new ApplicationUser
         {
             Username = registerDto.Username,
@@ -50,11 +47,9 @@ public class AuthService : IAuthService
             PasswordSalt = saltString
         };
 
-        // Save the user to the database
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
-        // Generate a JWT token
         return GenerateJwtToken(user);
     }
 

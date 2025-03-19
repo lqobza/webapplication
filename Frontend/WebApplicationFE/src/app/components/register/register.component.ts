@@ -17,10 +17,6 @@ export class RegisterComponent {
   error: string = '';
   loading: boolean = false;
 
-  // Email pattern that requires:
-  // - At least one character before the @
-  // - At least one character after the @
-  // - A period followed by 2-6 characters at the end
   private emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
 
   constructor(
@@ -28,7 +24,6 @@ export class RegisterComponent {
     private router: Router,
     private formBuilder: FormBuilder
   ) {
-    // redirect to home if already logged in
     if (this.authService.currentUserValue) {
       this.router.navigate(['/']);
     }
@@ -47,7 +42,6 @@ export class RegisterComponent {
     });
   }
 
-  // Custom validator to check if passwords match
   private passwordMatchValidator(fg: FormGroup) {
     const password = fg.get('password')?.value;
     const confirmPassword = fg.get('confirmPassword')?.value;
@@ -72,7 +66,6 @@ export class RegisterComponent {
     this.authService.register(username, email, password)
       .subscribe({
         next: () => {
-          // After successful registration, log the user in
           this.authService.login(username, password)
             .subscribe({
               next: () => {
@@ -91,6 +84,5 @@ export class RegisterComponent {
       });
   }
 
-  // Convenience getter for easy access to form fields
   get f() { return this.registerForm.controls; }
 } 

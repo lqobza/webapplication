@@ -100,28 +100,23 @@
   width: 100px;
 }
 
-/* Pagination styling */
 .mat-paginator {
   background-color: transparent;
   margin-top: 16px;
 }
 
-/* Ensure table rows have consistent height */
 .mat-row {
   height: 48px;
 }
 
-/* Add hover effect to table rows */
 .mat-row:hover {
   background-color: rgba(0, 0, 0, 0.04);
 }
 
-/* Style for action buttons */
 .mat-icon-button {
   margin: 0 4px;
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .mat-column-actions {
     width: 120px;

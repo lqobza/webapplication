@@ -29,7 +29,6 @@ export class AuthService {
     return this.http.post<any>(`${this.apiUrl}/login`, { email, password })
       .pipe(
         map(user => {
-          // store user details and jwt token in local storage
           localStorage.setItem('currentUser', JSON.stringify(user));
           this.currentUserSubject.next(user);
           return user;
@@ -49,7 +48,6 @@ export class AuthService {
   }
 
   logout() {
-    // remove user from local storage to log user out
     localStorage.removeItem('currentUser');
     this.currentUserSubject.next(null);
   }
@@ -60,13 +58,11 @@ export class AuthService {
       return false;
     }
     
-    // Check if token is expired
     try {
       const tokenParts = currentUser.token.split('.');
       if (tokenParts.length === 3) {
         const payload = JSON.parse(atob(tokenParts[1]));
         
-        // Check expiration time (exp is in seconds, Date.now() is in milliseconds)
         if (payload.exp && payload.exp * 1000 < Date.now()) {
           this.logout();
           return false;
@@ -92,7 +88,6 @@ export class AuthService {
     }
 
     try {
-      // Decode the JWT token to get the payload
       const tokenParts = token.split('.');
       if (tokenParts.length !== 3) {
         console.error('Invalid token format');
@@ -100,7 +95,6 @@ export class AuthService {
       }
 
       const payload = JSON.parse(atob(tokenParts[1]));
-      // Check multiple possible claim types for user ID
       const userId = payload.userId || payload.nameid || payload.sub || payload.id;
       
       if (!userId) {
@@ -122,14 +116,12 @@ export class AuthService {
     }
 
     try {
-      // Extract user data from JWT token
       const tokenParts = currentUser.token.split('.');
       if (tokenParts.length !== 3) {
         return false;
       }
 
       const payload = JSON.parse(atob(tokenParts[1]));
-      // Check if the user has the Admin role
       return payload.role === 'Admin' || 
              payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] === 'Admin';
     } catch (error) {

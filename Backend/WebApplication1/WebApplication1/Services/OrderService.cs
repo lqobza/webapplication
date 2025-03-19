@@ -23,21 +23,17 @@ public class OrderService : IOrderService
         {
             _logger.LogInformation("Creating order with {ItemCount} items", orderCreateDto.Items.Count);
             
-            // Log the items for debugging
             foreach (var item in orderCreateDto.Items)
             {
                 _logger.LogInformation("Order item: MerchId={MerchId}, Size={Size}, Quantity={Quantity}, Price={Price}, IsCustom={IsCustom}",
                     item.MerchId, item.Size, item.Quantity, item.Price, item.IsCustom);
             }
             
-            // Calculate total amount
             var totalAmount = orderCreateDto.Items.Sum(i => i.Price);
 
-            // Insert the order
             var orderId = await _orderRepository.InsertOrderAsync(orderCreateDto, totalAmount);
             _logger.LogInformation("Order created with ID: {OrderId}", orderId);
 
-            // Insert order items and update stock
             foreach (var item in orderCreateDto.Items)
             {
                 try
@@ -47,7 +43,6 @@ public class OrderService : IOrderService
                     
                     await _orderRepository.InsertOrderItemAsync(orderId, item);
                     
-                    // Only update stock for regular merchandise (not custom)
                     if (!item.IsCustom)
                     {
                         try {
@@ -58,13 +53,10 @@ public class OrderService : IOrderService
                         }
                         catch (InvalidOperationException ex) when (ex.Message.Contains("Insufficient stock"))
                         {
-                            // If we encounter an insufficient stock error, we need to roll back the order
-                            // by deleting it from the database
                             _logger.LogWarning("Insufficient stock for item: {Item}. Rolling back order {OrderId}.", item, orderId);
                             
                             try
                             {
-                                // Delete the order we just created
                                 await _orderRepository.DeleteOrderAsync(orderId);
                             }
                             catch (Exception rollbackEx)
@@ -72,20 +64,16 @@ public class OrderService : IOrderService
                                 _logger.LogError(rollbackEx, "Error rolling back order {OrderId}", orderId);
                             }
                             
-                            // Re-throw the original exception to be handled by the controller
                             throw;
                         }
                     }
                 }
                 catch (Exception ex) when (!(ex is InvalidOperationException && ex.Message.Contains("Insufficient stock")))
                 {
-                    // If there's an error inserting an order item that's not related to insufficient stock,
-                    // log it and roll back the order
                     _logger.LogError(ex, "Error inserting order item for order {OrderId}", orderId);
                     
                     try
                     {
-                        // Delete the order we just created
                         await _orderRepository.DeleteOrderAsync(orderId);
                     }
                     catch (Exception rollbackEx)
@@ -102,13 +90,11 @@ public class OrderService : IOrderService
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("Insufficient stock"))
         {
-            // Let this exception propagate to the controller
             _logger.LogWarning(ex, "Insufficient stock error during order creation");
             throw;
         }
         catch (Exception ex)
         {
-            // Log the exception
             _logger.LogError(ex, "Error creating order: {ErrorMessage}", ex.Message);
             return InsertResult.Error;
         }
@@ -137,7 +123,6 @@ public class OrderService : IOrderService
         return await _orderRepository.GetOrdersByUserIdAsync(userId);
     }
 
-    // Order Messages Implementation
     public async Task<OrderMessageDto> AddOrderMessageAsync(OrderMessageCreateDto messageDto)
     {
         _logger.LogInformation("Adding message for order {OrderId}", messageDto.OrderId);

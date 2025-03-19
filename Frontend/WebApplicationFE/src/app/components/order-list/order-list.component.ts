@@ -52,8 +52,6 @@ export class OrderListComponent implements OnInit {
     } else {
       this.loading = false;
       this.error = 'You need to be logged in to view your orders.';
-      // Optional: redirect to login page
-      // this.router.navigate(['/login']);
     }
   }
 
@@ -64,11 +62,9 @@ export class OrderListComponent implements OnInit {
       next: (data: OrderDto[]) => {
         this.orders = data || [];
         
-        // Process image URLs and ensure merchandise data exists
         this.orders.forEach(order => {
           if (order.orderItems) {
             order.orderItems.forEach(item => {
-              // Ensure merchandise object exists
               if (!item.merchandise) {
                 item.merchandise = {
                   id: item.merchandiseId,
@@ -77,7 +73,6 @@ export class OrderListComponent implements OnInit {
                 };
               }
               
-              // Process image URL
               if (item.merchandise.primaryImageUrl) {
                 item.merchandise.primaryImageUrl = this.getFullImageUrl(item.merchandise.primaryImageUrl);
               }
@@ -91,14 +86,12 @@ export class OrderListComponent implements OnInit {
         if (err.status === 401) {
           this.error = 'You need to be logged in to view your orders.';
           this.isAuthenticated = false;
-          // Optional: redirect to login page
-          // this.router.navigate(['/login']);
         } else {
           this.error = 'Failed to load orders. Please try again later.';
         }
         
         this.loading = false;
-        this.orders = []; // Initialize to empty array on error
+        this.orders = [];
       }
     });
   }
@@ -106,15 +99,12 @@ export class OrderListComponent implements OnInit {
   getFullImageUrl(relativeUrl: string | null): string {
     if (!relativeUrl) return '';
     
-    // If it's already an absolute URL, return it as is
     if (relativeUrl.startsWith('http://') || relativeUrl.startsWith('https://')) {
       return relativeUrl;
     }
     
-    // Make sure the URL starts with a slash
     const normalizedUrl = relativeUrl.startsWith('/') ? relativeUrl : `/${relativeUrl}`;
     
-    // Combine with the API URL
     return `${environment.apiUrl}${normalizedUrl}`;
   }
 
@@ -156,26 +146,6 @@ export class OrderListComponent implements OnInit {
     }
   }
 
-  getPlaceholderImageUrl(merchId: number): string {
-    // Generate a placeholder image based on the merchandise ID
-    // This ensures each product gets a consistent color
-    const hue = (merchId * 137) % 360; // Use a prime number to get good distribution
-    return `https://via.placeholder.com/80x80/${this.hslToHex(hue, 70, 80)}/FFFFFF?text=${merchId}`;
-  }
-
-  // Helper function to convert HSL to HEX color
-  private hslToHex(h: number, s: number, l: number): string {
-    s /= 100;
-    l /= 100;
-    const a = s * Math.min(l, 1 - l);
-    const f = (n: number) => {
-      const k = (n + h / 30) % 12;
-      const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-      return Math.round(255 * color).toString(16).padStart(2, '0');
-    };
-    return `${f(0)}${f(8)}${f(4)}`;
-  }
-
   confirmCancelOrder(orderId: number): void {
     const dialogRef = this.dialog.open(CancelOrderDialogComponent, {
       width: '350px',
@@ -192,7 +162,6 @@ export class OrderListComponent implements OnInit {
   cancelOrder(orderId: number): void {
     this.orderService.cancelOrder(orderId).subscribe({
       next: (response: any) => {
-        // Update the order status in the local array
         const order = this.orders.find(o => o.id === orderId);
         if (order) {
           order.status = OrderStatus.Cancelled;
