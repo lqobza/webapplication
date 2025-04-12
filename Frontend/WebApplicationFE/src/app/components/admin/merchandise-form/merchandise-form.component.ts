@@ -386,6 +386,20 @@ export class MerchandiseFormComponent implements OnInit {
     return imageUrl;
   }
 
+  getBrandName(brandId: number): string {
+    if (!brandId || brandId === 0) return 'No Brand';
+    
+    const brand = this.brands.find(b => b.id === brandId);
+    return brand ? brand.name : 'Unknown Brand';
+  }
+
+  getCategoryName(categoryId: number): string {
+    if (!categoryId) return 'No Category';
+    
+    const category = this.categories.find(c => c.id === categoryId);
+    return category ? category.name : 'Unknown Category';
+  }
+
   loadMerchandise(id: number): void {
     this.loading = true;
     this.error = null;
@@ -406,6 +420,11 @@ export class MerchandiseFormComponent implements OnInit {
           categoryId: merchandise.categoryId,
           brandId: merchandise.brandId || 0
         });
+
+        // Disable fields that should not be editable in edit mode
+        this.merchandiseForm.get('name')?.disable();
+        this.merchandiseForm.get('brandId')?.disable();
+        this.merchandiseForm.get('categoryId')?.disable();
 
         if (merchandise.categoryId) {
           this.loadSizesForCategory(merchandise.categoryId);
@@ -496,7 +515,7 @@ export class MerchandiseFormComponent implements OnInit {
       formData.images[0].isPrimary = true;
     }
 
-    if (!formData.themeIds) {
+    if (!this.isEditMode && !formData.themeIds) {
       formData.themeIds = [];
     }
 
@@ -518,10 +537,18 @@ export class MerchandiseFormComponent implements OnInit {
     formData.sizes = rawSizes;
 
     if (this.isEditMode && this.merchandiseId) {
-      this.merchandiseService.updateMerchandise(this.merchandiseId, {
+      // In edit mode, only send the fields that should be modifiable
+      const updateData = {
         id: this.merchandiseId,
-        ...formData
-      }).subscribe({
+        description: formData.description,
+        price: formData.price,
+        // categoryId is now read-only, so don't include it in the update
+        sizes: formData.sizes,
+        // Keep images data for handling image changes
+        images: formData.images
+      };
+
+      this.merchandiseService.updateMerchandise(this.merchandiseId, updateData).subscribe({
         next: () => {
           this.snackBar.open('Merchandise updated successfully', 'Close', { duration: 3000 });
           this.router.navigate(['/admin/merchandise']);

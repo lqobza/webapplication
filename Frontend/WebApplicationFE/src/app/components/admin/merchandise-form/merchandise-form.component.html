@@ -18,7 +18,12 @@
         <mat-card-title>Basic Information</mat-card-title>
       </mat-card-header>
       <mat-card-content>
-        <div class="form-row">
+        <div *ngIf="isEditMode" class="form-row readonly-field">
+          <label>Name:</label>
+          <div class="readonly-value">{{ merchandiseForm.get('name')?.value }}</div>
+        </div>
+        
+        <div class="form-row" *ngIf="!isEditMode">
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Name</mat-label>
             <input matInput formControlName="name" placeholder="Enter merchandise name">
@@ -26,7 +31,7 @@
             <mat-error *ngIf="merchandiseForm.get('name')?.hasError('minlength')">Name must be at least 3 characters</mat-error>
           </mat-form-field>
         </div>
-
+        
         <div class="form-row">
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Description</mat-label>
@@ -45,7 +50,7 @@
             <mat-error *ngIf="merchandiseForm.get('price')?.hasError('pattern')">Price must be a whole number</mat-error>
           </mat-form-field>
 
-          <mat-form-field appearance="outline">
+          <mat-form-field appearance="outline" *ngIf="!isEditMode">
             <mat-label>Category</mat-label>
             <mat-select formControlName="categoryId">
               <mat-option *ngFor="let category of categories" [value]="category.id">
@@ -54,9 +59,21 @@
             </mat-select>
             <mat-error *ngIf="merchandiseForm.get('categoryId')?.hasError('required')">Category is required</mat-error>
           </mat-form-field>
+          
+          <div *ngIf="isEditMode"></div>
         </div>
 
-        <div class="form-row">
+        <div *ngIf="isEditMode" class="form-row readonly-field">
+          <label>Category:</label>
+          <div class="readonly-value">{{ getCategoryName(merchandiseForm.get('categoryId')?.value) }}</div>
+        </div>
+
+        <div *ngIf="isEditMode" class="form-row readonly-field">
+          <label>Brand:</label>
+          <div class="readonly-value">{{ getBrandName(merchandiseForm.get('brandId')?.value) }}</div>
+        </div>
+
+        <div class="form-row" *ngIf="!isEditMode">
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Brand</mat-label>
             <mat-select formControlName="brandId">

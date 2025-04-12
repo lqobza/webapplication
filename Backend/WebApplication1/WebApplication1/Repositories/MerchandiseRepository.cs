@@ -1,4 +1,5 @@
 ﻿using System.Data.SqlClient;
+using WebApplication1.Controllers;
 using WebApplication1.Models;
 using WebApplication1.Models.DTOs;
 using WebApplication1.Models.Enums;
@@ -8,25 +9,35 @@ namespace WebApplication1.Repositories;
 
 public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
 {
+    private readonly ILogger<MerchandiseController> _logger;
     private readonly IRatingRepository _ratingRepository;
     private readonly IDatabaseWrapper _db;
 
-    public MerchandiseRepository(IRatingRepository ratingRepository, IDatabaseWrapper databaseWrapper)
+    public MerchandiseRepository(IRatingRepository ratingRepository, IDatabaseWrapper databaseWrapper, ILogger<MerchandiseController> logger)
         : base(databaseWrapper)
     {
         _ratingRepository = ratingRepository;
         _db = databaseWrapper;
+        _logger = logger;
     }
 
     public bool MerchandiseExists(int categoryId, string name, int brandId)
     {
         const string command = "[dbo].[CheckMerchExistence]";
+
+        var existsParam = new SqlParameter("@exists", System.Data.SqlDbType.Bit)
+        {
+            Direction = System.Data.ParameterDirection.Output
+        };
+
         var parameters = new[]
         {
             new SqlParameter("@categoryId", categoryId),
             new SqlParameter("@name", name),
-            new SqlParameter("@brandId", brandId)
+            new SqlParameter("@brandId", brandId),
+            existsParam
         };
+
         var result = _db.ExecuteScalar(command, parameters);
         return Convert.ToInt32(result) > 0;
     }
@@ -262,7 +273,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
     public InsertResult InsertMerchandise(MerchandiseCreateDto merchandise)
     {
         const string command = "[dbo].[InsertMerchandise]";
-        
+
         var parameters = new List<SqlParameter>
         {
             new("@categoryId", merchandise.CategoryId),
@@ -272,10 +283,18 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
             new("@brandId", merchandise.BrandId)
         };
 
-        // Handle sizes and themes tables
-        var result = _db.ExecuteScalar(command, parameters.ToArray());
+        try
+        {
+            //handle sizes and themes tables
+            _db.ExecuteScalar(command, parameters.ToArray());
 
-        return result != null ? InsertResult.Success : InsertResult.Error;
+            return InsertResult.Success;
+        }
+        catch (Exception e)
+        {
+            _logger.LogError("Inserting merchandise failed: " + e);
+            return InsertResult.Error;
+        }
     }
 
     public bool DeleteMerchandiseById(int id)

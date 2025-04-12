@@ -93,9 +93,13 @@ export class OrderService {
   }
 
   getUserOrders(): Observable<OrderDto[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/orders`).pipe(
+    return this.http.get<any[]>(`${this.apiUrl}/orders`, { observe: 'response' }).pipe(
       map(response => {
-        return response.map(order => {
+        if (response.status === 204) {
+          return [];
+        }
+        
+        return (response.body || []).map(order => {
           const orderDto: OrderDto = {
             id: order.id,
             userId: order.userId || '',

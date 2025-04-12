@@ -73,23 +73,27 @@ public class OrderRepository : BaseRepository, IOrderRepository
 
         try
         {
-            var parameters = new[]
+            var parameters = new List<SqlParameter>
             {
-                new SqlParameter("@orderId", orderId),
+                new SqlParameter("@orderId", orderId)
+            };
+            
+            if (item.MerchId != null)
+            {
+                parameters.Add(new SqlParameter("@merchId", item.MerchId));
+            }
+            
+            parameters.AddRange(new[]
+            {
                 new SqlParameter("@size", item.Size),
                 new SqlParameter("@quantity", item.Quantity),
                 new SqlParameter("@price", item.Price),
                 new SqlParameter("@merchandiseName", item.MerchandiseName ?? (object)DBNull.Value),
                 new SqlParameter("@imageUrl", item.ImageUrl ?? (object)DBNull.Value),
                 new SqlParameter("@isCustom", item.IsCustom)
-            };
+            });
 
-            if (item.MerchId != null)
-            {
-                parameters[1] = new SqlParameter("@merchId", item.MerchId);
-            }
-
-            _db.ExecuteNonQuery(command, parameters);
+            _db.ExecuteNonQuery(command, parameters.ToArray());
             
             _logger.LogInformation("Successfully inserted order item for order {OrderId}", orderId);
         }

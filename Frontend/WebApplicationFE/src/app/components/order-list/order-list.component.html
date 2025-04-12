@@ -25,8 +25,6 @@
   </div>
 
   <div *ngIf="!loading && !error && isAuthenticated && orders.length === 0" class="empty-state">
-    <mat-icon class="empty-icon">receipt_long</mat-icon>
-    <h2>No Orders Found</h2>
     <p>You haven't placed any orders yet.</p>
     <button mat-raised-button color="primary" routerLink="/merchandise">Browse Products</button>
   </div>

@@ -8,8 +8,6 @@ import { provideAnimations } from '@angular/platform-browser/animations';
 import { CustomDesignPreviewComponent } from './components/custom-design-preview/custom-design-preview.component';
 import { MerchandiseListComponent } from './components/merchandise-list/merchandise-list.component';
 import { MerchandiseDetailComponent } from './components/merchandise-detail/merchandise-detail.component';
-import { MerchandiseCreateComponent } from './components/merchandise-create/merchandise-create.component';
-import { MerchandiseUpdateComponent } from './components/merchandise-update/merchandise-update.component';
 import { CartComponent } from './components/cart/cart.component';
 import { OrderListComponent } from './components/order-list/order-list.component';
 import { AuthGuard } from './guards/auth.guard';
@@ -24,9 +22,7 @@ const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
   { path: 'merchandise', component: MerchandiseListComponent },
-  { path: 'merchandise/create', component: MerchandiseCreateComponent },
   { path: 'merchandise/:id', component: MerchandiseDetailComponent },
-  { path: 'merchandise/:id/edit', component: MerchandiseUpdateComponent },
   { path: 'cart', component: CartComponent, canActivate: [AuthGuard] },
   { path: 'orders', component: OrderListComponent, canActivate: [AuthGuard] },
   { path: 'my-designs', component: MyDesignsComponent, canActivate: [AuthGuard] },

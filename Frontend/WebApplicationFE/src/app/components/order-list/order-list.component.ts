@@ -12,6 +12,7 @@ import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { OrderService } from '../../services/order.service';
 import { OrderDetailsComponent } from '../order-details/order-details.component';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-order-list',
@@ -57,6 +58,7 @@ export class OrderListComponent implements OnInit {
 
   fetchOrders(): void {
     this.loading = true;
+    this.error = null;
     
     this.orderService.getUserOrders().subscribe({
       next: (data: OrderDto[]) => {
@@ -82,7 +84,7 @@ export class OrderListComponent implements OnInit {
         
         this.loading = false;
       },
-      error: (err: any) => {
+      error: (err: HttpErrorResponse) => {
         if (err.status === 401) {
           this.error = 'You need to be logged in to view your orders.';
           this.isAuthenticated = false;
@@ -99,10 +101,17 @@ export class OrderListComponent implements OnInit {
   getFullImageUrl(relativeUrl: string | null): string {
     if (!relativeUrl) return '';
     
+    // If it's a base64 image, return it as is
+    if (relativeUrl.startsWith('data:image')) {
+      return relativeUrl;
+    }
+    
+    // If it's already an absolute URL, return it as is
     if (relativeUrl.startsWith('http://') || relativeUrl.startsWith('https://')) {
       return relativeUrl;
     }
     
+    // Otherwise, prepend the API URL
     const normalizedUrl = relativeUrl.startsWith('/') ? relativeUrl : `/${relativeUrl}`;
     
     return `${environment.apiUrl}${normalizedUrl}`;
@@ -167,7 +176,7 @@ export class OrderListComponent implements OnInit {
           order.status = OrderStatus.Cancelled;
         }
       },
-      error: (err: any) => {
+      error: (err: HttpErrorResponse) => {
         let errorMessage = 'Failed to cancel order. Please try again later.';
         
         if (err.status === 400) {

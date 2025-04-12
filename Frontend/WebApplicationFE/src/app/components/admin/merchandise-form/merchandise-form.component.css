@@ -10,6 +10,26 @@
   font-weight: 500;
 }
 
+.readonly-field {
+  margin-bottom: 16px;
+}
+
+.readonly-field label {
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.6);
+  margin-bottom: 8px;
+  display: block;
+}
+
+.readonly-value {
+  font-size: 16px;
+  padding: 16px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+  min-height: 24px;
+}
+
 .loading-container {
   display: flex;
   flex-direction: column;
@@ -92,6 +112,15 @@
 
 .size-row mat-form-field {
   flex: 1;
+}
+
+.size-name {
+  flex: 1;
+  padding: 16px;
+  font-weight: 500;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  margin-right: 8px;
 }
 
 .image-upload-section {
