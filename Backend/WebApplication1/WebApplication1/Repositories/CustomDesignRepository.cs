@@ -4,53 +4,51 @@ using WebApplication1.Repositories.Interface;
 
 namespace WebApplication1.Repositories;
 
-public class CustomDesignRepository : ICustomDesignRepository
+public class CustomDesignRepository : BaseRepository, ICustomDesignRepository
 {
-    private readonly string? _connectionString;
+    private readonly IDatabaseWrapper _db;
 
-    public CustomDesignRepository(IConfiguration configuration)
+    public CustomDesignRepository(IDatabaseWrapper databaseWrapper)
+        : base(databaseWrapper)
     {
-        _connectionString = configuration.GetConnectionString("DefaultConnection");
+        _db = databaseWrapper;
     }
 
-    public async Task<int> CreateDesignAsync(CustomDesignCreateDto design)
+    public Task<int> CreateDesignAsync(CustomDesignCreateDto design)
     {
-        var query = @"
+        const string query = @"
             INSERT INTO CustomDesigns (user_id, name, front_image, back_image, created_at)
             OUTPUT INSERTED.ID
             VALUES (@userId, @name, @frontImage, @backImage, GETDATE())";
 
-        await using var connection = new SqlConnection(_connectionString);
-        await using var command = new SqlCommand(query, connection);
+        var parameters = new[]
+        {
+            new SqlParameter("@userId", design.UserId),
+            new SqlParameter("@name", design.Name),
+            new SqlParameter("@frontImage", design.FrontImage),
+            new SqlParameter("@backImage", design.BackImage)
+        };
 
-        command.Parameters.AddWithValue("@userId", design.UserId);
-        command.Parameters.AddWithValue("@name", design.Name);
-        command.Parameters.AddWithValue("@frontImage", design.FrontImage);
-        command.Parameters.AddWithValue("@backImage", design.BackImage);
-
-        await connection.OpenAsync();
-        var result = await command.ExecuteScalarAsync();
+        var result = _db.ExecuteScalar(query, parameters);
         if (result == null)
         {
             throw new InvalidOperationException("Failed to get the inserted design ID");
         }
-        return (int)result;
+        return Task.FromResult(Convert.ToInt32(result));
     }
 
-    public async Task<List<CustomDesignDto>> GetDesignsByUserIdAsync(string userId)
+    public Task<List<CustomDesignDto>> GetDesignsByUserIdAsync(string userId)
     {
-        var query = @"SELECT * FROM CustomDesigns WHERE user_id = @userId ORDER BY created_at DESC";
+        const string query = @"SELECT * FROM CustomDesigns WHERE user_id = @userId ORDER BY created_at DESC";
+        var parameters = new[]
+        {
+            new SqlParameter("@userId", userId)
+        };
 
         var designList = new List<CustomDesignDto>();
-        await using var connection = new SqlConnection(_connectionString);
-        await using var command = new SqlCommand(query, connection);
+        using var reader = _db.ExecuteReader(query, parameters);
 
-        command.Parameters.AddWithValue("@userId", userId);
-
-        await connection.OpenAsync();
-        await using var reader = await command.ExecuteReaderAsync();
-
-        while (await reader.ReadAsync())
+        while (reader.Read())
         {
             var design = new CustomDesignDto
             {
@@ -64,24 +62,22 @@ public class CustomDesignRepository : ICustomDesignRepository
             designList.Add(design);
         }
 
-        return designList;
+        return Task.FromResult(designList);
     }
 
-    public async Task<CustomDesignDto?> GetDesignByIdAsync(int id)
+    public Task<CustomDesignDto?> GetDesignByIdAsync(int id)
     {
-        var query = @"SELECT * FROM CustomDesigns WHERE id = @id";
-
-        await using var connection = new SqlConnection(_connectionString);
-        await using var command = new SqlCommand(query, connection);
-
-        command.Parameters.AddWithValue("@id", id);
-
-        await connection.OpenAsync();
-        await using var reader = await command.ExecuteReaderAsync();
-
-        if (await reader.ReadAsync())
+        const string query = @"SELECT * FROM CustomDesigns WHERE id = @id";
+        var parameters = new[]
         {
-            return new CustomDesignDto
+            new SqlParameter("@id", id)
+        };
+
+        using var reader = _db.ExecuteReader(query, parameters);
+
+        if (reader.Read())
+        {
+            return Task.FromResult(new CustomDesignDto
             {
                 Id = (int)reader["id"],
                 UserId = (string)reader["user_id"],
@@ -89,22 +85,21 @@ public class CustomDesignRepository : ICustomDesignRepository
                 FrontImage = (string)reader["front_image"],
                 BackImage = (string)reader["back_image"],
                 CreatedAt = (DateTime)reader["created_at"]
-            };
+            })!;
         }
 
-        return null;
+        return Task.FromResult<CustomDesignDto?>(null);
     }
 
-    public async Task DeleteDesignAsync(int id)
+    public Task DeleteDesignAsync(int id)
     {
-        var query = @"DELETE FROM CustomDesigns WHERE id = @id";
+        const string query = @"DELETE FROM CustomDesigns WHERE id = @id";
+        var parameters = new[]
+        {
+            new SqlParameter("@id", id)
+        };
 
-        await using var connection = new SqlConnection(_connectionString);
-        await using var command = new SqlCommand(query, connection);
-
-        command.Parameters.AddWithValue("@id", id);
-
-        await connection.OpenAsync();
-        await command.ExecuteNonQueryAsync();
+        _db.ExecuteNonQuery(query, parameters);
+        return Task.CompletedTask;
     }
 } 

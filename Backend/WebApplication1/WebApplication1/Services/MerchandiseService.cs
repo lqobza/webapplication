@@ -51,10 +51,7 @@ public class MerchandiseService : IMerchandiseService
 
     public InsertResult InsertMerchandise(MerchandiseCreateDto merchandise)
     {
-        if (_merchandiseRepository.MerchandiseExists(merchandise.CategoryId, merchandise.Name, merchandise.BrandId))
-            return InsertResult.AlreadyExists;
-
-        return _merchandiseRepository.InsertMerchandise(merchandise);
+        return _merchandiseRepository.MerchandiseExists(merchandise.CategoryId, merchandise.Name, merchandise.BrandId) ? InsertResult.AlreadyExists : _merchandiseRepository.InsertMerchandise(merchandise);
     }
 
     public bool DeleteMerchandiseById(int id)
@@ -95,34 +92,28 @@ public class MerchandiseService : IMerchandiseService
 
     public InsertResult AddCategoryToDb(CategoryCreateDto categoryCreateDto)
     {
-        int result = _merchandiseRepository.AddCategoryToDb(categoryCreateDto);
+        var result = _merchandiseRepository.AddCategoryToDb(categoryCreateDto);
 
-        if (result > 0)  // valid category ID returned
+        return result switch
         {
-            return InsertResult.Success;
-        }
-        if (result == -1)
-        {
-            return InsertResult.AlreadyExists;
-        }
-
-        return InsertResult.Error;
+            // valid category ID returned
+            > 0 => InsertResult.Success,
+            -1 => InsertResult.AlreadyExists,
+            _ => InsertResult.Error
+        };
     }
 
     public InsertResult AddThemeToDb(ThemeCreateDto themeCreateDto)
     {
-        int result = _merchandiseRepository.AddThemeToDb(themeCreateDto);
+        var result = _merchandiseRepository.AddThemeToDb(themeCreateDto);
 
-        if (result > 0)  // valid theme ID returned
+        return result switch
         {
-            return InsertResult.Success;
-        }
-        if (result == -1)
-        {
-            return InsertResult.AlreadyExists;
-        }
-
-        return InsertResult.Error;
+            // valid theme ID returned
+            > 0 => InsertResult.Success,
+            -1 => InsertResult.AlreadyExists,
+            _ => InsertResult.Error
+        };
     }
 
     public async Task<MerchandiseImageDto> AddMerchandiseImage(int merchandiseId, string imageUrl, bool isPrimary = false)
@@ -147,7 +138,7 @@ public class MerchandiseService : IMerchandiseService
 
     public bool MerchandiseExists(int id)
     {
-        var sql = "SELECT COUNT(1) FROM Merch WHERE id = @id";
+        const string sql = "SELECT COUNT(1) FROM Merch WHERE id = @id";
         var parameters = new[] { new System.Data.SqlClient.SqlParameter("@id", id) };
         var exists = _merchandiseRepository.ExecuteScalar<int>(sql, parameters) > 0;
         return exists;
@@ -175,15 +166,14 @@ public class MerchandiseService : IMerchandiseService
         }
         catch (Exception ex)
         {
-            if (ex is DbUpdateException && ex.InnerException?.Message.Contains("FOREIGN KEY constraint") == true)
+            if (ex is not DbUpdateException ||
+                ex.InnerException?.Message.Contains("FOREIGN KEY constraint") != true) throw;
+            var imageUrl = ex.Data["ImageUrl"] as string;
+            if (!string.IsNullOrEmpty(imageUrl))
             {
-                var imageUrl = ex.Data["ImageUrl"] as string;
-                if (!string.IsNullOrEmpty(imageUrl))
-                {
-                    await _imageStorageService.DeleteImageAsync(imageUrl);
-                }
+                await _imageStorageService.DeleteImageAsync(imageUrl);
             }
-            
+
             throw;
         }
     }

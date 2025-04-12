@@ -246,6 +246,7 @@ export class CartService {
       CustomerName: customerName,
       CustomerEmail: customerEmail,
       CustomerAddress: customerAddress,
+      userId: this.authService.getCurrentUserId(),
       Items: orderItems
     };
     

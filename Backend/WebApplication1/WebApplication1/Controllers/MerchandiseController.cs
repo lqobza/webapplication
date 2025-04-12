@@ -5,7 +5,6 @@ using WebApplication1.Models.Enums;
 using WebApplication1.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Repositories.Interface;
-using WebApplication1.Utils;
 
 namespace WebApplication1.Controllers;
 
@@ -16,15 +15,13 @@ public class MerchandiseController : ControllerBase
     private readonly ILogger<MerchandiseController> _logger;
     private readonly IMerchandiseService _merchandiseService;
     private readonly IImageStorageService _imageStorageService;
-    private readonly ApplicationDbContext _context;
     private readonly IMerchandiseRepository _merchandiseRepository;
 
-    public MerchandiseController(IMerchandiseService merchandiseService, ILogger<MerchandiseController> logger, IImageStorageService imageStorageService, ApplicationDbContext context, IMerchandiseRepository merchandiseRepository)
+    public MerchandiseController(IMerchandiseService merchandiseService, ILogger<MerchandiseController> logger, IImageStorageService imageStorageService, IMerchandiseRepository merchandiseRepository)
     {
         _merchandiseService = merchandiseService;
         _logger = logger;
         _imageStorageService = imageStorageService;
-        _context = context;
         _merchandiseRepository = merchandiseRepository;
     }
 
@@ -423,12 +420,12 @@ public class MerchandiseController : ControllerBase
             _logger.LogInformation("Stock check for {MerchandiseName} (ID: {Id}, Size: {Size}): Available: {Available}, Requested: {Requested}",
                 merchandiseName, id, size, sizeInfo.InStock, quantity);
             
-            return Ok(new { 
-                isAvailable = isAvailable,
+            return Ok(new {
+                isAvailable,
                 available = sizeInfo.InStock,
                 requested = quantity,
-                merchandiseName = merchandiseName,
-                size = size
+                merchandiseName,
+                size
             });
         }
         catch (Exception ex)

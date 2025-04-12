@@ -1,18 +1,20 @@
 ﻿using System.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
+using WebApplication1.Repositories.Interface;
 
 namespace WebApplication1.Repositories;
 
-public abstract class BaseRepository
+public class BaseRepository
 {
-    protected readonly IConfiguration _configuration;
+    private readonly IDatabaseWrapper _db;
 
-    protected BaseRepository(IConfiguration configuration)
+    protected BaseRepository(IDatabaseWrapper databaseWrapper)
     {
-        _configuration = configuration;
+        _db = databaseWrapper;
     }
 
     protected SqlConnection CreateConnection()
     {
-        return new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
+        return _db.CreateConnection();
     }
 }

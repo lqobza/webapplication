@@ -15,7 +15,7 @@ public class Startup
 {
     private readonly IConfiguration _configuration;
 
-    public Startup(IConfiguration configuration)
+    public Startup()
     {
         var builder = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
@@ -77,13 +77,16 @@ public class Startup
         });
 
         
-        services.AddTransient<IMerchandiseRepository, MerchandiseRepository>();
+        services.AddScoped<IMerchandiseRepository, MerchandiseRepository>();
+        services.AddScoped<IRatingRepository, RatingRepository>();
+        services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<ICustomDesignRepository, CustomDesignRepository>();
+
+        services.AddScoped<IDatabaseWrapper, DatabaseWrapper>();
+
         services.AddTransient<IMerchandiseService, MerchandiseService>();
-        services.AddTransient<IRatingRepository, RatingRepository>();
         services.AddTransient<IRatingService, RatingService>();
-        services.AddTransient<IOrderRepository, OrderRepository>();
         services.AddTransient<IOrderService, OrderService>();
-        services.AddTransient<ICustomDesignRepository, CustomDesignRepository>();
         services.AddTransient<ICustomDesignService, CustomDesignService>();
 
         services.AddControllers()

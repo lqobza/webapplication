@@ -626,6 +626,9 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
       const originalActiveElement = this.activeElement;
       const originalSide = this.currentSide;
       
+      this.showModifiableArea = false;
+      this.renderCanvas();
+      
       const currentSideImage = this.captureCanvasImage();
       
       const otherSide = originalSide === 'front' ? 'back' : 'front';

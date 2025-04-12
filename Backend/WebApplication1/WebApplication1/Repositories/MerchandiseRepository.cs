@@ -1,102 +1,92 @@
-﻿using System.Data;
-using System.Data.SqlClient;
+﻿using System.Data.SqlClient;
 using WebApplication1.Models;
 using WebApplication1.Models.DTOs;
 using WebApplication1.Models.Enums;
 using WebApplication1.Repositories.Interface;
-using Dapper;
 
 namespace WebApplication1.Repositories;
 
 public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
 {
-    private readonly ILogger<MerchandiseRepository> _logger;
     private readonly IRatingRepository _ratingRepository;
+    private readonly IDatabaseWrapper _db;
 
-    public MerchandiseRepository(IConfiguration configuration, ILogger<MerchandiseRepository> logger,
-        IRatingRepository ratingRepository)
-        : base(configuration)
+    public MerchandiseRepository(IRatingRepository ratingRepository, IDatabaseWrapper databaseWrapper)
+        : base(databaseWrapper)
     {
-        _logger = logger;
         _ratingRepository = ratingRepository;
+        _db = databaseWrapper;
     }
 
     public bool MerchandiseExists(int categoryId, string name, int brandId)
     {
-        using var command = new SqlCommand("[dbo].[CheckMerchExistence]");
-        command.CommandType = CommandType.StoredProcedure;
-
-        command.Parameters.Add("categoryId", SqlDbType.Int).Value = categoryId;
-        command.Parameters.Add("name", SqlDbType.NVarChar, 255).Value = name;
-        command.Parameters.Add("brandId", SqlDbType.Int).Value = brandId;
-
-        var existsParam = new SqlParameter("@exists", SqlDbType.Bit) { Direction = ParameterDirection.Output };
-        command.Parameters.Add(existsParam);
-
-        ExecuteScalar(command);
-        return (bool)existsParam.Value;
+        const string command = "[dbo].[CheckMerchExistence]";
+        var parameters = new[]
+        {
+            new SqlParameter("@categoryId", categoryId),
+            new SqlParameter("@name", name),
+            new SqlParameter("@brandId", brandId)
+        };
+        var result = _db.ExecuteScalar(command, parameters);
+        return Convert.ToInt32(result) > 0;
     }
 
     public PaginatedResponse<MerchandiseDto> GetAllMerchandise(int page = 1, int pageSize = 10)
     {
         var merchList = new List<MerchandiseDto>();
-        int totalCount = 0;
+        var totalCount = 0;
 
-        using var connection = CreateConnection();
-        connection.Open();
-        
-        using var command = new SqlCommand("[dbo].[GetAllMerchandise]", connection);
-        command.CommandType = CommandType.StoredProcedure;
-        command.Parameters.AddWithValue("@PageNumber", page);
-        command.Parameters.AddWithValue("@PageSize", pageSize);
+        const string command = "[dbo].[GetAllMerchandise]";
+        var parameters = new[]
+        {
+            new SqlParameter("@PageNumber", page),
+            new SqlParameter("@PageSize", pageSize)
+        };
 
-        using var reader = command.ExecuteReader();
-
+        using var reader = _db.ExecuteReader(command, parameters);
         while (reader.Read())
         {
             totalCount = (int)reader["TotalCount"];
             var merchandise = merchList.FirstOrDefault(m => m.Id == (int)reader["id"]);
 
-            if (merchandise == null)
+            if (merchandise != null) continue;
+            merchandise = new MerchandiseDto
             {
-                merchandise = new MerchandiseDto
+                Id = (int)reader["id"],
+                CategoryId = (int)reader["category_id"],
+                CategoryName = (string)reader["CategoryName"],
+                Name = (string)reader["name"],
+                Price = (int)reader["price"],
+                Description = (string)reader["description"],
+                BrandId = (int)reader["brand_id"],
+                BrandName = (string)reader["BrandName"],
+                Themes = new List<ThemeDto>(),
+                Sizes = new List<MerchSizeDto>()
+            };
+
+            if (reader["theme_id"] != DBNull.Value)
+            {
+                merchandise.Themes.Add(new ThemeDto
                 {
-                    Id = (int)reader["id"],
-                    CategoryId = (int)reader["category_id"],
-                    CategoryName = (string)reader["CategoryName"],
-                    Name = (string)reader["name"],
-                    Price = (int)reader["price"],
-                    Description = (string)reader["description"],
-                    BrandId = (int)reader["brand_id"],
-                    BrandName = (string)reader["BrandName"],
-                    Themes = new List<ThemeDto>(),
-                    Sizes = new List<MerchSizeDto>()
-                };
-
-                if (reader["theme_id"] != DBNull.Value)
-                {
-                    merchandise.Themes.Add(new ThemeDto
-                    {
-                        Id = (int)reader["theme_id"],
-                        Name = (string)reader["theme_name"]
-                    });
-                }
-
-                if (reader["size_id"] != DBNull.Value)
-                {
-                    merchandise.Sizes.Add(new MerchSizeDto
-                    {
-                        Id = (int)reader["size_id"],
-                        MerchId = (int)reader["id"],
-                        Size = reader["size_name"] == DBNull.Value ? null : (string)reader["size_name"],
-                        InStock = (int)reader["size_in_stock"]
-                    });
-                }
-
-                merchandise.Images = GetImagesForMerchandise(merchandise.Id);
-
-                merchList.Add(merchandise);
+                    Id = (int)reader["theme_id"],
+                    Name = (string)reader["theme_name"]
+                });
             }
+
+            if (reader["size_id"] != DBNull.Value)
+            {
+                merchandise.Sizes.Add(new MerchSizeDto
+                {
+                    Id = (int)reader["size_id"],
+                    MerchId = (int)reader["id"],
+                    Size = reader["size_name"] == DBNull.Value ? null : (string)reader["size_name"],
+                    InStock = (int)reader["size_in_stock"]
+                });
+            }
+
+            merchandise.Images = GetImagesForMerchandise(merchandise.Id);
+
+            merchList.Add(merchandise);
         }
 
         return new PaginatedResponse<MerchandiseDto>
@@ -115,14 +105,13 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
     {
         MerchandiseDto? merchandise = null;
 
-        using var connection = CreateConnection();
-        connection.Open();
-        using var command = new SqlCommand("[dbo].[GetMerchandiseById]", connection);
-        command.CommandType = CommandType.StoredProcedure;
-        command.Parameters.AddWithValue("@Id", id);
+        const string command = "[dbo].[GetMerchandiseById]";
+        var parameters = new[]
+        {
+            new SqlParameter("@Id", id)
+        };
 
-        using var reader = command.ExecuteReader();
-
+        using var reader = _db.ExecuteReader(command, parameters);
         while (reader.Read())
         {
             merchandise ??= new MerchandiseDto
@@ -186,7 +175,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
                     });
                 }
             }
-            
+
             merchandise.Images = GetImagesForMerchandise(merchandise.Id);
         }
 
@@ -196,14 +185,13 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
     public List<MerchandiseDto> GetMerchandiseBySize(string size)
     {
         var merchList = new List<MerchandiseDto>();
-        using var connection = CreateConnection();
+        const string command = "[dbo].[GetMerchandiseBySize]";
+        var parameters = new[]
+        {
+            new SqlParameter("@size", size)
+        };
 
-        connection.Open();
-        using var command = new SqlCommand("[dbo].[GetMerchandiseBySize]", connection);
-        command.CommandType = CommandType.StoredProcedure;
-        command.Parameters.Add(new SqlParameter("@size", SqlDbType.NVarChar, 255) { Value = size });
-
-        using var reader = command.ExecuteReader();
+        using var reader = _db.ExecuteReader(command, parameters);
 
         while (reader.Read())
             merchList.Add(new MerchandiseDto
@@ -233,14 +221,13 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
 
     public List<MerchandiseDto> GetMerchandiseByCategory(int categoryId)
     {
-        using var connection = CreateConnection();
-        connection.Open();
+        const string command = "[dbo].[GetMerchandiseByCategory]";
+        var parameters = new[]
+        {
+            new SqlParameter("@categoryId", categoryId)
+        };
 
-        using var command = new SqlCommand("[dbo].[GetMerchandiseByCategory]", connection);
-        command.CommandType = CommandType.StoredProcedure;
-        command.Parameters.Add(new SqlParameter("@categoryId", SqlDbType.Int) { Value = categoryId });
-
-        using var reader = command.ExecuteReader();
+        using var reader = _db.ExecuteReader(command, parameters);
         var merchList = new List<MerchandiseDto>();
 
         while (reader.Read())
@@ -274,88 +261,60 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
 
     public InsertResult InsertMerchandise(MerchandiseCreateDto merchandise)
     {
-        using var insertMerchandiseCommand = new SqlCommand("[dbo].[InsertMerchandise]");
-        insertMerchandiseCommand.CommandType = CommandType.StoredProcedure;
-
-        insertMerchandiseCommand.Parameters.Add("categoryId", SqlDbType.Int).Value = merchandise.CategoryId;
-        insertMerchandiseCommand.Parameters.Add("name", SqlDbType.NVarChar, 255).Value = merchandise.Name;
-        insertMerchandiseCommand.Parameters.Add("price", SqlDbType.Decimal).Value = merchandise.Price;
-        insertMerchandiseCommand.Parameters.Add("description", SqlDbType.NVarChar, 255).Value = merchandise.Description;
-        insertMerchandiseCommand.Parameters.Add("brandId", SqlDbType.Int).Value = merchandise.BrandId;
-
-
-        if (merchandise.Sizes != null)
+        const string command = "[dbo].[InsertMerchandise]";
+        
+        var parameters = new List<SqlParameter>
         {
-            var sizesTable = new DataTable();
-            sizesTable.Columns.Add("Size", typeof(string));
-            sizesTable.Columns.Add("InStock", typeof(int));
-            foreach (var sizeDto in merchandise.Sizes)
-            {
-                sizesTable.Rows.Add(sizeDto.Size, sizeDto.InStock);
-            }
+            new("@categoryId", merchandise.CategoryId),
+            new("@name", merchandise.Name),
+            new("@price", merchandise.Price),
+            new("@description", merchandise.Description),
+            new("@brandId", merchandise.BrandId)
+        };
 
-            var sizesParam = insertMerchandiseCommand.Parameters.AddWithValue("sizes", sizesTable);
-            sizesParam.SqlDbType = SqlDbType.Structured;
-            sizesParam.TypeName = "dbo.MerchSizeType";
-        }
+        // Handle sizes and themes tables
+        var result = _db.ExecuteScalar(command, parameters.ToArray());
 
-        if (merchandise.ThemeIds != null)
-        {
-            var themesTable = new DataTable();
-            themesTable.Columns.Add("ThemeId", typeof(int));
-            foreach (var themeId in merchandise.ThemeIds)
-            {
-                themesTable.Rows.Add(themeId);
-            }
-
-            var themesParam = insertMerchandiseCommand.Parameters.AddWithValue("themes", themesTable);
-            themesParam.SqlDbType = SqlDbType.Structured;
-            themesParam.TypeName = "dbo.MerchThemeType";
-        }
-
-        var result = ExecuteScalar(insertMerchandiseCommand);
-
-        return result is int ? InsertResult.Success : InsertResult.Error;
+        return result != null ? InsertResult.Success : InsertResult.Error;
     }
-
 
     public bool DeleteMerchandiseById(int id)
     {
-        using var command = new SqlCommand("[dbo].[DeleteMerchandiseById]");
-        command.CommandType = CommandType.StoredProcedure;
-        command.Parameters.Add("id", SqlDbType.Int).Value = id;
-        return ExecuteNonQuery(command) == 1;
+        const string command = "[dbo].[DeleteMerchandiseById]";
+        var parameters = new[]
+        {
+            new SqlParameter("@id", id)
+        };
+        
+        var rowsAffected = _db.ExecuteNonQuery(command, parameters);
+        return rowsAffected == 1;
     }
 
     public bool UpdateMerchandise(int id, MerchandiseUpdateDto merchandiseUpdateDto)
     {
         var updateFields = new List<string>();
-        var command = new SqlCommand("[dbo].[UpdateMerchandise]");
-        command.CommandType = CommandType.StoredProcedure;
-
+        const string command = "[dbo].[UpdateMerchandise]";
+        var parameters = new List<SqlParameter>();
+        
         if (merchandiseUpdateDto.Price.HasValue)
         {
             Console.WriteLine("Price value " + merchandiseUpdateDto.Price.Value);
             updateFields.Add("price = @Price");
-            command.Parameters.Add("@Price", SqlDbType.Int).Value = merchandiseUpdateDto.Price.Value;
+            parameters.Add(new SqlParameter("@Price", merchandiseUpdateDto.Price.Value));
         }
 
         if (!string.IsNullOrEmpty(merchandiseUpdateDto.Description))
         {
             Console.WriteLine("Description value " + merchandiseUpdateDto.Description);
             updateFields.Add("description = @Description");
-            command.Parameters.Add("@Description", SqlDbType.NVarChar, 255).Value = merchandiseUpdateDto.Description;
+            parameters.Add(new SqlParameter("@Description", merchandiseUpdateDto.Description));
         }
 
         if (!updateFields.Any()) throw new ArgumentException("No fields to update.");
 
-        command.Parameters.Add("@Id", SqlDbType.Int).Value = id;
-
-        using var connection = CreateConnection();
-
-        command.Connection = connection;
-        connection.Open();
-        var rowsAffected = command.ExecuteNonQuery();
+        parameters.Add(new SqlParameter("@Id", id));
+        
+        var rowsAffected = _db.ExecuteNonQuery(command, parameters.ToArray());
         return rowsAffected > 0;
     }
 
@@ -397,13 +356,9 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
     public List<CategoryDto> GetCategories()
     {
         var categories = new List<CategoryDto>();
+        const string command = "[dbo].[GetCategories]";
 
-        using var connection = CreateConnection();
-        using var command = new SqlCommand("[dbo].[GetCategories]", connection);
-        command.CommandType = CommandType.StoredProcedure;
-
-        connection.Open();
-        using var reader = command.ExecuteReader();
+        using var reader = _db.ExecuteReader(command);
 
         while (reader.Read())
             categories.Add(new CategoryDto
@@ -418,13 +373,9 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
     public List<ThemeDto> GetThemes()
     {
         var themes = new List<ThemeDto>();
+        const string command = "[dbo].[GetThemes]";
 
-        using var connection = CreateConnection();
-        using var command = new SqlCommand("[dbo].[GetThemes]", connection);
-        command.CommandType = CommandType.StoredProcedure;
-
-        connection.Open();
-        using var reader = command.ExecuteReader();
+        using var reader = _db.ExecuteReader(command);
 
         while (reader.Read())
             themes.Add(new ThemeDto
@@ -439,13 +390,9 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
     public List<BrandDto> GetBrands()
     {
         var brands = new List<BrandDto>();
+        const string command = "[dbo].[GetBrands]";
 
-        using var connection = CreateConnection();
-        using var command = new SqlCommand("[dbo].[GetBrands]", connection);
-        command.CommandType = CommandType.StoredProcedure;
-
-        connection.Open();
-        using var reader = command.ExecuteReader();
+        using var reader = _db.ExecuteReader(command);
 
         while (reader.Read())
             brands.Add(new BrandDto
@@ -461,15 +408,14 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
     {
         try
         {
-            using var connection = CreateConnection();
-            using var command = new SqlCommand("[dbo].[InsertCategory]", connection);
-            command.CommandType = CommandType.StoredProcedure;
+            const string command = "[dbo].[InsertCategory]";
+            var parameters = new[]
+            {
+                new SqlParameter("@name", categoryCreateDto.Name)
+            };
 
-            command.Parameters.Add(new SqlParameter("@name", SqlDbType.NVarChar, 255)
-                { Value = categoryCreateDto.Name });
-
-            connection.Open();
-            return (int)command.ExecuteScalar();
+            var result = _db.ExecuteScalar(command, parameters);
+            return Convert.ToInt32(result);
         }
         catch (SqlException ex)
         {
@@ -486,15 +432,14 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
     {
         try
         {
-            using var connection = CreateConnection();
-            using var command = new SqlCommand("[dbo].[InsertTheme]", connection);
-            command.CommandType = CommandType.StoredProcedure;
+            const string command = "[dbo].[InsertTheme]";
+            var parameters = new[]
+            {
+                new SqlParameter("@name", themeCreateDto.Name)
+            };
 
-            command.Parameters.Add(new SqlParameter("@name", SqlDbType.NVarChar, 255)
-                { Value = themeCreateDto.Name });
-
-            connection.Open();
-            return (int)command.ExecuteScalar();
+            var result = _db.ExecuteScalar(command, parameters);
+            return Convert.ToInt32(result);
         }
         catch (SqlException ex)
         {
@@ -507,59 +452,21 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
         }
     }
 
-    private int ExecuteNonQuery(SqlCommand dbCommand)
-    {
-        using var connection = CreateConnection();
-
-        dbCommand.Connection = connection;
-        connection.Open();
-
-        using var dbTransaction = connection.BeginTransaction();
-
-        try
-        {
-            dbCommand.Transaction = dbTransaction;
-            var rowsAffected = dbCommand.ExecuteNonQuery();
-            dbTransaction.Commit();
-            return rowsAffected;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "A database error occurred while executing non-query.");
-            throw;
-        }
-    }
-
-    private object ExecuteScalar(SqlCommand command)
-    {
-        if (command == null)
-        {
-            throw new ArgumentNullException(nameof(command));
-        }
-
-        using var connection = CreateConnection();
-        command.Connection = connection;
-        command.Connection.Open();
-        return command.ExecuteScalar();
-    }
-
-
     private List<ThemeDto> GetThemesByMerchId(int merchId)
     {
-        var query = @"
+        const string command = @"
             SELECT t.id, t.name
             FROM Theme t
             JOIN MerchTheme mt ON t.id = mt.theme_id
             WHERE mt.merch_id = @merchId";
 
+        var parameters = new[]
+        {
+            new SqlParameter("@merchId", merchId)
+        };
+
         var themes = new List<ThemeDto>();
-        using var connection = CreateConnection();
-
-        connection.Open();
-        using var command = new SqlCommand(query, connection);
-
-        command.Parameters.Add(new SqlParameter("@merchId", SqlDbType.Int) { Value = merchId });
-        using var reader = command.ExecuteReader();
+        using var reader = _db.ExecuteReader(command, parameters);
 
         while (reader.Read())
             themes.Add(new ThemeDto
@@ -573,19 +480,18 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
 
     public List<MerchSizeDto> GetSizesByMerchId(int merchId)
     {
-        var query = @"
+        const string command = @"
         SELECT id, merch_id, size, instock
         FROM MerchSize
         WHERE merch_id = @merchId";
 
+        var parameters = new[]
+        {
+            new SqlParameter("@merchId", merchId)
+        };
+
         var sizes = new List<MerchSizeDto>();
-        using var connection = CreateConnection();
-
-        connection.Open();
-        using var command = new SqlCommand(query, connection);
-
-        command.Parameters.Add(new SqlParameter("@merchId", SqlDbType.Int) { Value = merchId });
-        using var reader = command.ExecuteReader();
+        using var reader = _db.ExecuteReader(command, parameters);
 
         while (reader.Read())
         {
@@ -614,13 +520,32 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
 
     private List<MerchandiseImage> GetImagesForMerchandise(int merchandiseId)
     {
-        var query = @"
+        const string command = @"
             SELECT id, MerchId, ImageUrl, IsPrimary, CreatedAt
             FROM MerchandiseImages
             WHERE MerchId = @MerchandiseId
         ";
 
-        using var connection = CreateConnection();
-        return connection.Query<MerchandiseImage>(query, new { MerchandiseId = merchandiseId }).ToList();
+        var parameters = new[]
+        {
+            new SqlParameter("@MerchandiseId", merchandiseId)
+        };
+
+        var images = new List<MerchandiseImage>();
+        using var reader = _db.ExecuteReader(command, parameters);
+
+        while (reader.Read())
+        {
+            images.Add(new MerchandiseImage
+            {
+                Id = (int)reader["id"],
+                MerchId = (int)reader["MerchId"],
+                ImageUrl = (string)reader["ImageUrl"],
+                IsPrimary = (bool)reader["IsPrimary"],
+                CreatedAt = reader["CreatedAt"] != DBNull.Value ? (DateTime)reader["CreatedAt"] : DateTime.UtcNow
+            });
+        }
+
+        return images;
     }
 }

@@ -9,19 +9,19 @@ public class RatingRepository : BaseRepository, IRatingRepository
 {
     private readonly ILogger<RatingRepository> _logger;
 
-    public RatingRepository(IConfiguration configuration, ILogger<RatingRepository> logger)
-        : base(configuration)
+    public RatingRepository(ILogger<RatingRepository> logger, IDatabaseWrapper databaseWrapper)
+        : base(databaseWrapper)
     {
         _logger = logger;
     }
 
-    public bool AddRating(RatingCreateDto ratingCreateDto)
+    public virtual bool AddRating(RatingCreateDto ratingCreateDto)
     {
         using var connection = CreateConnection();
         connection.Open();
 
-        var checkMerchQuery = "SELECT COUNT(*) FROM Merch WHERE id = @MerchId";
-        using var checkCommand = new SqlCommand(checkMerchQuery, connection);
+        const string checkMerchCommand = "SELECT COUNT(*) FROM Merch WHERE id = @MerchId";
+        using var checkCommand = new SqlCommand(checkMerchCommand, connection);
         
         checkCommand.Parameters.Add("@MerchId", SqlDbType.Int).Value = ratingCreateDto.MerchId;
         var merchExists = (int)checkCommand.ExecuteScalar() > 0;
@@ -32,8 +32,8 @@ public class RatingRepository : BaseRepository, IRatingRepository
             throw new ArgumentException("Invalid Merch ID");
         }
 
-        var query = "INSERT INTO Ratings (merch_id, rating, description) VALUES (@MerchId, @Rating, @Description)";
-        using var command = new SqlCommand(query, connection);
+        const string insertCommand = "INSERT INTO Ratings (merch_id, rating, description) VALUES (@MerchId, @Rating, @Description)";
+        using var command = new SqlCommand(insertCommand, connection);
         
         command.Parameters.Add("@MerchId", SqlDbType.Int).Value = ratingCreateDto.MerchId;
         command.Parameters.Add("@Rating", SqlDbType.Int).Value = ratingCreateDto.Rating;
@@ -44,27 +44,27 @@ public class RatingRepository : BaseRepository, IRatingRepository
         return rowsAffected > 0;
     }
 
-    public List<RatingDto> GetRatingsForMerchandise(int merchId)
+    public virtual List<RatingDto> GetRatingsForMerchandise(int merchId)
     {
         var ratings = new List<RatingDto>();
 
         using var connection = CreateConnection();
         connection.Open();
 
-        using var ratingCommand = new SqlCommand("SELECT * FROM Ratings WHERE merch_id = @MerchId", connection);
-        ratingCommand.Parameters.Add("@MerchId", SqlDbType.Int).Value = merchId;
+        using var command = new SqlCommand("SELECT * FROM Ratings WHERE merch_id = @MerchId", connection);
+        command.Parameters.Add("@MerchId", SqlDbType.Int).Value = merchId;
 
-        using var ratingReader = ratingCommand.ExecuteReader();
+        using var reader = command.ExecuteReader();
         
-        while (ratingReader.Read())
+        while (reader.Read())
         {
             var rating = new RatingDto
             {
-                Id = (int)ratingReader["id"],
-                MerchId = (int)ratingReader["merch_id"],
-                Rating = (int)ratingReader["rating"],
-                Description = ratingReader["description"] as string ?? string.Empty,
-                CreatedAt = (DateTime)ratingReader["created_at"]
+                Id = (int)reader["id"],
+                MerchId = (int)reader["merch_id"],
+                Rating = (int)reader["rating"],
+                Description = reader["description"] as string ?? string.Empty,
+                CreatedAt = (DateTime)reader["created_at"]
             };
             ratings.Add(rating);
         }

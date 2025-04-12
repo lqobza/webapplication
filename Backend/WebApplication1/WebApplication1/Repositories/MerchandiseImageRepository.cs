@@ -1,86 +1,117 @@
-using Microsoft.EntityFrameworkCore;
-using WebApplication1.Models;
+using System.Data.SqlClient;
 using WebApplication1.Models.DTOs;
 using WebApplication1.Repositories.Interface;
-using WebApplication1.Utils;
-using System.Data.SqlClient;
 
 namespace WebApplication1.Repositories
 {
-    public class MerchandiseImageRepository : IMerchandiseImageRepository
+    public class MerchandiseImageRepository : BaseRepository, IMerchandiseImageRepository
     {
-        private readonly ApplicationDbContext _context;
         private readonly ILogger<MerchandiseImageRepository> _logger;
+        private readonly IDatabaseWrapper _db;
 
-        public MerchandiseImageRepository(ApplicationDbContext context, ILogger<MerchandiseImageRepository> logger)
+        public MerchandiseImageRepository(ILogger<MerchandiseImageRepository> logger, IDatabaseWrapper databaseWrapper)
+            : base(databaseWrapper)
         {
-            _context = context;
             _logger = logger;
+            _db = databaseWrapper;
         }
 
         public async Task<List<MerchandiseImageDto>> GetImagesForMerchandise(int merchandiseId)
         {
-            var images = await _context.MerchandiseImages
-                .Where(mi => mi.MerchId == merchandiseId)
-                .Select(mi => new MerchandiseImageDto
-                {
-                    Id = mi.Id,
-                    ImageUrl = mi.ImageUrl,
-                    IsPrimary = mi.IsPrimary,
-                    MerchandiseId = mi.MerchId
-                })
-                .ToListAsync();
+            const string command = @"
+                SELECT id, MerchId, ImageUrl, IsPrimary, CreatedAt
+                FROM MerchandiseImages
+                WHERE MerchId = @MerchandiseId
+            ";
 
-            return images;
+            var parameters = new[]
+            {
+                new SqlParameter("@MerchandiseId", merchandiseId)
+            };
+
+            var images = new List<MerchandiseImageDto>();
+            using var reader = _db.ExecuteReader(command, parameters);
+
+            while (reader.Read())
+            {
+                images.Add(new MerchandiseImageDto
+                {
+                    Id = (int)reader["id"],
+                    MerchandiseId = (int)reader["MerchId"],
+                    ImageUrl = (string)reader["ImageUrl"],
+                    IsPrimary = (bool)reader["IsPrimary"],
+                    CreatedAt = reader["CreatedAt"] != DBNull.Value ? (DateTime)reader["CreatedAt"] : DateTime.UtcNow
+                });
+            }
+
+            return await Task.FromResult(images);
         }
 
         public async Task<MerchandiseImageDto> AddImage(int merchandiseId, string imageUrl, bool isPrimary = false)
         {
             try
             {
-                var sql = "SELECT COUNT(1) FROM Merch WHERE id = @id";
-                var parameter = new Microsoft.Data.SqlClient.SqlParameter("@id", merchandiseId);
-                var count = await _context.Database.ExecuteSqlRawAsync(sql, parameter);
+                // Check if merchandise exists
+                const string command = "SELECT COUNT(1) FROM Merch WHERE id = @id";
+                var checkParam = new SqlParameter("@id", merchandiseId);
+                var count = Convert.ToInt32(_db.ExecuteScalar(command, checkParam));
                 
                 if (count == 0)
                 {
                     throw new KeyNotFoundException($"Merchandise with ID {merchandiseId} does not exist");
                 }
 
+                // Check and update existing primary image if needed
                 if (isPrimary)
                 {
-                    var existingPrimary = await _context.MerchandiseImages
-                        .Where(mi => mi.MerchId == merchandiseId && mi.IsPrimary)
-                        .FirstOrDefaultAsync();
+                    const string updateExistingCommand = @"
+                        UPDATE MerchandiseImages 
+                        SET IsPrimary = 0 
+                        WHERE MerchId = @MerchId AND IsPrimary = 1";
                     
-                    if (existingPrimary != null)
+                    var updateParams = new[]
                     {
-                        existingPrimary.IsPrimary = false;
-                    }
+                        new SqlParameter("@MerchId", merchandiseId)
+                    };
+                    
+                    _db.ExecuteNonQuery(updateExistingCommand, updateParams);
                 }
 
-                var image = new MerchandiseImage
+                // Insert the new image
+                const string insertCommand = @"
+                    INSERT INTO MerchandiseImages (MerchId, ImageUrl, IsPrimary, CreatedAt)
+                    OUTPUT INSERTED.Id, INSERTED.MerchId, INSERTED.ImageUrl, INSERTED.IsPrimary, INSERTED.CreatedAt
+                    VALUES (@MerchId, @ImageUrl, @IsPrimary, @CreatedAt)";
+                
+                var insertParams = new[]
                 {
-                    MerchId = merchandiseId,
-                    ImageUrl = imageUrl,
-                    IsPrimary = isPrimary,
-                    CreatedAt = DateTime.UtcNow
+                    new SqlParameter("@MerchId", merchandiseId),
+                    new SqlParameter("@ImageUrl", imageUrl),
+                    new SqlParameter("@IsPrimary", isPrimary),
+                    new SqlParameter("@CreatedAt", DateTime.UtcNow)
                 };
-
-                _context.MerchandiseImages.Add(image);
-                await _context.SaveChangesAsync();
-
-                return new MerchandiseImageDto
+                
+                using var reader = _db.ExecuteReader(insertCommand, insertParams);
+                var imageDto = new MerchandiseImageDto();
+                
+                if (reader.Read())
                 {
-                    Id = image.Id,
-                    ImageUrl = image.ImageUrl,
-                    IsPrimary = image.IsPrimary,
-                    MerchandiseId = image.MerchId,
-                    CreatedAt = image.CreatedAt
-                };
+                    imageDto.Id = (int)reader["Id"];
+                    imageDto.MerchandiseId = (int)reader["MerchId"];
+                    imageDto.ImageUrl = (string)reader["ImageUrl"];
+                    imageDto.IsPrimary = (bool)reader["IsPrimary"];
+                    imageDto.CreatedAt = (DateTime)reader["CreatedAt"];
+                }
+                else
+                {
+                    throw new InvalidOperationException("Failed to insert merchandise image");
+                }
+
+                return await Task.FromResult(imageDto);
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to add image for merchandise {MerchandiseId}", merchandiseId);
                 ex.Data["ImageUrl"] = imageUrl;
                 throw;
             }
@@ -88,50 +119,75 @@ namespace WebApplication1.Repositories
 
         public async Task<bool> DeleteImage(int imageId)
         {
-            var image = await _context.MerchandiseImages.FindAsync(imageId);
-            if (image == null) return false;
-
-            _context.MerchandiseImages.Remove(image);
-            await _context.SaveChangesAsync();
-            return true;
+            const string command = "DELETE FROM MerchandiseImages WHERE Id = @ImageId";
+            var parameters = new[]
+            {
+                new SqlParameter("@ImageId", imageId)
+            };
+            
+            var rowsAffected = _db.ExecuteNonQuery(command, parameters);
+            return await Task.FromResult(rowsAffected > 0);
         }
 
         public async Task<bool> SetPrimaryImage(int merchandiseId, int imageId)
         {
-            var existingPrimary = await _context.MerchandiseImages
-                .Where(mi => mi.MerchId == merchandiseId && mi.IsPrimary)
-                .FirstOrDefaultAsync();
+            // First reset any existing primary image
+            const string resetCommand = @"
+                UPDATE MerchandiseImages 
+                SET IsPrimary = 0 
+                WHERE MerchId = @MerchId AND IsPrimary = 1";
             
-            if (existingPrimary != null)
+            var resetParams = new[]
             {
-                existingPrimary.IsPrimary = false;
-            }
-
-            var newPrimary = await _context.MerchandiseImages
-                .FirstOrDefaultAsync(mi => mi.Id == imageId && mi.MerchId == merchandiseId);
+                new SqlParameter("@MerchId", merchandiseId)
+            };
             
-            if (newPrimary == null) return false;
-
-            newPrimary.IsPrimary = true;
-            await _context.SaveChangesAsync();
-            return true;
+            _db.ExecuteNonQuery(resetCommand, resetParams);
+            
+            // Now set the new primary image
+            const string updateCommand = @"
+                UPDATE MerchandiseImages 
+                SET IsPrimary = 1 
+                WHERE Id = @ImageId AND MerchId = @MerchId";
+            
+            var updateParams = new[]
+            {
+                new SqlParameter("@ImageId", imageId),
+                new SqlParameter("@MerchId", merchandiseId)
+            };
+            
+            var rowsAffected = _db.ExecuteNonQuery(updateCommand, updateParams);
+            return await Task.FromResult(rowsAffected > 0);
         }
 
         public List<MerchandiseImageDto> GetMerchandiseImages(int merchandiseId)
         {
             try
             {
-                var images = _context.MerchandiseImages
-                    .Where(mi => mi.MerchId == merchandiseId)
-                    .AsQueryable()
-                    .Select(mi => new MerchandiseImageDto
+                const string command = @"
+                    SELECT id, MerchId, ImageUrl, IsPrimary, CreatedAt
+                    FROM MerchandiseImages
+                    WHERE MerchId = @MerchandiseId
+                ";
+
+                var parameters = new[]
+                {
+                    new SqlParameter("@MerchandiseId", merchandiseId)
+                };
+
+                var images = new List<MerchandiseImageDto>();
+                using var reader = _db.ExecuteReader(command, parameters);
+
+                while (reader.Read())
+                {
+                    images.Add(new MerchandiseImageDto
                     {
-                        Id = mi.Id,
-                        MerchandiseId = mi.MerchId,
-                        ImageUrl = mi.ImageUrl,
-                        IsPrimary = mi.IsPrimary
-                    })
-                    .ToList();
+                        Id = (int)reader["id"],
+                        MerchandiseId = (int)reader["MerchId"],
+                        ImageUrl = (string)reader["ImageUrl"],
+                        IsPrimary = (bool)reader["IsPrimary"]
+                    });
+                }
                     
                 return images;
             }

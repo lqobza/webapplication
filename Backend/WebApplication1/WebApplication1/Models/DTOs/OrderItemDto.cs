@@ -10,5 +10,5 @@ public class OrderItemDto
     public decimal Price { get; set; }
     public string? MerchandiseName { get; set; }
     public string? ImageUrl { get; set; }
-    public bool IsCustom { get; set; } = false;
+    public bool IsCustom { get; set; }
 }
