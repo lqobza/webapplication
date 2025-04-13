@@ -70,7 +70,7 @@ export class AuthService {
       }
       return true;
     } catch (error) {
-      console.error('Error checking token expiration:', error);
+      //console.error('Error checking token expiration:', error);
       return false;
     }
   }
@@ -83,14 +83,14 @@ export class AuthService {
   getCurrentUserId(): number {
     const token = this.getToken();
     if (!token) {
-      console.error('No token found');
+      //console.error('No token found');
       return 0;
     }
 
     try {
       const tokenParts = token.split('.');
       if (tokenParts.length !== 3) {
-        console.error('Invalid token format');
+        //console.error('Invalid token format');
         return 0;
       }
 
@@ -98,13 +98,13 @@ export class AuthService {
       const userId = payload.userId || payload.nameid || payload.sub || payload.id;
       
       if (!userId) {
-        console.error('User ID not found in token payload');
+        //console.error('User ID not found in token payload');
         return 0;
       }
 
       return parseInt(userId, 10);
     } catch (error) {
-      console.error('Error decoding token:', error);
+      //console.error('Error decoding token:', error);
       return 0;
     }
   }
@@ -125,7 +125,7 @@ export class AuthService {
       return payload.role === 'Admin' || 
              payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] === 'Admin';
     } catch (error) {
-      console.error('Error checking admin status:', error);
+      //console.error('Error checking admin status:', error);
       return false;
     }
   }

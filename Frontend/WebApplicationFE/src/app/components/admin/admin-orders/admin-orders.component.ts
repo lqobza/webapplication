@@ -99,7 +99,7 @@ export class AdminOrdersComponent implements OnInit {
         minute: '2-digit'
       });
     } catch (error) {
-      console.error('Error formatting date:', error);
+      //console.error('Error formatting date:', error);
       return String(dateString);
     }
   }

@@ -44,8 +44,7 @@ namespace TestProject1.ControllerTests
 
             Debug.Assert(okResult != null, nameof(okResult) + " != null");
             Assert.That(okResult.Value, Is.Not.Null);
-            
-            // Convert to JSON and deserialize to safely access properties
+             
             var json = JsonConvert.SerializeObject(okResult.Value);
             var deserialized = JsonConvert.DeserializeObject<dynamic>(json);
             
@@ -99,7 +98,6 @@ namespace TestProject1.ControllerTests
             Debug.Assert(badRequestResult != null, nameof(badRequestResult) + " != null");
             Assert.That(badRequestResult.Value, Is.Not.Null);
             
-            // Convert to JSON and deserialize to safely access properties
             var json = JsonConvert.SerializeObject(badRequestResult.Value);
             var deserialized = JsonConvert.DeserializeObject<dynamic>(json);
             

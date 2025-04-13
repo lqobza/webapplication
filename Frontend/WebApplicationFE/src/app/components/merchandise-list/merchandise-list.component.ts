@@ -6,6 +6,9 @@ import { PaginatedResponse } from '../../models/paginated-response.model';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { environment } from 'src/environments/environment';
+import { MerchandiseSearch, SortOption } from '../../models/merchandise-search.model';
+import { Category } from '../../models/category.model';
+import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 
 @Component({
   selector: 'app-merchandise-list',
@@ -16,7 +19,6 @@ import { environment } from 'src/environments/environment';
 })
 export class MerchandiseListComponent implements OnInit {
   merchandiseList: Merchandise[] = [];
-  filteredList: Merchandise[] = [];
   isLoading = true;
   errorMessage: string | undefined;
   currentPage = 1;
@@ -31,109 +33,125 @@ export class MerchandiseListComponent implements OnInit {
     hasPreviousPage: false
   };
   
-  categories: string[] = [];
-  selectedCategory: string = '';
-  priceRange: { min: number, max: number } = { min: 0, max: 1000 };
+  categories: Category[] = [];
+  selectedCategoryId: number | undefined;
+  priceRange: { min: number | undefined, max: number | undefined } = { min: undefined, max: undefined };
   sortOption: string = '';
   searchTerm: string = '';
-
+  private searchTerms = new Subject<string>();
+  
   constructor(
     private merchandiseService: MerchandiseService,
     private router: Router
   ) { }
 
   ngOnInit(): void {
-    this.loadMerchandise();
+    this.loadCategories();
+    
+    this.searchTerms.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(() => {
+      this.currentPage = 1;
+      this.searchMerchandise();
+    });
+    
+    this.searchMerchandise();
+  }
+  
+  loadCategories(): void {
+    this.merchandiseService.getCategories().subscribe({
+      next: (categories) => {
+        this.categories = categories;
+      },
+      error: (error) => {
+        //console.error('Error fetching categories', error);
+      }
+    });
   }
 
-  loadMerchandise(): void {
+  searchMerchandise(): void {
     this.isLoading = true;
-    this.merchandiseService.getAllMerchandise(this.currentPage, this.pageSize).subscribe({
+    
+    const searchParams: MerchandiseSearch = {
+      page: this.currentPage,
+      pageSize: this.pageSize
+    };
+    
+    if (this.searchTerm) {
+      searchParams.keywords = this.searchTerm;
+    }
+    
+    if (this.selectedCategoryId) {
+      searchParams.categoryId = this.selectedCategoryId;
+    }
+    
+    if (this.priceRange.min !== undefined) {
+      searchParams.minPrice = this.priceRange.min;
+    }
+    
+    if (this.priceRange.max !== undefined) {
+      searchParams.maxPrice = this.priceRange.max;
+    }
+    
+    switch (this.sortOption) {
+      case 'price-low-high':
+        searchParams.sortBy = SortOption.PriceAsc;
+        break;
+      case 'price-high-low':
+        searchParams.sortBy = SortOption.PriceDesc;
+        break;
+      case 'name-a-z':
+        searchParams.sortBy = SortOption.NameAsc;
+        break;
+      case 'name-z-a':
+        searchParams.sortBy = SortOption.NameDesc;
+        break;
+    }
+    
+    this.merchandiseService.searchMerchandise(searchParams).subscribe({
       next: (response) => {
         this.merchandiseList = response.items;
-        this.filteredList = [...this.merchandiseList];
         this.paginationInfo = response;
         this.isLoading = false;
         this.errorMessage = undefined;
         
-        this.extractCategories();
+        if (this.merchandiseList.length === 0 && this.paginationInfo.totalPages > 0 && this.currentPage > this.paginationInfo.totalPages) {
+          this.currentPage = this.paginationInfo.totalPages;
+          this.searchMerchandise();
+        }
       },
       error: (error) => {
-        console.error('Error fetching merchandise', error);
-        this.errorMessage = error.message || "Error fetching merchandise";
+        //console.error('Error searching merchandise', error);
+        this.errorMessage = error.message || "Error searching merchandise";
         this.isLoading = false;
+        this.merchandiseList = [];
       }
     });
   }
 
-  extractCategories(): void {
-    const uniqueCategories = new Set<string>();
-    this.merchandiseList.forEach(item => {
-      if (item.categoryName) {
-        uniqueCategories.add(item.categoryName);
-      }
-    });
-    this.categories = Array.from(uniqueCategories);
+  onSearch(): void {
+    this.searchTerms.next(this.searchTerm);
   }
 
   applyFilters(): void {
-    this.filteredList = this.merchandiseList.filter(item => {
-      if (this.selectedCategory && item.categoryName !== this.selectedCategory) {
-        return false;
-      }
-      
-      if (item.price < this.priceRange.min || item.price > this.priceRange.max) {
-        return false;
-      }
-      
-      return true;
-    });
-    
-    this.applySorting();
-  }
-
-  applySearch(): void {
-    const searchTermLower = this.searchTerm.toLowerCase();
-    this.filteredList = this.merchandiseList.filter(item => 
-      item.name.toLowerCase().includes(searchTermLower) || 
-      item.description.toLowerCase().includes(searchTermLower)
-    );
-    
-    this.applySorting();
-  }
-
-  applySorting(): void {
-    switch (this.sortOption) {
-      case 'price-low-high':
-        this.filteredList.sort((a, b) => a.price - b.price);
-        break;
-      case 'price-high-low':
-        this.filteredList.sort((a, b) => b.price - a.price);
-        break;
-      case 'name-a-z':
-        this.filteredList.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case 'name-z-a':
-        this.filteredList.sort((a, b) => b.name.localeCompare(a.name));
-        break;
-      default:
-        //no sorting
-        break;
-    }
+    this.currentPage = 1;
+    this.searchMerchandise();
   }
 
   resetFilters(): void {
-    this.selectedCategory = '';
-    this.priceRange = { min: 0, max: 1000 };
+    this.selectedCategoryId = undefined;
+    this.priceRange = { min: undefined, max: undefined };
     this.sortOption = '';
     this.searchTerm = '';
-    this.filteredList = [...this.merchandiseList];
+    this.currentPage = 1;
+    this.searchMerchandise();
   }
 
   changePage(newPage: number): void {
     if (newPage >= 1 && (!this.paginationInfo || newPage <= this.paginationInfo.totalPages)) {
       this.currentPage = newPage;
-      this.loadMerchandise();
+      this.searchMerchandise();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }

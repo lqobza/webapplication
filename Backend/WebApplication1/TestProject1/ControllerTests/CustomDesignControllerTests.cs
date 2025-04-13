@@ -20,7 +20,6 @@ namespace TestProject1.ControllerTests
             _mockLogger = new Mock<ILogger<CustomDesignController>>();
             _controller = new CustomDesignController(_mockCustomDesignService.Object, _mockLogger.Object);
             
-            // Setup default HttpContext
             var httpContext = new DefaultHttpContext();
             _controller.ControllerContext = new ControllerContext
             {
@@ -66,7 +65,6 @@ namespace TestProject1.ControllerTests
             Assert.That(result, Is.InstanceOf<OkObjectResult>());
             var okResult = result as OkObjectResult;
             
-            // Convert to JSON and then deserialize to check properties
             Debug.Assert(okResult != null, nameof(okResult) + " != null");
             var json = JsonConvert.SerializeObject(okResult.Value);
             var deserialized = JsonConvert.DeserializeObject<dynamic>(json);
@@ -91,7 +89,7 @@ namespace TestProject1.ControllerTests
         [Test]
         public async Task CreateDesign_MissingRequiredFields_ReturnsBadRequest()
         {
-            // Arrange - Name missing
+            // Arrange
             var designDto1 = new CustomDesignCreateDto
             {
                 Name = "",

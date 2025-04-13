@@ -16,7 +16,8 @@ public class MerchandiseRepositoryTests
     private Mock<IDatabaseWrapper> _mockDatabase = null!;
     private MerchandiseRepository _repository = null!;
     private Mock<IDataReader> _mockReader = null!;
-
+    private Mock<ILogger<MerchandiseRepository>> _mockLogger = null!;
+    
     [SetUp]
     public void Setup()
     {
@@ -26,7 +27,8 @@ public class MerchandiseRepositoryTests
         _mockRatingRepository = new Mock<IRatingRepository>();
         _mockDatabase = new Mock<IDatabaseWrapper>();
         _mockReader = new Mock<IDataReader>();
-
+        _mockLogger = new Mock<ILogger<MerchandiseRepository>>();
+        
         // Setup configuration for GetConnectionString to work
         _mockDefaultConnectionSection.Setup(x => x.Value).Returns("Server=test;Database=test;Trusted_Connection=True;");
         _mockConnectionStringsSection.Setup(x => x["DefaultConnection"]).Returns("Server=test;Database=test;Trusted_Connection=True;");
@@ -34,7 +36,8 @@ public class MerchandiseRepositoryTests
 
         _repository = new MerchandiseRepository(
             _mockRatingRepository.Object,
-            _mockDatabase.Object);
+            _mockDatabase.Object,
+            _mockLogger.Object);
     }
 
     [Test]

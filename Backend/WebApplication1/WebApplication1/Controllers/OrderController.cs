@@ -27,7 +27,7 @@ public class OrderController : ControllerBase
     {
         _logger.LogInformation("GetAllOrders endpoint called");
         
-        bool isAdmin = User.Claims.Any(c => 
+        var isAdmin = User.Claims.Any(c => 
             (c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role" && c.Value == "Admin")
         );
         

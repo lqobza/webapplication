@@ -87,7 +87,7 @@ export class OrderDetailsComponent implements OnInit {
         this.loading = false;
       },
       error: (err) => {
-        console.error('[OrderDetails] Error fetching order details:', err);
+        //console.error('[OrderDetails] Error fetching order details:', err);
         this.error = 'Failed to load order details. Please try again.';
         this.loading = false;
       }

@@ -50,8 +50,7 @@ namespace WebApplication1.Repositories
         public async Task<MerchandiseImageDto> AddImage(int merchandiseId, string imageUrl, bool isPrimary = false)
         {
             try
-            {
-                // Check if merchandise exists
+            { 
                 const string command = "SELECT COUNT(1) FROM Merch WHERE id = @id";
                 var checkParam = new SqlParameter("@id", merchandiseId);
                 var count = Convert.ToInt32(_db.ExecuteScalar(command, checkParam));
@@ -60,8 +59,7 @@ namespace WebApplication1.Repositories
                 {
                     throw new KeyNotFoundException($"Merchandise with ID {merchandiseId} does not exist");
                 }
-
-                // Check and update existing primary image if needed
+ 
                 if (isPrimary)
                 {
                     const string updateExistingCommand = @"
@@ -76,8 +74,7 @@ namespace WebApplication1.Repositories
                     
                     _db.ExecuteNonQuery(updateExistingCommand, updateParams);
                 }
-
-                // Insert the new image
+ 
                 const string insertCommand = @"
                     INSERT INTO MerchandiseImages (MerchId, ImageUrl, IsPrimary, CreatedAt)
                     OUTPUT INSERTED.Id, INSERTED.MerchId, INSERTED.ImageUrl, INSERTED.IsPrimary, INSERTED.CreatedAt
@@ -130,8 +127,7 @@ namespace WebApplication1.Repositories
         }
 
         public async Task<bool> SetPrimaryImage(int merchandiseId, int imageId)
-        {
-            // First reset any existing primary image
+        { 
             const string resetCommand = @"
                 UPDATE MerchandiseImages 
                 SET IsPrimary = 0 
@@ -143,8 +139,7 @@ namespace WebApplication1.Repositories
             };
             
             _db.ExecuteNonQuery(resetCommand, resetParams);
-            
-            // Now set the new primary image
+             
             const string updateCommand = @"
                 UPDATE MerchandiseImages 
                 SET IsPrimary = 1 

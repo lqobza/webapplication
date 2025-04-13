@@ -7,6 +7,7 @@ namespace WebApplication1.Services.Interface;
 public interface IMerchandiseService
 {
     public PaginatedResponse<MerchandiseDto> GetAllMerchandise(int page = 1, int pageSize = 10);
+    public PaginatedResponse<MerchandiseDto> SearchMerchandise(MerchandiseSearchDto searchParams);
     public MerchandiseDto? GetMerchandiseById(int id);
     public List<MerchandiseDto> GetMerchandiseBySize(string size);
     public List<MerchandiseDto> GetMerchandiseByCategory(int category);
@@ -20,7 +21,7 @@ public interface IMerchandiseService
     public InsertResult AddCategoryToDb(CategoryCreateDto categoryCreateDto);
     public InsertResult AddThemeToDb(ThemeCreateDto themeCreateDto);
     Task<MerchandiseImageDto> AddMerchandiseImage(int merchandiseId, string imageUrl, bool isPrimary = false);
-    Task<bool> DeleteMerchandiseImage(int imageId);
+    Task<bool> DeleteMerchandiseImage(int merchandiseId, string fileName);
     Task<bool> SetPrimaryImage(int merchandiseId, int imageId);
     bool MerchandiseExists(int id);
     List<MerchandiseImageDto> GetMerchandiseImages(int merchandiseId);

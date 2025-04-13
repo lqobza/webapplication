@@ -262,7 +262,7 @@ export class CartComponent implements OnInit {
       error: (error) => {
         this.orderSubmitting = false;
         
-        console.error('Order creation error:', error);
+        //console.error('Order creation error:', error);
         
         if (error.error && error.error.message) {
           if (error.error.message.includes('Insufficient stock') || 

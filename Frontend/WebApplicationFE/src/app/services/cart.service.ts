@@ -37,11 +37,11 @@ export class CartService {
         this.cartItems = JSON.parse(storedCartItems);
         
         await this.fetchMerchandiseDetails().catch((error) => {
-          console.error('[CartService] Failed to fetch merchandise details:', error);
+          //console.error('[CartService] Failed to fetch merchandise details:', error);
         });
         this.cartItems$.next(this.cartItems);
       } catch (error) {
-        console.error('[CartService] Error parsing stored cart items:', error);
+        //console.error('[CartService] Error parsing stored cart items:', error);
         this.clearCart();
       }
     }
@@ -162,7 +162,7 @@ export class CartService {
       
       this.saveCart();
     } catch (error) {
-      console.error('[CartService] Failed to fetch merchandise details:', error);
+      //console.error('[CartService] Failed to fetch merchandise details:', error);
       throw error;
     }
   }
@@ -189,7 +189,7 @@ export class CartService {
       try {
         localStorage.setItem('cartItems', JSON.stringify(this.cartItems));
       } catch (e) {
-        console.error('Error saving cart to localStorage:', e);
+        //console.error('Error saving cart to localStorage:', e);
         if (e instanceof DOMException && e.name === 'QuotaExceededError') {
           const cartWithoutImages = this.cartItems.map(item => {
             const copy = {...item};

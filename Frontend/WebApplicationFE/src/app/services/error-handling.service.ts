@@ -11,7 +11,7 @@ export class ErrorHandlingService {
   
   public handleError<T>(operation = 'operation', result?: T) {
     return (error: HttpErrorResponse): Observable<T> => {
-      console.error(`${operation} failed: ${error.message}`);
+      //console.error(`${operation} failed: ${error.message}`);
       
       return of(result as T);
     };

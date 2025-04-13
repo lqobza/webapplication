@@ -307,15 +307,22 @@ export class MerchandiseFormComponent implements OnInit {
   }
 
   removeImage(index: number): void {
-    this.imagesArray.removeAt(index);
+    let imageNameArr = this.imagesArray.at(index).get('imageUrl')?.value.split('/');
+
+    this.merchandiseService.deleteImage(this.merchandiseId!, imageNameArr[imageNameArr.length-1]).subscribe({
+      next: () => {
+        this.snackBar.open('Image deleted successfully', 'Close', { duration: 3000 });
+        this.imagesArray.removeAt(index);
     
-    if (this.imagesArray.length === 0 && !this.isEditMode) {
-      return;
-    }
-    
-    if (this.imagesArray.length > 0 && !this.imagesArray.controls.some(control => control.get('isPrimary')?.value)) {
-      this.imagesArray.at(0).get('isPrimary')?.setValue(true);
-    }
+        if (this.imagesArray.length === 0 && !this.isEditMode) {
+          return;
+        }
+        
+        if (this.imagesArray.length > 0 && !this.imagesArray.controls.some(control => control.get('isPrimary')?.value)) {
+          this.imagesArray.at(0).get('isPrimary')?.setValue(true);
+        }
+      }
+    });
   }
 
   setPrimaryImage(index: number): void {
@@ -421,7 +428,6 @@ export class MerchandiseFormComponent implements OnInit {
           brandId: merchandise.brandId || 0
         });
 
-        // Disable fields that should not be editable in edit mode
         this.merchandiseForm.get('name')?.disable();
         this.merchandiseForm.get('brandId')?.disable();
         this.merchandiseForm.get('categoryId')?.disable();
@@ -465,13 +471,9 @@ export class MerchandiseFormComponent implements OnInit {
                   isPrimary: [image.isPrimary]
                 }));
               });
-            } else {
-              this.addImage();
             }
           },
           error: (err) => {
-            this.addImage();
-            
             if (err.status === 404) {
             } else {
               this.snackBar.open('Could not load images. You can add new ones.', 'Close', { duration: 3000 });
@@ -491,12 +493,12 @@ export class MerchandiseFormComponent implements OnInit {
   onSubmit(): void {
     if (this.merchandiseForm.invalid) {
       this.merchandiseForm.markAllAsTouched();
-      console.error('Form is invalid:', this.merchandiseForm.errors);
+      //console.error('Form is invalid:', this.merchandiseForm.errors);
       
       Object.keys(this.merchandiseForm.controls).forEach(key => {
         const control = this.merchandiseForm.get(key);
         if (control && control.invalid) {
-          console.error(`Control '${key}' is invalid:`, control.errors);
+          //console.error(`Control '${key}' is invalid:`, control.errors);
         }
       });
       return;
@@ -537,15 +539,11 @@ export class MerchandiseFormComponent implements OnInit {
     formData.sizes = rawSizes;
 
     if (this.isEditMode && this.merchandiseId) {
-      // In edit mode, only send the fields that should be modifiable
       const updateData = {
         id: this.merchandiseId,
         description: formData.description,
         price: formData.price,
-        // categoryId is now read-only, so don't include it in the update
         sizes: formData.sizes,
-        // Keep images data for handling image changes
-        images: formData.images
       };
 
       this.merchandiseService.updateMerchandise(this.merchandiseId, updateData).subscribe({
@@ -554,7 +552,7 @@ export class MerchandiseFormComponent implements OnInit {
           this.router.navigate(['/admin/merchandise']);
         },
         error: (err) => {
-          console.error('Error updating merchandise:', err);
+          //console.error('Error updating merchandise:', err);
           this.snackBar.open('Failed to update merchandise', 'Close', { duration: 3000 });
           this.submitting = false;
         }
@@ -572,10 +570,10 @@ export class MerchandiseFormComponent implements OnInit {
           this.router.navigate(['/admin/merchandise']);
         },
         error: (err) => {
-          console.error('Error creating merchandise:', err);
-          console.error('Error details:', err.error);
-          console.error('Status:', err.status);
-          console.error('Status text:', err.statusText);
+          //console.error('Error creating merchandise:', err);
+          //console.error('Error details:', err.error);
+          //console.error('Status:', err.status);
+          //console.error('Status text:', err.statusText);
           
           let errorMessage = 'Failed to create merchandise';
           if (err.error && typeof err.error === 'string') {

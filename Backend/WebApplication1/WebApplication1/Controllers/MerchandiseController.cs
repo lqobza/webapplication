@@ -48,6 +48,34 @@ public class MerchandiseController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("search")]
+    public IActionResult SearchMerchandise([FromQuery] MerchandiseSearchDto searchParams)
+    {
+        _logger.LogInformation("SearchMerchandise endpoint called with parameters: {@SearchParams}", searchParams);
+
+        if (searchParams.Page < 1 || searchParams.PageSize < 1)
+        {
+            return BadRequest(new { message = "Page and pageSize must be greater than 0" });
+        }
+
+        if (searchParams.MinPrice.HasValue && searchParams.MaxPrice.HasValue && searchParams.MinPrice > searchParams.MaxPrice)
+        {
+            return BadRequest(new { message = "MinPrice cannot be greater than MaxPrice" });
+        }
+
+        var result = _merchandiseService.SearchMerchandise(searchParams);
+
+        if (result.Items.Count == 0)
+        {
+            _logger.LogWarning("No merchandise found for search criteria");
+            return NotFound(new { message = "No merchandise found for the given search criteria." });
+        }
+
+        _logger.LogInformation("Returning search results (count: {Count}, total: {Total})", 
+            result.Items.Count, result.TotalCount);
+        return Ok(result);
+    }
+
     [HttpGet("{id:int}")]
     public IActionResult GetMerchandiseById(int id)
     {
@@ -158,7 +186,7 @@ public class MerchandiseController : ControllerBase
         {
             case true:
                 _logger.LogInformation("Merchandise deleted successfully with ID: {Id}", id);
-                return NoContent();
+                return Ok();
             case false:
                 _logger.LogWarning("Merchandise not found with ID: {Id}", id);
                 return NotFound(new { message = $"Merchandise with ID {id} not found." });
@@ -177,7 +205,29 @@ public class MerchandiseController : ControllerBase
         _logger.LogInformation("UpdateMerchandise endpoint called with data: {Merchandise}", merchandiseUpdateDto);
 
         try
-        {
+        { 
+            if (!_merchandiseService.MerchandiseExists(id))
+            {
+                _logger.LogWarning("Merchandise with ID {Id} not found", id);
+                return NotFound(new { message = $"Merchandise with ID {id} not found." });
+            }
+             
+            if (merchandiseUpdateDto.Sizes != null)
+            {
+                foreach (var size in merchandiseUpdateDto.Sizes)
+                {
+                    if (size.InStock < 0)
+                    {
+                        return BadRequest(new { message = "InStock value cannot be negative." });
+                    }
+                    
+                    if (string.IsNullOrWhiteSpace(size.Size))
+                    {
+                        return BadRequest(new { message = "Size name cannot be empty." });
+                    }
+                }
+            }
+
             var result = _merchandiseService.UpdateMerchandise(id, merchandiseUpdateDto);
             if (result)
             {
@@ -195,9 +245,8 @@ public class MerchandiseController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while updating merchandise: {Merchandise}", merchandiseUpdateDto);
-            return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Internal server error during merchandise update." });
+            _logger.LogError(ex, "Error updating merchandise: {Merchandise}", merchandiseUpdateDto);
+            return StatusCode(500, new { message = "An error occurred while updating merchandise." });
         }
     }
 
@@ -380,6 +429,33 @@ public class MerchandiseController : ControllerBase
         
         var imageFileStream = System.IO.File.OpenRead(imagePath);
         return File(imageFileStream, "image/jpeg");
+    }
+    
+    [HttpDelete("image/{merchandiseId}/{fileName}")]
+    public async Task<IActionResult> DeleteImage(int merchandiseId, string fileName)
+    {
+        _logger.LogInformation("DeleteImage endpoint called for merchandise ID: {Id}, filename: {FileName}", 
+            merchandiseId, fileName);
+        
+        try
+        {
+            var result = await _merchandiseService.DeleteMerchandiseImage(merchandiseId, fileName);
+            
+            if (!result)
+            {
+                _logger.LogWarning("Image with filename {FileName} for Merchandise {Id} not found", fileName, merchandiseId);
+                return NotFound();
+            }
+            
+            _logger.LogInformation("Image with filename {FileName} for Merchandise {Id} deleted successfully", fileName, merchandiseId);
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting image for merchandise ID: {Id}, filename: {FileName}", 
+                merchandiseId, fileName);
+            return StatusCode(500, new { message = "An error occurred while deleting the image" });
+        }
     }
 
     [HttpGet("{id:int}/stock/{size}")]

@@ -1,8 +1,5 @@
 using System.Data;
 using System.Data.SqlClient;
-using Microsoft.Extensions.Logging;
-using Moq;
-using NUnit.Framework;
 using WebApplication1.Models.DTOs;
 using WebApplication1.Repositories;
 using WebApplication1.Repositories.Interface;

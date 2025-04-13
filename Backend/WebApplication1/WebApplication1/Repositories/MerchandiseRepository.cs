@@ -1,5 +1,4 @@
 ﻿using System.Data.SqlClient;
-using WebApplication1.Controllers;
 using WebApplication1.Models;
 using WebApplication1.Models.DTOs;
 using WebApplication1.Models.Enums;
@@ -9,11 +8,11 @@ namespace WebApplication1.Repositories;
 
 public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
 {
-    private readonly ILogger<MerchandiseController> _logger;
+    private readonly ILogger<MerchandiseRepository> _logger;
     private readonly IRatingRepository _ratingRepository;
     private readonly IDatabaseWrapper _db;
 
-    public MerchandiseRepository(IRatingRepository ratingRepository, IDatabaseWrapper databaseWrapper, ILogger<MerchandiseController> logger)
+    public MerchandiseRepository(IRatingRepository ratingRepository, IDatabaseWrapper databaseWrapper, ILogger<MerchandiseRepository> logger)
         : base(databaseWrapper)
     {
         _ratingRepository = ratingRepository;
@@ -285,7 +284,6 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
 
         try
         {
-            //handle sizes and themes tables
             _db.ExecuteScalar(command, parameters.ToArray());
 
             return InsertResult.Success;
@@ -306,35 +304,98 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
         };
         
         var rowsAffected = _db.ExecuteNonQuery(command, parameters);
-        return rowsAffected == 1;
+        return rowsAffected >= 1;
     }
 
     public bool UpdateMerchandise(int id, MerchandiseUpdateDto merchandiseUpdateDto)
     {
-        var updateFields = new List<string>();
-        const string command = "[dbo].[UpdateMerchandise]";
-        var parameters = new List<SqlParameter>();
-        
-        if (merchandiseUpdateDto.Price.HasValue)
+        try
         {
-            Console.WriteLine("Price value " + merchandiseUpdateDto.Price.Value);
-            updateFields.Add("price = @Price");
-            parameters.Add(new SqlParameter("@Price", merchandiseUpdateDto.Price.Value));
-        }
+            var updateFields = new List<string>();
+            const string updateCommand = "[dbo].[UpdateMerchandise]";
+            var parameters = new List<SqlParameter>();
+            
+            if (merchandiseUpdateDto.Price.HasValue)
+            {
+                updateFields.Add("price = @Price");
+                parameters.Add(new SqlParameter("@Price", merchandiseUpdateDto.Price.Value));
+            }
 
-        if (!string.IsNullOrEmpty(merchandiseUpdateDto.Description))
+            if (!string.IsNullOrEmpty(merchandiseUpdateDto.Description))
+            {
+                updateFields.Add("description = @Description");
+                parameters.Add(new SqlParameter("@Description", merchandiseUpdateDto.Description));
+            }
+
+            if (!updateFields.Any() && merchandiseUpdateDto.Sizes == null) 
+                throw new ArgumentException("No fields to update.");
+
+            parameters.Add(new SqlParameter("@Id", id));
+            
+            var rowsAffected = _db.ExecuteNonQuery(updateCommand, parameters.ToArray());
+
+            if (merchandiseUpdateDto.Sizes == null || !merchandiseUpdateDto.Sizes.Any()) return rowsAffected > 0;
+            
+            var currentSizes = GetSizesByMerchId(id);
+                
+            foreach (var sizeDto in merchandiseUpdateDto.Sizes)
+            {
+                var existingSize = currentSizes.FirstOrDefault(s => s.Size == sizeDto.Size);
+                    
+                if (existingSize != null)
+                {
+                    const string updateSizeCommand = @"
+                            UPDATE MerchSize 
+                            SET instock = @InStock 
+                            WHERE id = @SizeId";
+                            
+                    var sizeParams = new[]
+                    {
+                        new SqlParameter("@SizeId", existingSize.Id),
+                        new SqlParameter("@InStock", sizeDto.InStock)
+                    };
+                        
+                    _db.ExecuteNonQuery(updateSizeCommand, sizeParams);
+                    rowsAffected++;
+                }
+                else
+                {
+                    const string insertSizeCommand = @"
+                            INSERT INTO MerchSize (merch_id, size, instock)
+                            VALUES (@MerchId, @Size, @InStock)";
+                            
+                    var sizeParams = new[]
+                    {
+                        new SqlParameter("@MerchId", id),
+                        new SqlParameter("@Size", sizeDto.Size),
+                        new SqlParameter("@InStock", sizeDto.InStock)
+                    };
+                        
+                    _db.ExecuteNonQuery(insertSizeCommand, sizeParams);
+                    rowsAffected++;
+                }
+            }
+                
+            var sizesToRemove = currentSizes
+                .Where(cs => !merchandiseUpdateDto.Sizes.Any(us => us.Size == cs.Size))
+                .ToList();
+                
+            foreach (var sizeToRemove in sizesToRemove)
+            {
+                const string deleteSizeCommand = "DELETE FROM MerchSize WHERE id = @SizeId";
+                var deleteParams = new[] { new SqlParameter("@SizeId", sizeToRemove.Id) };
+                    
+                _db.ExecuteNonQuery(deleteSizeCommand, deleteParams);
+                rowsAffected++;
+            }
+
+            return rowsAffected > 0;
+        }
+        catch (Exception ex)
         {
-            Console.WriteLine("Description value " + merchandiseUpdateDto.Description);
-            updateFields.Add("description = @Description");
-            parameters.Add(new SqlParameter("@Description", merchandiseUpdateDto.Description));
+            _logger.LogError(ex, "Error updating merchandise with ID {Id}", id);
+            throw;
         }
-
-        if (!updateFields.Any()) throw new ArgumentException("No fields to update.");
-
-        parameters.Add(new SqlParameter("@Id", id));
-        
-        var rowsAffected = _db.ExecuteNonQuery(command, parameters.ToArray());
-        return rowsAffected > 0;
     }
 
     public List<string>? GetSizesByCategoryId(int categoryId)
@@ -566,5 +627,80 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
         }
 
         return images;
+    }
+
+    public PaginatedResponse<MerchandiseDto> SearchMerchandise(MerchandiseSearchDto searchParams)
+    {
+        var merchList = new List<MerchandiseDto>();
+        var totalCount = 0;
+
+        const string command = "[dbo].[SearchMerchandise]";
+        var parameters = new List<SqlParameter>
+        {
+            new SqlParameter("@PageNumber", searchParams.Page),
+            new SqlParameter("@PageSize", searchParams.PageSize),
+            new SqlParameter("@Keywords", (object?)searchParams.Keywords ?? DBNull.Value),
+            new SqlParameter("@MinPrice", (object?)searchParams.MinPrice ?? DBNull.Value),
+            new SqlParameter("@MaxPrice", (object?)searchParams.MaxPrice ?? DBNull.Value),
+            new SqlParameter("@CategoryId", (object?)searchParams.CategoryId ?? DBNull.Value),
+            new SqlParameter("@SortBy", (object?)(searchParams.SortBy?.ToString() ?? "") ?? DBNull.Value)
+        };
+
+        using var reader = _db.ExecuteReader(command, parameters.ToArray());
+        while (reader.Read())
+        {
+            totalCount = (int)reader["TotalCount"];
+            var merchandise = merchList.FirstOrDefault(m => m.Id == (int)reader["id"]);
+
+            if (merchandise != null) continue;
+            merchandise = new MerchandiseDto
+            {
+                Id = (int)reader["id"],
+                CategoryId = (int)reader["category_id"],
+                CategoryName = (string)reader["CategoryName"],
+                Name = (string)reader["name"],
+                Price = (int)reader["price"],
+                Description = (string)reader["description"],
+                BrandId = (int)reader["brand_id"],
+                BrandName = (string)reader["BrandName"],
+                Themes = new List<ThemeDto>(),
+                Sizes = new List<MerchSizeDto>()
+            };
+
+            if (reader["theme_id"] != DBNull.Value)
+            {
+                merchandise.Themes.Add(new ThemeDto
+                {
+                    Id = (int)reader["theme_id"],
+                    Name = (string)reader["theme_name"]
+                });
+            }
+
+            if (reader["size_id"] != DBNull.Value)
+            {
+                merchandise.Sizes.Add(new MerchSizeDto
+                {
+                    Id = (int)reader["size_id"],
+                    MerchId = (int)reader["id"],
+                    Size = reader["size_name"] == DBNull.Value ? null : (string)reader["size_name"],
+                    InStock = (int)reader["size_in_stock"]
+                });
+            }
+
+            merchandise.Images = GetImagesForMerchandise(merchandise.Id);
+
+            merchList.Add(merchandise);
+        }
+
+        return new PaginatedResponse<MerchandiseDto>
+        {
+            Items = merchList,
+            TotalCount = totalCount,
+            PageNumber = searchParams.Page,
+            PageSize = searchParams.PageSize,
+            TotalPages = (int)Math.Ceiling(totalCount / (double)searchParams.PageSize),
+            HasNextPage = (searchParams.Page * searchParams.PageSize) < totalCount,
+            HasPreviousPage = searchParams.Page > 1
+        };
     }
 }

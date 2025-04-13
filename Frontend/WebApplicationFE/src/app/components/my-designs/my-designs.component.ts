@@ -95,7 +95,7 @@ export class MyDesignsComponent implements OnInit {
           this.loading = false;
         },
         error: (error) => {
-          console.error('Error loading designs:', error);
+          //console.error('Error loading designs:', error);
           this.error = 'Failed to load your designs. Please try again.';
           this.loading = false;
         }
@@ -139,7 +139,7 @@ export class MyDesignsComponent implements OnInit {
             this.snackBar.open('Design deleted successfully', 'Close', { duration: 3000 });
           },
           error: (error) => {
-            console.error('Error deleting design:', error);
+            //console.error('Error deleting design:', error);
             this.snackBar.open('Failed to delete design', 'Close', { duration: 3000 });
           }
         });

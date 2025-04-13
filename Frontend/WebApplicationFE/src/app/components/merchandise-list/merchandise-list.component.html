@@ -4,14 +4,14 @@
   <div class="filters-section">
     <div class="filter-group">
       <label for="search-input">Search:</label>
-      <input id="search-input" type="text" [(ngModel)]="searchTerm" (input)="applySearch()" placeholder="Search merchandise...">
+      <input id="search-input" type="text" [(ngModel)]="searchTerm" (input)="onSearch()" placeholder="Search merchandise...">
     </div>
 
     <div class="filter-group">
       <label for="category-filter">Category:</label>
-      <select id="category-filter" [(ngModel)]="selectedCategory" (change)="applyFilters()">
-        <option value="">All Categories</option>
-        <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
+      <select id="category-filter" [(ngModel)]="selectedCategoryId" (change)="applyFilters()">
+        <option [ngValue]="undefined">All Categories</option>
+        <option *ngFor="let category of categories" [ngValue]="category.id">{{ category.name }}</option>
       </select>
     </div>
 
@@ -26,7 +26,7 @@
 
     <div class="filter-group">
       <label for="sort-option">Sort By:</label>
-      <select id="sort-option" [(ngModel)]="sortOption" (change)="applySorting()">
+      <select id="sort-option" [(ngModel)]="sortOption" (change)="applyFilters()">
         <option value="">No Sorting</option>
         <option value="price-low-high">Price: Low to High</option>
         <option value="price-high-low">Price: High to Low</option>
@@ -41,8 +41,8 @@
   <div *ngIf="isLoading" class="loading">Loading...</div>
   <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
 
-  <ul *ngIf="filteredList.length > 0" class="merchandise-list">
-    <li *ngFor="let item of filteredList" (click)="goToDetails(item.id!)" class="merchandise-item">
+  <ul *ngIf="merchandiseList.length > 0" class="merchandise-list">
+    <li *ngFor="let item of merchandiseList" (click)="goToDetails(item.id!)" class="merchandise-item">
       <div class="merchandise-image">
         <img [src]="getImageUrl(item)" alt="{{ item.name }}" />
       </div>
@@ -54,7 +54,7 @@
     </li>
   </ul>
 
-  <div *ngIf="paginationInfo && filteredList.length > 0" class="pagination-controls">
+  <div *ngIf="paginationInfo && merchandiseList.length > 0" class="pagination-controls">
     <button 
       [disabled]="currentPage === 1" 
       (click)="changePage(currentPage - 1)"
@@ -76,7 +76,7 @@
     </button>
   </div>
 
-  <p *ngIf="filteredList.length === 0 && !isLoading && !errorMessage" class="no-merchandise">
-    No merchandise available matching your filters.
+  <p *ngIf="merchandiseList.length === 0 && !isLoading && !errorMessage" class="no-merchandise">
+    No merchandise available matching your search criteria.
   </p>
 </div>

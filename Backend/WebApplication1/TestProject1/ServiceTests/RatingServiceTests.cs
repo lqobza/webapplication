@@ -68,7 +68,7 @@ namespace TestProject1.ServiceTests
             // Arrange
             var ratingCreateDto = new RatingCreateDto
             {
-                MerchId = 999, // Non-existent merchandise
+                MerchId = 999,
                 Rating = 5,
                 Description = "Can't rate this"
             };

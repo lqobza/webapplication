@@ -661,7 +661,7 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
           },
           error: (error) => {
             this.isLoading = false;
-            console.error('Error saving design:', error);
+            //console.error('Error saving design:', error);
             
             let errorMessage = 'Failed to save design. Please try again.';
             if (error.error && typeof error.error === 'string') {
@@ -714,14 +714,14 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
             },
             error: (error) => {
               this.isLoading = false;
-              console.error('Error fetching saved design:', error);
+              //console.error('Error fetching saved design:', error);
               this.snackBar.open('Design was saved but could not be added to cart. Please try again.', 'Close', { duration: 5000 });
             }
           });
       })
       .catch(error => {
         this.isLoading = false;
-        console.error('Error in save and add to cart process:', error);
+        //console.error('Error in save and add to cart process:', error);
       });
   }
 

@@ -81,7 +81,7 @@ export class AdminMerchandiseComponent implements OnInit, AfterViewInit {
         );
       },
       error: (err) => {
-        console.error('Error fetching categories:', err);
+        //console.error('Error fetching categories:', err);
       }
     });
   }
@@ -112,7 +112,7 @@ export class AdminMerchandiseComponent implements OnInit, AfterViewInit {
       error: (err) => {
         this.error = 'Failed to load merchandise data. Please try again later.';
         this.loading = false;
-        console.error('Error fetching merchandise:', err);
+        //console.error('Error fetching merchandise:', err);
       }
     });
   }
@@ -135,7 +135,7 @@ export class AdminMerchandiseComponent implements OnInit, AfterViewInit {
       },
       error: (err: any) => {
         alert('Failed to delete merchandise. Please try again later.');
-        console.error('Error deleting merchandise:', err);
+        //console.error('Error deleting merchandise:', err);
       }
     });
   }

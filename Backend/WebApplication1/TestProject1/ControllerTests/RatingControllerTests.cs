@@ -40,8 +40,7 @@ namespace TestProject1.ControllerTests
             // Assert
             Assert.That(result, Is.InstanceOf<OkObjectResult>());
             var okResult = result as OkObjectResult;
-            
-            // Convert to JSON and deserialize to safely access properties
+             
             Debug.Assert(okResult != null, nameof(okResult) + " != null");
             var json = JsonConvert.SerializeObject(okResult.Value);
             var deserialized = JsonConvert.DeserializeObject<dynamic>(json);
@@ -56,7 +55,6 @@ namespace TestProject1.ControllerTests
             // Arrange
             var ratingCreateDto = new RatingCreateDto
             {
-                // Missing required MerchId and Rating
                 Description = "Invalid rating"
             };
 

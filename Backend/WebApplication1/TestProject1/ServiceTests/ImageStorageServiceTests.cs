@@ -13,23 +13,19 @@ namespace TestProject1.ServiceTests
 
         [SetUp]
         public void Setup()
-        {
-            // Create a temp directory for test images
+        { 
             _testImageDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             Directory.CreateDirectory(_testImageDirectory);
-            
-            // Setup Configuration mock
+             
             _mockConfiguration = new Mock<IConfiguration>();
             _mockConfiguration.Setup(x => x["ImageStorage:Path"]).Returns(_testImageDirectory);
-            
-            // Create FileSystemImageService with test configuration
+             
             _imageService = new FileSystemImageService(_mockConfiguration.Object);
         }
 
         [TearDown]
         public void TearDown()
-        {
-            // Clean up created test directories after each test
+        { 
             if (Directory.Exists(_testImageDirectory))
             {
                 Directory.Delete(_testImageDirectory, true);

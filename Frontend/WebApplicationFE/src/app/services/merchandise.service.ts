@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
 import { Merchandise } from '../models/merchandise.model';
 import { Category } from '../models/category.model';
 import { PaginatedResponse } from '../models/paginated-response.model';
@@ -8,6 +8,7 @@ import { catchError } from 'rxjs/operators';
 import { ErrorHandlingService } from './error-handling.service';
 import { MerchandiseImage } from '../models/merchandise-image.model';
 import { environment } from 'src/environments/environment';
+import { MerchandiseSearch, SortOption } from '../models/merchandise-search.model';
 
 @Injectable({
   providedIn: 'root'
@@ -19,6 +20,51 @@ export class MerchandiseService {
 
   getAllMerchandise(page: number = 1, pageSize: number = 10): Observable<PaginatedResponse<Merchandise>> {
     return this.http.get<PaginatedResponse<Merchandise>>(`${this.apiUrl}?page=${page}&pageSize=${pageSize}`);
+  }
+
+  searchMerchandise(searchParams: MerchandiseSearch): Observable<PaginatedResponse<Merchandise>> {
+    let params = new HttpParams()
+      .set('page', searchParams.page.toString())
+      .set('pageSize', searchParams.pageSize.toString());
+      
+    if (searchParams.keywords) {
+      params = params.set('keywords', searchParams.keywords);
+    }
+    
+    if (searchParams.minPrice !== undefined) {
+      params = params.set('minPrice', searchParams.minPrice.toString());
+    }
+    
+    if (searchParams.maxPrice !== undefined) {
+      params = params.set('maxPrice', searchParams.maxPrice.toString());
+    }
+    
+    if (searchParams.categoryId !== undefined) {
+      params = params.set('categoryId', searchParams.categoryId.toString());
+    }
+    
+    if (searchParams.sortBy !== undefined) {
+      params = params.set('sortBy', searchParams.sortBy.toString());
+    }
+    
+    return this.http.get<PaginatedResponse<Merchandise>>(`${this.apiUrl}/search`, { params })
+      .pipe(
+        catchError(error => {
+          if (error.status === 404) {
+            return of<PaginatedResponse<Merchandise>>({
+              items: [],
+              totalCount: 0,
+              pageNumber: searchParams.page,
+              pageSize: searchParams.pageSize,
+              totalPages: 0,
+              hasNextPage: false,
+              hasPreviousPage: false
+            });
+          }
+
+          throw error;
+        })
+      );
   }
 
   insertMerchandise(merchandise: Merchandise): Observable<any> {
@@ -76,6 +122,12 @@ export class MerchandiseService {
     return this.http.post(
       `${this.apiUrl}/${merchandiseId}/images`, 
       formData
+    );
+  }
+
+  deleteImage(merchandiseId: number, imageUrl: string): Observable<any> {
+    return this.http.delete(
+      `${this.apiUrl}/image/${merchandiseId}/${imageUrl}`
     );
   }
 

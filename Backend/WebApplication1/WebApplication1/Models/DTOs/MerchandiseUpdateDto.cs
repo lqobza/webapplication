@@ -8,4 +8,6 @@ public class MerchandiseUpdateDto
     public int? Price { get; set; }
 
     [StringLength(255)] public string? Description { get; set; }
+    
+    public List<MerchSizeDto>? Sizes { get; set; }
 }

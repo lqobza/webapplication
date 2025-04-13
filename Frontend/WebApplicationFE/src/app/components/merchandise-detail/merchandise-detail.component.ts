@@ -205,7 +205,7 @@ export class MerchandiseDetailComponent implements OnInit {
         this.newRatingText = '';
         this.newRating = 0;
       },
-      error: (error) => console.error("Error adding rating:", error)
+      //error: (error) => console.error("Error adding rating:", error)
     });
   }
 
@@ -213,7 +213,7 @@ export class MerchandiseDetailComponent implements OnInit {
     if (!this.merchandise?.id) return;
     this.merchandiseService.getMerchandiseById(this.merchandise.id).subscribe({
       next: (data) => this.merchandise!.ratings = data.ratings,
-      error: (error) => console.error("Error refreshing ratings:", error)
+      //error: (error) => console.error("Error refreshing ratings:", error)
     });
   }
 
@@ -228,7 +228,7 @@ export class MerchandiseDetailComponent implements OnInit {
             }
           },
           error: (error) => {
-            console.error('Error loading merchandise images:', error);
+            //console.error('Error loading merchandise images:', error);
           }
         });
     }

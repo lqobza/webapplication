@@ -101,17 +101,14 @@ export class OrderListComponent implements OnInit {
   getFullImageUrl(relativeUrl: string | null): string {
     if (!relativeUrl) return '';
     
-    // If it's a base64 image, return it as is
     if (relativeUrl.startsWith('data:image')) {
       return relativeUrl;
     }
     
-    // If it's already an absolute URL, return it as is
     if (relativeUrl.startsWith('http://') || relativeUrl.startsWith('https://')) {
       return relativeUrl;
     }
     
-    // Otherwise, prepend the API URL
     const normalizedUrl = relativeUrl.startsWith('/') ? relativeUrl : `/${relativeUrl}`;
     
     return `${environment.apiUrl}${normalizedUrl}`;

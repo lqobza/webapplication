@@ -8,6 +8,7 @@ public interface IMerchandiseRepository
 {
     public bool MerchandiseExists(int categoryId, string name, int brandId);
     public PaginatedResponse<MerchandiseDto> GetAllMerchandise(int page = 1, int pageSize = 10);
+    public PaginatedResponse<MerchandiseDto> SearchMerchandise(MerchandiseSearchDto searchParams);
     public MerchandiseDto? GetMerchandiseById(int id);
     public List<MerchandiseDto> GetMerchandiseBySize(string size);
     public List<MerchandiseDto> GetMerchandiseByCategory(int category);

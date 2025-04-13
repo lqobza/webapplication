@@ -27,6 +27,11 @@ public class MerchandiseService : IMerchandiseService
         return _merchandiseRepository.GetAllMerchandise(page, pageSize);
     }
     
+    public PaginatedResponse<MerchandiseDto> SearchMerchandise(MerchandiseSearchDto searchParams)
+    {
+        return _merchandiseRepository.SearchMerchandise(searchParams);
+    }
+    
     public MerchandiseDto? GetMerchandiseById(int id)
     {
         return _merchandiseRepository.GetMerchandiseById(id);
@@ -96,7 +101,6 @@ public class MerchandiseService : IMerchandiseService
 
         return result switch
         {
-            // valid category ID returned
             > 0 => InsertResult.Success,
             -1 => InsertResult.AlreadyExists,
             _ => InsertResult.Error
@@ -109,7 +113,6 @@ public class MerchandiseService : IMerchandiseService
 
         return result switch
         {
-            // valid theme ID returned
             > 0 => InsertResult.Success,
             -1 => InsertResult.AlreadyExists,
             _ => InsertResult.Error
@@ -121,9 +124,31 @@ public class MerchandiseService : IMerchandiseService
         return await _imageRepository.AddImage(merchandiseId, imageUrl, isPrimary);
     }
 
-    public async Task<bool> DeleteMerchandiseImage(int imageId)
+    public async Task<bool> DeleteMerchandiseImage(int merchandiseId, string fileName)
     {
-        return await _imageRepository.DeleteImage(imageId);
+        var imagePath = Path.Combine(_imageStorageService.GetImageDirectory(), merchandiseId.ToString(), fileName);
+        var fileExists = File.Exists(imagePath);
+        
+        var images = _imageRepository.GetMerchandiseImages(merchandiseId);
+        var imageToDelete = images.FirstOrDefault(img => img.ImageUrl.EndsWith(fileName));
+        
+        if (imageToDelete == null)
+        {
+            if (fileExists)
+            {
+                File.Delete(imagePath);
+            }
+            return true;
+        }
+        
+        var dbDeleteResult = await _imageRepository.DeleteImage(imageToDelete.Id);
+        
+        if (fileExists)
+        {
+            File.Delete(imagePath);
+        }
+        
+        return dbDeleteResult;
     }
 
     public async Task<bool> SetPrimaryImage(int merchandiseId, int imageId)

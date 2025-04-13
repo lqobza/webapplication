@@ -20,7 +20,6 @@ namespace TestProject1.ControllerTests
             _mockLogger = new Mock<ILogger<OrderController>>();
             _controller = new OrderController(_mockOrderService.Object, _mockLogger.Object);
             
-            // Create default HttpContext to simulate authentication
             var httpContext = new DefaultHttpContext();
             _controller.ControllerContext = new ControllerContext
             {
