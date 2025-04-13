@@ -16,4 +16,4 @@ public class CustomDesignCreateDto
     public string Name { get; set; } = string.Empty;
     public string FrontImage { get; set; } = string.Empty;
     public string BackImage { get; set; } = string.Empty;
-} 
+}

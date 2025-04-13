@@ -11,4 +11,4 @@ public interface IDatabaseWrapper
     IDataReader ExecuteReader(string query, params SqlParameter[]? parameters);
     SqlConnection CreateConnection();
     Task<IDbTransaction> BeginTransactionAsync();
-} 
+}

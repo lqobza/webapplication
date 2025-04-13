@@ -3,6 +3,7 @@ using System.Security.Claims;
 using WebApplication1.Models.DTOs;
 using WebApplication1.Models.Enums;
 using WebApplication1.Services.Interface;
+using System.Data.SqlClient;
 
 namespace TestProject1.ControllerTests
 {
@@ -369,6 +370,34 @@ namespace TestProject1.ControllerTests
             var okResult = result as OkObjectResult;
             Debug.Assert(okResult != null, nameof(okResult) + " != null");
             Assert.That(okResult.Value, Is.EqualTo(createdMessage));
+        }
+        
+        [Test]
+        public async Task CreateOrder_WithCustomItems_ReturnsOk()
+        {
+            // Arrange
+            var orderCreateDto = new OrderCreateDto
+            {
+                Items = new List<OrderItemDto>
+                {
+                    new() 
+                    {
+                        MerchId = 1, 
+                        Size = "M", 
+                        Quantity = 1, 
+                        IsCustom = true
+                    }
+                }
+            };
+            
+            _mockOrderService.Setup(s => s.CreateOrderAsync(It.IsAny<OrderCreateDto>()))
+                .ReturnsAsync(InsertResult.Success);
+            
+            // Act
+            var result = await _controller.CreateOrder(orderCreateDto);
+            
+            // Assert
+            Assert.That(result, Is.InstanceOf<OkObjectResult>());
         }
     }
 }

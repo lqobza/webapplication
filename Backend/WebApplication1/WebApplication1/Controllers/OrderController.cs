@@ -26,11 +26,11 @@ public class OrderController : ControllerBase
     public async Task<IActionResult> GetAllOrders()
     {
         _logger.LogInformation("GetAllOrders endpoint called");
-        
-        var isAdmin = User.Claims.Any(c => 
-            (c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role" && c.Value == "Admin")
+
+        var isAdmin = User.Claims.Any(c =>
+            c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role" && c.Value == "Admin"
         );
-        
+
 
         if (!isAdmin)
         {
@@ -59,14 +59,14 @@ public class OrderController : ControllerBase
         var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "userId") ??
                           User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier) ??
                           User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub);
-        
+
         if (userIdClaim == null)
         {
             _logger.LogWarning("User ID claim not found in token");
             return Unauthorized(new { message = "User not authenticated or user ID not found in token" });
         }
 
-        if (!int.TryParse(userIdClaim.Value, out int userId))
+        if (!int.TryParse(userIdClaim.Value, out var userId))
         {
             _logger.LogWarning("Invalid user ID format in token: {UserId}", userIdClaim.Value);
             return BadRequest(new { message = "Invalid user ID format" });
@@ -106,7 +106,7 @@ public class OrderController : ControllerBase
     public async Task<IActionResult> CreateOrder([FromBody] OrderCreateDto orderCreateDto)
     {
         _logger.LogInformation("CreateOrder endpoint called");
-        
+
         var orderCreateDtoJson = JsonConvert.SerializeObject(orderCreateDto, Formatting.Indented);
         _logger.LogInformation("Received OrderCreateDto: {OrderCreateDto}", orderCreateDtoJson);
 
@@ -115,39 +115,37 @@ public class OrderController : ControllerBase
             _logger.LogWarning("Invalid input data: {ModelStateErrors}", ModelState);
             return BadRequest(ModelState);
         }
-        
+
         var validItems = new List<OrderItemDto>();
-        
+
         foreach (var item in orderCreateDto.Items)
         {
-            _logger.LogInformation("Processing order item: MerchId={MerchId}, Size={Size}, IsCustom={IsCustom}", 
+            _logger.LogInformation("Processing order item: MerchId={MerchId}, Size={Size}, IsCustom={IsCustom}",
                 item.MerchId, item.Size, item.IsCustom);
-            
+
             if (item.IsCustom)
             {
                 item.MerchId = null;
-                
-                if (string.IsNullOrEmpty(item.MerchandiseName))
-                {
-                    item.MerchandiseName = "Custom T-Shirt Design";
-                }
-                
+
+                if (string.IsNullOrEmpty(item.MerchandiseName)) item.MerchandiseName = "Custom T-Shirt Design";
+
                 validItems.Add(item);
             }
             else
             {
                 if (item.MerchId == null || item.MerchId <= 0)
                 {
-                    _logger.LogWarning("Invalid MerchId: {MerchId} for regular merchandise - skipping item", item.MerchId);
-                    continue; 
+                    _logger.LogWarning("Invalid MerchId: {MerchId} for regular merchandise - skipping item",
+                        item.MerchId);
+                    continue;
                 }
-                
+
                 validItems.Add(item);
             }
         }
-        
+
         orderCreateDto.Items = validItems;
-        
+
         if (orderCreateDto.Items.Count == 0)
         {
             _logger.LogWarning("No valid items in order");
@@ -168,13 +166,18 @@ public class OrderController : ControllerBase
             {
                 _logger.LogError("Internal server error while creating order: {Order}", orderCreateDtoJson);
                 return StatusCode(StatusCodes.Status500InternalServerError,
-                    new { message = "Order creation failed due to internal server error. Please try again later or contact support." });
+                    new
+                    {
+                        message =
+                            "Order creation failed due to internal server error. Please try again later or contact support."
+                    });
             }
 
             _logger.LogError("Unexpected error during order creation");
             return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Internal server error" });
         }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("Insufficient stock") || ex.Message.Contains("not found in stock"))
+        catch (InvalidOperationException ex) when (ex.Message.Contains("Insufficient stock") ||
+                                                   ex.Message.Contains("not found in stock"))
         {
             _logger.LogWarning("Order creation failed due to stock issue: {ErrorMessage}", ex.Message);
             return BadRequest(new { message = ex.Message });
@@ -182,14 +185,14 @@ public class OrderController : ControllerBase
         catch (SqlException ex)
         {
             _logger.LogError(ex, "SQL error during order creation: {ErrorMessage}", ex.Message);
-            return StatusCode(StatusCodes.Status500InternalServerError, 
+            return StatusCode(StatusCodes.Status500InternalServerError,
                 new { message = "Database error occurred while processing your order. Please try again later." });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected exception during order creation: {ErrorType} - {ErrorMessage}", 
+            _logger.LogError(ex, "Unexpected exception during order creation: {ErrorType} - {ErrorMessage}",
                 ex.GetType().Name, ex.Message);
-            return StatusCode(StatusCodes.Status500InternalServerError, 
+            return StatusCode(StatusCodes.Status500InternalServerError,
                 new { message = "An unexpected error occurred while processing your order. Please try again later." });
         }
     }
@@ -200,7 +203,7 @@ public class OrderController : ControllerBase
         try
         {
             _logger.LogInformation("CancelOrder endpoint called for order {OrderId}", id);
-            
+
             var order = await _orderService.GetOrderByIdAsync(id);
             if (order == null)
             {
@@ -225,14 +228,15 @@ public class OrderController : ControllerBase
             return StatusCode(500, "An error occurred while cancelling the order");
         }
     }
-    
+
     [HttpPost("{id}/status")]
     public async Task<IActionResult> UpdateOrderStatus(int id, [FromBody] UpdateOrderStatusDto statusDto)
     {
         try
         {
-            _logger.LogInformation("UpdateOrderStatus endpoint called for order {OrderId} with status {Status}", id, statusDto.Status);
-            
+            _logger.LogInformation("UpdateOrderStatus endpoint called for order {OrderId} with status {Status}", id,
+                statusDto.Status);
+
             var order = await _orderService.GetOrderByIdAsync(id);
             if (order == null)
             {
@@ -257,34 +261,31 @@ public class OrderController : ControllerBase
             return StatusCode(500, "An error occurred while updating the order status");
         }
     }
-    
+
     [HttpGet("{id}/messages")]
     public async Task<IActionResult> GetOrderMessages(int id)
     {
         _logger.LogInformation("GetOrderMessages endpoint called for order {OrderId}", id);
-        
+
         var order = await _orderService.GetOrderByIdAsync(id);
         if (order == null)
         {
             _logger.LogWarning("Order with ID {OrderId} not found", id);
             return NotFound($"Order with ID {id} not found");
         }
-        
+
         var messages = await _orderService.GetOrderMessagesAsync(id);
-        
+
         return Ok(messages);
     }
-    
+
     [HttpPost("{id}/messages")]
     public async Task<IActionResult> AddOrderMessage(int id, [FromBody] OrderMessageCreateDto messageDto)
     {
         _logger.LogInformation("AddOrderMessage endpoint called for order {OrderId}", id);
-        
-        if (messageDto.OrderId != id)
-        {
-            return BadRequest("Order ID in the URL and message body do not match");
-        }
-        
+
+        if (messageDto.OrderId != id) return BadRequest("Order ID in the URL and message body do not match");
+
         try
         {
             var message = await _orderService.AddOrderMessageAsync(messageDto);

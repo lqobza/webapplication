@@ -13,9 +13,9 @@ public class MerchandiseService : IMerchandiseService
     private readonly IMerchandiseImageRepository _imageRepository;
     private readonly IImageStorageService _imageStorageService;
 
-    public MerchandiseService(IMerchandiseRepository merchandiseRepository, 
-                            IMerchandiseImageRepository imageRepository,
-                            IImageStorageService imageStorageService)
+    public MerchandiseService(IMerchandiseRepository merchandiseRepository,
+        IMerchandiseImageRepository imageRepository,
+        IImageStorageService imageStorageService)
     {
         _merchandiseRepository = merchandiseRepository;
         _imageRepository = imageRepository;
@@ -26,12 +26,12 @@ public class MerchandiseService : IMerchandiseService
     {
         return _merchandiseRepository.GetAllMerchandise(page, pageSize);
     }
-    
+
     public PaginatedResponse<MerchandiseDto> SearchMerchandise(MerchandiseSearchDto searchParams)
     {
         return _merchandiseRepository.SearchMerchandise(searchParams);
     }
-    
+
     public MerchandiseDto? GetMerchandiseById(int id)
     {
         return _merchandiseRepository.GetMerchandiseById(id);
@@ -39,13 +39,10 @@ public class MerchandiseService : IMerchandiseService
 
     public List<MerchandiseDto> GetMerchandiseBySize(string size)
     {
-        if (string.IsNullOrWhiteSpace(size))
-        {
-            throw new ArgumentException("Size cannot be empty");
-        }
+        if (string.IsNullOrWhiteSpace(size)) throw new ArgumentException("Size cannot be empty");
 
         size = size.Trim().ToUpper();
-        
+
         return _merchandiseRepository.GetMerchandiseBySize(size);
     }
 
@@ -56,7 +53,9 @@ public class MerchandiseService : IMerchandiseService
 
     public InsertResult InsertMerchandise(MerchandiseCreateDto merchandise)
     {
-        return _merchandiseRepository.MerchandiseExists(merchandise.CategoryId, merchandise.Name, merchandise.BrandId) ? InsertResult.AlreadyExists : _merchandiseRepository.InsertMerchandise(merchandise);
+        return _merchandiseRepository.MerchandiseExists(merchandise.CategoryId, merchandise.Name, merchandise.BrandId)
+            ? InsertResult.AlreadyExists
+            : _merchandiseRepository.InsertMerchandise(merchandise);
     }
 
     public bool DeleteMerchandiseById(int id)
@@ -66,10 +65,7 @@ public class MerchandiseService : IMerchandiseService
 
     public bool UpdateMerchandise(int id, MerchandiseUpdateDto merchandiseUpdateDto)
     {
-        if (id <= 0)
-        {
-            throw new ArgumentException("Invalid merchandise ID");
-        }
+        if (id <= 0) throw new ArgumentException("Invalid merchandise ID");
 
         return _merchandiseRepository.UpdateMerchandise(id, merchandiseUpdateDto);
     }
@@ -119,7 +115,8 @@ public class MerchandiseService : IMerchandiseService
         };
     }
 
-    public async Task<MerchandiseImageDto> AddMerchandiseImage(int merchandiseId, string imageUrl, bool isPrimary = false)
+    public async Task<MerchandiseImageDto> AddMerchandiseImage(int merchandiseId, string imageUrl,
+        bool isPrimary = false)
     {
         return await _imageRepository.AddImage(merchandiseId, imageUrl, isPrimary);
     }
@@ -128,26 +125,20 @@ public class MerchandiseService : IMerchandiseService
     {
         var imagePath = Path.Combine(_imageStorageService.GetImageDirectory(), merchandiseId.ToString(), fileName);
         var fileExists = File.Exists(imagePath);
-        
+
         var images = _imageRepository.GetMerchandiseImages(merchandiseId);
         var imageToDelete = images.FirstOrDefault(img => img.ImageUrl.EndsWith(fileName));
-        
+
         if (imageToDelete == null)
         {
-            if (fileExists)
-            {
-                File.Delete(imagePath);
-            }
+            if (fileExists) File.Delete(imagePath);
             return true;
         }
-        
+
         var dbDeleteResult = await _imageRepository.DeleteImage(imageToDelete.Id);
-        
-        if (fileExists)
-        {
-            File.Delete(imagePath);
-        }
-        
+
+        if (fileExists) File.Delete(imagePath);
+
         return dbDeleteResult;
     }
 
@@ -171,22 +162,17 @@ public class MerchandiseService : IMerchandiseService
 
     public async Task<MerchandiseImageDto> UploadMerchandiseImage(int merchandiseId, IFormFile image)
     {
-        if (image == null || image.Length == 0)
-        {
-            throw new ArgumentException("No image file provided");
-        }
-        
+        if (image == null || image.Length == 0) throw new ArgumentException("No image file provided");
+
         if (!MerchandiseExists(merchandiseId))
-        {
             throw new KeyNotFoundException($"Merchandise with ID {merchandiseId} not found");
-        }
-        
+
         try
         {
             var imageUrl = await _imageStorageService.SaveImageAsync(image, merchandiseId.ToString());
-            
+
             var imageDto = await _imageRepository.AddImage(merchandiseId, imageUrl);
-            
+
             return imageDto;
         }
         catch (Exception ex)
@@ -194,10 +180,7 @@ public class MerchandiseService : IMerchandiseService
             if (ex is not DbUpdateException ||
                 ex.InnerException?.Message.Contains("FOREIGN KEY constraint") != true) throw;
             var imageUrl = ex.Data["ImageUrl"] as string;
-            if (!string.IsNullOrEmpty(imageUrl))
-            {
-                await _imageStorageService.DeleteImageAsync(imageUrl);
-            }
+            if (!string.IsNullOrEmpty(imageUrl)) await _imageStorageService.DeleteImageAsync(imageUrl);
 
             throw;
         }

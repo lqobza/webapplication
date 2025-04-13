@@ -13,5 +13,5 @@ public class MerchandiseDto
     public List<RatingDto>? Ratings { get; set; }
     public List<ThemeDto>? Themes { get; set; }
     public List<MerchSizeDto>? Sizes { get; set; }
-    public List<MerchandiseImage> Images { get; set; } = new List<MerchandiseImage>();
+    public List<MerchandiseImage> Images { get; set; } = new();
 }

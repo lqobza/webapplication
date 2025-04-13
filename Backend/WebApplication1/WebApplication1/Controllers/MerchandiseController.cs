@@ -17,7 +17,8 @@ public class MerchandiseController : ControllerBase
     private readonly IImageStorageService _imageStorageService;
     private readonly IMerchandiseRepository _merchandiseRepository;
 
-    public MerchandiseController(IMerchandiseService merchandiseService, ILogger<MerchandiseController> logger, IImageStorageService imageStorageService, IMerchandiseRepository merchandiseRepository)
+    public MerchandiseController(IMerchandiseService merchandiseService, ILogger<MerchandiseController> logger,
+        IImageStorageService imageStorageService, IMerchandiseRepository merchandiseRepository)
     {
         _merchandiseService = merchandiseService;
         _logger = logger;
@@ -28,12 +29,10 @@ public class MerchandiseController : ControllerBase
     [HttpGet]
     public IActionResult GetAllMerchandise([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        _logger.LogInformation("GetAllMerchandise endpoint called with page: {Page}, pageSize: {PageSize}", page, pageSize);
+        _logger.LogInformation("GetAllMerchandise endpoint called with page: {Page}, pageSize: {PageSize}", page,
+            pageSize);
 
-        if (page < 1 || pageSize < 1)
-        {
-            return BadRequest(new { message = "Page and pageSize must be greater than 0" });
-        }
+        if (page < 1 || pageSize < 1) return BadRequest(new { message = "Page and pageSize must be greater than 0" });
 
         var result = _merchandiseService.GetAllMerchandise(page, pageSize);
 
@@ -43,7 +42,7 @@ public class MerchandiseController : ControllerBase
             return NotFound(new { message = "No merchandise found." });
         }
 
-        _logger.LogInformation("Returning merchandise list (count: {Count}, total: {Total})", 
+        _logger.LogInformation("Returning merchandise list (count: {Count}, total: {Total})",
             result.Items.Count, result.TotalCount);
         return Ok(result);
     }
@@ -54,14 +53,11 @@ public class MerchandiseController : ControllerBase
         _logger.LogInformation("SearchMerchandise endpoint called with parameters: {@SearchParams}", searchParams);
 
         if (searchParams.Page < 1 || searchParams.PageSize < 1)
-        {
             return BadRequest(new { message = "Page and pageSize must be greater than 0" });
-        }
 
-        if (searchParams.MinPrice.HasValue && searchParams.MaxPrice.HasValue && searchParams.MinPrice > searchParams.MaxPrice)
-        {
+        if (searchParams.MinPrice.HasValue && searchParams.MaxPrice.HasValue &&
+            searchParams.MinPrice > searchParams.MaxPrice)
             return BadRequest(new { message = "MinPrice cannot be greater than MaxPrice" });
-        }
 
         var result = _merchandiseService.SearchMerchandise(searchParams);
 
@@ -71,7 +67,7 @@ public class MerchandiseController : ControllerBase
             return NotFound(new { message = "No merchandise found for the given search criteria." });
         }
 
-        _logger.LogInformation("Returning search results (count: {Count}, total: {Total})", 
+        _logger.LogInformation("Returning search results (count: {Count}, total: {Total})",
             result.Items.Count, result.TotalCount);
         return Ok(result);
     }
@@ -96,13 +92,10 @@ public class MerchandiseController : ControllerBase
     [HttpGet("size/{size}")]
     public IActionResult GetMerchandiseBySize(string size)
     {
-        if (string.IsNullOrWhiteSpace(size))
-        {
-            return BadRequest(new { message = "Size cannot be empty" });
-        }
+        if (string.IsNullOrWhiteSpace(size)) return BadRequest(new { message = "Size cannot be empty" });
 
         size = size.Trim().ToUpper();
-        
+
         _logger.LogInformation("GetMerchandiseBySize endpoint called with size: {Size}", size);
 
         var merchList = _merchandiseService.GetMerchandiseBySize(size);
@@ -133,7 +126,7 @@ public class MerchandiseController : ControllerBase
         _logger.LogInformation("Returning merchandise list for category: {category}", category);
         return Ok(merchList);
     }
-    
+
     [HttpPost("")]
     [Authorize(Roles = "Admin")]
     public IActionResult InsertMerchandise([FromBody] MerchandiseCreateDto merchandiseCreateDto)
@@ -173,7 +166,7 @@ public class MerchandiseController : ControllerBase
                 new { message = $"Exception during merchandise insert: {ex.Message}", stackTrace = ex.StackTrace });
         }
     }
-    
+
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "Admin")]
     public IActionResult DeleteMerchandiseById(int id)
@@ -192,41 +185,31 @@ public class MerchandiseController : ControllerBase
                 return NotFound(new { message = $"Merchandise with ID {id} not found." });
         }
     }
-    
+
     [HttpPatch("{id:int}")]
     [Authorize(Roles = "Admin")]
     public IActionResult UpdateMerchandise(int id, [FromBody] MerchandiseUpdateDto merchandiseUpdateDto)
     {
-        if (id <= 0)
-        {
-            return BadRequest(new { message = "Invalid merchandise ID" });
-        }
+        if (id <= 0) return BadRequest(new { message = "Invalid merchandise ID" });
 
         _logger.LogInformation("UpdateMerchandise endpoint called with data: {Merchandise}", merchandiseUpdateDto);
 
         try
-        { 
+        {
             if (!_merchandiseService.MerchandiseExists(id))
             {
                 _logger.LogWarning("Merchandise with ID {Id} not found", id);
                 return NotFound(new { message = $"Merchandise with ID {id} not found." });
             }
-             
+
             if (merchandiseUpdateDto.Sizes != null)
-            {
                 foreach (var size in merchandiseUpdateDto.Sizes)
                 {
-                    if (size.InStock < 0)
-                    {
-                        return BadRequest(new { message = "InStock value cannot be negative." });
-                    }
-                    
+                    if (size.InStock < 0) return BadRequest(new { message = "InStock value cannot be negative." });
+
                     if (string.IsNullOrWhiteSpace(size.Size))
-                    {
                         return BadRequest(new { message = "Size name cannot be empty." });
-                    }
                 }
-            }
 
             var result = _merchandiseService.UpdateMerchandise(id, merchandiseUpdateDto);
             if (result)
@@ -296,17 +279,14 @@ public class MerchandiseController : ControllerBase
         _logger.LogWarning("No brands found.");
         return NotFound(new { message = "No brands found." });
     }
-    
+
     [HttpPost("categories")]
     [Authorize(Roles = "Admin")]
     public IActionResult AddCategoryToDb([FromBody] CategoryCreateDto categoryCreateDto)
     {
         _logger.LogInformation("AddCategoryToDb endpoint called with data: {}", categoryCreateDto.Name);
 
-        if (string.IsNullOrWhiteSpace(categoryCreateDto.Name) || !ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
+        if (string.IsNullOrWhiteSpace(categoryCreateDto.Name) || !ModelState.IsValid) return BadRequest(ModelState);
 
         var insertCategoryResult = _merchandiseService.AddCategoryToDb(categoryCreateDto);
 
@@ -326,17 +306,14 @@ public class MerchandiseController : ControllerBase
                     new { message = "Internal server error during category insert." });
         }
     }
-    
+
     [HttpPost("themes")]
     [Authorize(Roles = "Admin")]
     public IActionResult AddThemeToDb([FromBody] ThemeCreateDto themeCreateDto)
     {
         _logger.LogInformation("AddThemeToDb endpoint called with data: {}", themeCreateDto.Name);
 
-        if (string.IsNullOrWhiteSpace(themeCreateDto.Name) || !ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
+        if (string.IsNullOrWhiteSpace(themeCreateDto.Name) || !ModelState.IsValid) return BadRequest(ModelState);
 
         var insertThemeResult = _merchandiseService.AddThemeToDb(themeCreateDto);
 
@@ -364,12 +341,12 @@ public class MerchandiseController : ControllerBase
             return BadRequest("No image file provided");
 
         _logger.LogInformation($"Uploading image for merchandise {id}...");
-        
+
         try
         {
             var result = await _merchandiseService.UploadMerchandiseImage(id, image);
             _logger.LogInformation($"Image uploaded successfully for merchandise {id}, image ID: {result.Id}");
-            
+
             return Ok(new { imageUrl = result.ImageUrl });
         }
         catch (KeyNotFoundException ex)
@@ -397,22 +374,23 @@ public class MerchandiseController : ControllerBase
     [HttpGet("images/{merchandiseId:int}")]
     public IActionResult GetMerchandiseImages(int merchandiseId)
     {
-        _logger.LogInformation("GetMerchandiseImages endpoint called for merchandiseId: {merchandiseId}", merchandiseId);
-        
+        _logger.LogInformation("GetMerchandiseImages endpoint called for merchandiseId: {merchandiseId}",
+            merchandiseId);
+
         if (!_merchandiseService.MerchandiseExists(merchandiseId))
         {
             _logger.LogWarning("Merchandise not found with ID: {Id}", merchandiseId);
             return NotFound(new { message = $"Merchandise with ID {merchandiseId} not found." });
         }
-        
+
         var images = _merchandiseService.GetMerchandiseImages(merchandiseId);
-        
+
         if (images.Count == 0)
         {
             _logger.LogWarning("No images found for merchandise ID: {Id}", merchandiseId);
             return NotFound(new { message = $"No images found for merchandise with ID {merchandiseId}." });
         }
-        
+
         _logger.LogInformation("Returning {Count} images for merchandise ID: {Id}", images.Count, merchandiseId);
         return Ok(images);
     }
@@ -421,38 +399,37 @@ public class MerchandiseController : ControllerBase
     public IActionResult GetImage(int merchandiseId, string fileName)
     {
         var imagePath = Path.Combine(_imageStorageService.GetImageDirectory(), merchandiseId.ToString(), fileName);
-        
-        if (!System.IO.File.Exists(imagePath))
-        {
-            return NotFound();
-        }
-        
+
+        if (!System.IO.File.Exists(imagePath)) return NotFound();
+
         var imageFileStream = System.IO.File.OpenRead(imagePath);
         return File(imageFileStream, "image/jpeg");
     }
-    
+
     [HttpDelete("image/{merchandiseId}/{fileName}")]
     public async Task<IActionResult> DeleteImage(int merchandiseId, string fileName)
     {
-        _logger.LogInformation("DeleteImage endpoint called for merchandise ID: {Id}, filename: {FileName}", 
+        _logger.LogInformation("DeleteImage endpoint called for merchandise ID: {Id}, filename: {FileName}",
             merchandiseId, fileName);
-        
+
         try
         {
             var result = await _merchandiseService.DeleteMerchandiseImage(merchandiseId, fileName);
-            
+
             if (!result)
             {
-                _logger.LogWarning("Image with filename {FileName} for Merchandise {Id} not found", fileName, merchandiseId);
+                _logger.LogWarning("Image with filename {FileName} for Merchandise {Id} not found", fileName,
+                    merchandiseId);
                 return NotFound();
             }
-            
-            _logger.LogInformation("Image with filename {FileName} for Merchandise {Id} deleted successfully", fileName, merchandiseId);
+
+            _logger.LogInformation("Image with filename {FileName} for Merchandise {Id} deleted successfully", fileName,
+                merchandiseId);
             return Ok();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error deleting image for merchandise ID: {Id}, filename: {FileName}", 
+            _logger.LogError(ex, "Error deleting image for merchandise ID: {Id}, filename: {FileName}",
                 merchandiseId, fileName);
             return StatusCode(500, new { message = "An error occurred while deleting the image" });
         }
@@ -461,9 +438,10 @@ public class MerchandiseController : ControllerBase
     [HttpGet("{id:int}/stock/{size}")]
     public IActionResult CheckStockAvailability(int id, string size, [FromQuery] int quantity = 1)
     {
-        _logger.LogInformation("CheckStockAvailability endpoint called for merchandise ID: {Id}, size: {Size}, quantity: {Quantity}", 
+        _logger.LogInformation(
+            "CheckStockAvailability endpoint called for merchandise ID: {Id}, size: {Size}, quantity: {Quantity}",
             id, size, quantity);
-        
+
         try
         {
             var merchandise = _merchandiseService.GetMerchandiseById(id);
@@ -472,31 +450,33 @@ public class MerchandiseController : ControllerBase
                 _logger.LogWarning("Merchandise with ID {Id} not found", id);
                 return NotFound(new { message = $"Merchandise with ID {id} not found" });
             }
-            
-            string merchandiseName = merchandise.Name;
-            
+
+            var merchandiseName = merchandise.Name;
+
             var sizes = _merchandiseService.GetSizesByCategoryId(merchandise.CategoryId);
             if (sizes == null || !sizes.Contains(size))
             {
                 _logger.LogWarning("Size {Size} not available for merchandise ID {Id}", size, id);
                 return NotFound(new { message = $"Size {size} not available for merchandise with ID {id}" });
             }
-            
+
             var merchSizes = _merchandiseRepository.GetSizesByMerchId(id);
             var sizeInfo = merchSizes.FirstOrDefault(s => s.Size == size);
-            
+
             if (sizeInfo == null)
             {
                 _logger.LogWarning("Size {Size} not found in stock for merchandise ID {Id}", size, id);
                 return NotFound(new { message = $"Size {size} not found in stock for merchandise with ID {id}" });
             }
-            
-            bool isAvailable = sizeInfo.InStock >= quantity;
-            
-            _logger.LogInformation("Stock check for {MerchandiseName} (ID: {Id}, Size: {Size}): Available: {Available}, Requested: {Requested}",
+
+            var isAvailable = sizeInfo.InStock >= quantity;
+
+            _logger.LogInformation(
+                "Stock check for {MerchandiseName} (ID: {Id}, Size: {Size}): Available: {Available}, Requested: {Requested}",
                 merchandiseName, id, size, sizeInfo.InStock, quantity);
-            
-            return Ok(new {
+
+            return Ok(new
+            {
                 isAvailable,
                 available = sizeInfo.InStock,
                 requested = quantity,

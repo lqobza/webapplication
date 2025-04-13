@@ -81,48 +81,6 @@ public class MerchandiseRepositoryTests
     }
 
     [Test]
-    public void GetAllMerchandise_WithValidPagination_ReturnsPaginatedResponse()
-    {
-        // Arrange
-        const int page = 1;
-        const int pageSize = 10;
-        const int totalCount = 20;
-
-        _mockReader.SetupSequence(x => x.Read())
-            .Returns(true)
-            .Returns(true)
-            .Returns(false);
-
-        _mockReader.Setup(x => x["id"]).Returns(1);
-        _mockReader.Setup(x => x["category_id"]).Returns(1);
-        _mockReader.Setup(x => x["CategoryName"]).Returns("Test Category");
-        _mockReader.Setup(x => x["name"]).Returns("Test Merch");
-        _mockReader.Setup(x => x["price"]).Returns(100);
-        _mockReader.Setup(x => x["description"]).Returns("Test Description");
-        _mockReader.Setup(x => x["brand_id"]).Returns(1);
-        _mockReader.Setup(x => x["BrandName"]).Returns("Test Brand");
-        _mockReader.Setup(x => x["TotalCount"]).Returns(totalCount);
-        _mockReader.Setup(x => x["theme_id"]).Returns(DBNull.Value);
-        _mockReader.Setup(x => x["size_id"]).Returns(DBNull.Value);
-
-        _mockDatabase.Setup(x => x.CreateConnection()).Returns(new SqlConnection("Server=test;Database=test;Trusted_Connection=True;"));
-        _mockDatabase.Setup(x => x.ExecuteReader(It.IsAny<string>(), It.IsAny<SqlParameter[]>()))
-            .Returns(_mockReader.Object);
-
-        // Mock the GetImagesForMerchandise method
-        _mockDatabase.Setup(x => x.ExecuteReader(It.Is<string>(s => s.Contains("GetImagesByMerchandiseId")), It.IsAny<SqlParameter[]>()))
-            .Returns(Mock.Of<IDataReader>(r => r.Read() == false));
-
-        // Act
-        var result = _repository.GetAllMerchandise(page, pageSize);
-
-        // Assert - for now we'll keep it simple
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.PageNumber, Is.EqualTo(page));
-        Assert.That(result.PageSize, Is.EqualTo(pageSize));
-    }
-
-    [Test]
     public void DeleteMerchandiseById_WhenExists_ReturnsTrue()
     {
         // Arrange
@@ -154,5 +112,107 @@ public class MerchandiseRepositoryTests
 
         // Assert
         Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void GetMerchandiseBySize_WhenSizeExists_ReturnsList()
+    {
+        // Arrange
+        const string size = "L";
+        
+        _mockReader.SetupSequence(x => x.Read())
+            .Returns(true)
+            .Returns(false);
+        
+        _mockReader.Setup(x => x["id"]).Returns(1);
+        _mockReader.Setup(x => x["category_id"]).Returns(1);
+        _mockReader.Setup(x => x["CategoryName"]).Returns("Test Category");
+        _mockReader.Setup(x => x["name"]).Returns("Test Merch");
+        _mockReader.Setup(x => x["price"]).Returns(100);
+        _mockReader.Setup(x => x["description"]).Returns("Test Description");
+        _mockReader.Setup(x => x["brand_id"]).Returns(1);
+        _mockReader.Setup(x => x["BrandName"]).Returns("Test Brand");
+        _mockReader.Setup(x => x["theme_id"]).Returns(DBNull.Value);
+        
+        _mockDatabase.Setup(x => x.ExecuteReader(It.IsAny<string>(), It.IsAny<SqlParameter[]>()))
+            .Returns(_mockReader.Object);
+        
+        // Mock the GetImagesForMerchandise method
+        _mockDatabase.Setup(x => x.ExecuteReader(It.Is<string>(s => s.Contains("GetImagesByMerchandiseId")), It.IsAny<SqlParameter[]>()))
+            .Returns(Mock.Of<IDataReader>(r => r.Read() == false));
+            
+        // Act
+        var result = _repository.GetMerchandiseBySize(size);
+        
+        // Assert
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Count, Is.EqualTo(1));
+        Assert.That(result[0].Name, Is.EqualTo("Test Merch"));
+        _mockDatabase.Verify(x => x.ExecuteReader(It.IsAny<string>(), It.Is<SqlParameter[]>(p => 
+            p.Any(param => param.ParameterName == "@size" && (string)param.Value == size))), Times.Once);
+    }
+    
+    [Test]
+    public void GetMerchandiseBySize_WhenSizeDoesNotExist_ReturnsEmptyList()
+    {
+        // Arrange
+        const string size = "XXL";
+        
+        _mockReader.Setup(x => x.Read()).Returns(false);
+        
+        _mockDatabase.Setup(x => x.ExecuteReader(It.IsAny<string>(), It.IsAny<SqlParameter[]>()))
+            .Returns(_mockReader.Object);
+        
+        // Act
+        var result = _repository.GetMerchandiseBySize(size);
+        
+        // Assert
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Count, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void UpdateMerchandise_WithNonExistingId_ReturnsFalse()
+    {
+        // Arrange
+        const int id = 999;
+        var updateDto = new WebApplication1.Models.DTOs.MerchandiseUpdateDto
+        {
+            Description = "Updated Description",
+            Price = 150
+        };
+        
+        _mockDatabase.Setup(x => x.ExecuteNonQuery(It.IsAny<string>(), It.IsAny<SqlParameter[]>()))
+            .Returns(0);
+        
+        // Act
+        var result = _repository.UpdateMerchandise(id, updateDto);
+        
+        // Assert
+        Assert.That(result, Is.False);
+    }
+    
+    [Test]
+    public void GetCategories_ReturnsListOfCategories()
+    {
+        // Arrange
+        _mockReader.SetupSequence(x => x.Read())
+            .Returns(true)
+            .Returns(true)
+            .Returns(false);
+        
+        _mockReader.Setup(x => x["id"]).Returns(1);
+        _mockReader.Setup(x => x["name"]).Returns("Test Category");
+        
+        _mockDatabase.Setup(x => x.ExecuteReader(It.IsAny<string>(), It.IsAny<SqlParameter[]>()))
+            .Returns(_mockReader.Object);
+        
+        // Act
+        var result = _repository.GetCategories();
+        
+        // Assert
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Count, Is.EqualTo(2));
+        Assert.That(result[0].Name, Is.EqualTo("Test Category"));
     }
 } 

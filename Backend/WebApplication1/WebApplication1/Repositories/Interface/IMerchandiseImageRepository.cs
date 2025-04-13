@@ -8,4 +8,4 @@ public interface IMerchandiseImageRepository
     Task<bool> DeleteImage(int imageId);
     Task<bool> SetPrimaryImage(int merchandiseId, int imageId);
     List<MerchandiseImageDto> GetMerchandiseImages(int merchandiseId);
-} 
+}

@@ -20,7 +20,7 @@ public class RatingController : ControllerBase
     [HttpPost("")]
     public IActionResult AddRating([FromBody] RatingCreateDto ratingCreateDto)
     {
-        if (!ModelState.IsValid) 
+        if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
         _logger.LogInformation("AddRating endpoint called with data: {Rating}", ratingCreateDto);
@@ -29,7 +29,7 @@ public class RatingController : ControllerBase
             var result = _ratingService.AddRating(ratingCreateDto);
             if (result)
                 return Ok(new { message = "Rating added successfully." });
-            
+
             return StatusCode(StatusCodes.Status500InternalServerError,
                 new { message = "An error occurred while adding the rating." });
         }

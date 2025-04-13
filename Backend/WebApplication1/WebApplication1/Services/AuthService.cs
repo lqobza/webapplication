@@ -26,16 +26,14 @@ public class AuthService : IAuthService
     public async Task<string> RegisterUserAsync(RegisterDto registerDto)
     {
         var existingUser = await _context.Users.SingleOrDefaultAsync(u => u.Email == registerDto.Email);
-        if (existingUser != null)
-        {
-            throw new ArgumentException("User already exists.");
-        }
+        if (existingUser != null) throw new ArgumentException("User already exists.");
 
-        byte[] salt = new byte[128 / 8];
+        var salt = new byte[128 / 8];
         using (var rng = RandomNumberGenerator.Create())
         {
             rng.GetBytes(salt);
         }
+
         var saltString = Convert.ToBase64String(salt);
         var passwordHash = HashPassword(registerDto.Password, salt);
 
@@ -56,30 +54,24 @@ public class AuthService : IAuthService
     public async Task<string> LoginAsync(LoginDto loginDto)
     {
         var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == loginDto.Email);
-        if (user == null)
-        {
-            throw new ArgumentException("Invalid email or password.");
-        }
+        if (user == null) throw new ArgumentException("Invalid email or password.");
 
         var salt = Convert.FromBase64String(user.PasswordSalt);
         var passwordHash = HashPassword(loginDto.Password, salt);
 
-        if (passwordHash != user.PasswordHash)
-        {
-            throw new ArgumentException("Invalid email or password.");
-        }
+        if (passwordHash != user.PasswordHash) throw new ArgumentException("Invalid email or password.");
 
         return GenerateJwtToken(user);
     }
 
     private string HashPassword(string password, byte[] salt)
     {
-        string hashed = Convert.ToBase64String(KeyDerivation.Pbkdf2(
-            password: password,
-            salt: salt,
-            prf: KeyDerivationPrf.HMACSHA256,
-            iterationCount: 10000,
-            numBytesRequested: 256 / 8));
+        var hashed = Convert.ToBase64String(KeyDerivation.Pbkdf2(
+            password,
+            salt,
+            KeyDerivationPrf.HMACSHA256,
+            10000,
+            256 / 8));
 
         return hashed;
     }
@@ -99,9 +91,9 @@ public class AuthService : IAuthService
         };
 
         var token = new JwtSecurityToken(
-            issuer: _configuration["Jwt:Issuer"],
-            audience: _configuration["Jwt:Audience"],
-            claims: claims,
+            _configuration["Jwt:Issuer"],
+            _configuration["Jwt:Audience"],
+            claims,
             expires: DateTime.Now.AddHours(3),
             signingCredentials: credentials);
 

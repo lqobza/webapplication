@@ -21,11 +21,8 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Register([FromBody] RegisterDto registerDto)
     {
         _logger.LogInformation("Registration attempt for user: {Email}", registerDto.Email);
-        
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
+
+        if (!ModelState.IsValid) return BadRequest(ModelState);
 
         try
         {
@@ -35,13 +32,13 @@ public class AuthController : ControllerBase
         }
         catch (ArgumentException ex)
         {
-            _logger.LogWarning("Registration failed for user: {Email}. Reason: {Message}", 
+            _logger.LogWarning("Registration failed for user: {Email}. Reason: {Message}",
                 registerDto.Email, ex.Message);
             return BadRequest(new { Message = ex.Message });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error during registration for user: {Email}", 
+            _logger.LogError(ex, "Unexpected error during registration for user: {Email}",
                 registerDto.Email);
             return StatusCode(500, new { Message = "An error occurred while processing your request." });
         }
@@ -51,11 +48,8 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
     {
         _logger.LogInformation("Login attempt for user: {Email}", loginDto.Email);
-        
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
+
+        if (!ModelState.IsValid) return BadRequest(ModelState);
 
         try
         {
@@ -65,13 +59,13 @@ public class AuthController : ControllerBase
         }
         catch (ArgumentException ex)
         {
-            _logger.LogWarning("Login failed for user: {Email}. Reason: {Message}", 
+            _logger.LogWarning("Login failed for user: {Email}. Reason: {Message}",
                 loginDto.Email, ex.Message);
             return BadRequest(new { Message = ex.Message });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error during login for user: {Email}", 
+            _logger.LogError(ex, "Unexpected error during login for user: {Email}",
                 loginDto.Email);
             return StatusCode(500, new { Message = "An error occurred while processing your request." });
         }

@@ -159,5 +159,32 @@ namespace TestProject1.ControllerTests
             Debug.Assert(statusCodeResult != null, nameof(statusCodeResult) + " != null");
             Assert.That(statusCodeResult.StatusCode, Is.EqualTo(500));
         }
+
+        [Test]
+        public void AddRating_RatingOutOfRange_ReturnsBadRequest()
+        {
+            // Arrange
+            var ratingCreateDto = new RatingCreateDto
+            {
+                MerchId = 1,
+                Rating = 6, // Out of range (should be 1-5)
+                Description = "Test rating"
+            };
+
+            _controller.ModelState.AddModelError("Rating", "The Rating must be between 1 and 5.");
+
+            // Act
+            var result = _controller.AddRating(ratingCreateDto);
+
+            // Assert
+            Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
+            var badRequestResult = result as BadRequestObjectResult;
+            Debug.Assert(badRequestResult != null, nameof(badRequestResult) + " != null");
+            
+            // Check that the ModelState error for Rating is included in the response
+            var value = badRequestResult.Value as SerializableError;
+            Debug.Assert(value != null, nameof(value) + " != null");
+            Assert.That(value.ContainsKey("Rating"), Is.True);
+        }
     }
 } 

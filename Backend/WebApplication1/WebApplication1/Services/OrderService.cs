@@ -21,39 +21,40 @@ public class OrderService : IOrderService
         try
         {
             _logger.LogInformation("Creating order with {ItemCount} items", orderCreateDto.Items.Count);
-            
+
             foreach (var item in orderCreateDto.Items)
-            {
-                _logger.LogInformation("Order item: MerchId={MerchId}, Size={Size}, Quantity={Quantity}, Price={Price}, IsCustom={IsCustom}",
+                _logger.LogInformation(
+                    "Order item: MerchId={MerchId}, Size={Size}, Quantity={Quantity}, Price={Price}, IsCustom={IsCustom}",
                     item.MerchId, item.Size, item.Quantity, item.Price, item.IsCustom);
-            }
-            
+
             var totalAmount = orderCreateDto.Items.Sum(i => i.Price);
 
             var orderId = await _orderRepository.InsertOrderAsync(orderCreateDto, totalAmount);
             _logger.LogInformation("Order created with ID: {OrderId}", orderId);
 
             foreach (var item in orderCreateDto.Items)
-            {
                 try
                 {
-                    _logger.LogInformation("Inserting order item for order {OrderId}: MerchId={MerchId}, Size={Size}, Quantity={Quantity}",
+                    _logger.LogInformation(
+                        "Inserting order item for order {OrderId}: MerchId={MerchId}, Size={Size}, Quantity={Quantity}",
                         orderId, item.MerchId, item.Size, item.Quantity);
-                    
+
                     await _orderRepository.InsertOrderItemAsync(orderId, item);
-                    
+
                     if (!item.IsCustom)
-                    {
-                        try {
-                            _logger.LogInformation("Updating stock for order {OrderId}, item: MerchId={MerchId}, Size={Size}, Quantity={Quantity}",
+                        try
+                        {
+                            _logger.LogInformation(
+                                "Updating stock for order {OrderId}, item: MerchId={MerchId}, Size={Size}, Quantity={Quantity}",
                                 orderId, item.MerchId, item.Size, item.Quantity);
-                                
+
                             await _orderRepository.UpdateStockAsync(item);
                         }
                         catch (InvalidOperationException ex) when (ex.Message.Contains("Insufficient stock"))
                         {
-                            _logger.LogWarning("Insufficient stock for item: {Item}. Rolling back order {OrderId}.", item, orderId);
-                            
+                            _logger.LogWarning("Insufficient stock for item: {Item}. Rolling back order {OrderId}.",
+                                item, orderId);
+
                             try
                             {
                                 await _orderRepository.DeleteOrderAsync(orderId);
@@ -62,15 +63,15 @@ public class OrderService : IOrderService
                             {
                                 _logger.LogError(rollbackEx, "Error rolling back order {OrderId}", orderId);
                             }
-                            
+
                             throw;
                         }
-                    }
                 }
-                catch (Exception ex) when (!(ex is InvalidOperationException && ex.Message.Contains("Insufficient stock")))
+                catch (Exception ex) when (!(ex is InvalidOperationException &&
+                                             ex.Message.Contains("Insufficient stock")))
                 {
                     _logger.LogError(ex, "Error inserting order item for order {OrderId}", orderId);
-                    
+
                     try
                     {
                         await _orderRepository.DeleteOrderAsync(orderId);
@@ -79,10 +80,9 @@ public class OrderService : IOrderService
                     {
                         _logger.LogError(rollbackEx, "Error rolling back order {OrderId}", orderId);
                     }
-                    
+
                     return InsertResult.Error;
                 }
-            }
 
             _logger.LogInformation("Order {OrderId} created successfully", orderId);
             return InsertResult.Success;

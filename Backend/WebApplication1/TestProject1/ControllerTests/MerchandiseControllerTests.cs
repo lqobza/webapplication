@@ -223,7 +223,7 @@ public class MerchandiseControllerTests
         var result = _controller.DeleteMerchandiseById(id);
         
         // Assert
-        Assert.That(result, Is.InstanceOf<NoContentResult>());
+        Assert.That(result, Is.InstanceOf<OkResult>());
     }
     
     [Test]
@@ -294,7 +294,7 @@ public class MerchandiseControllerTests
         };
         
         _mockMerchandiseService.Setup(s => s.UpdateMerchandise(id, updateDto)).Returns(true);
-        
+        _mockMerchandiseService.Setup(s => s.MerchandiseExists(id)).Returns(true);
         // Act
         var result = _controller.UpdateMerchandise(id, updateDto);
         
@@ -404,6 +404,142 @@ public class MerchandiseControllerTests
         
         // Act
         var result = _controller.CheckStockAvailability(id, size);
+        
+        // Assert
+        Assert.That(result, Is.InstanceOf<NotFoundObjectResult>());
+    }
+    
+    [Test]
+    public void SearchMerchandise_ValidParameters_ReturnsOkWithItems()
+    {
+        // Arrange
+        var searchParams = new MerchandiseSearchDto
+        {
+            Page = 1,
+            PageSize = 10,
+            MinPrice = 10,
+            MaxPrice = 100,
+            CategoryId = 1,
+            Keywords = "Test"
+        };
+        
+        var expectedResult = new PaginatedResponse<MerchandiseDto>
+        {
+            Items = new List<MerchandiseDto> { new() { Id = 1, Name = "Test Merchandise" } },
+            TotalCount = 1,
+            PageNumber = searchParams.Page,
+            PageSize = searchParams.PageSize,
+            TotalPages = 1,
+            HasNextPage = false,
+            HasPreviousPage = false
+        };
+        
+        _mockMerchandiseService.Setup(s => s.SearchMerchandise(searchParams)).Returns(expectedResult);
+        
+        // Act
+        var result = _controller.SearchMerchandise(searchParams);
+        
+        // Assert
+        Assert.That(result, Is.InstanceOf<OkObjectResult>());
+        var okResult = result as OkObjectResult;
+        Debug.Assert(okResult != null, nameof(okResult) + " != null");
+        Assert.That(okResult.Value, Is.EqualTo(expectedResult));
+    }
+    
+    [Test]
+    public void SearchMerchandise_InvalidParameters_ReturnsBadRequest()
+    {
+        // Arrange
+        var searchParams = new MerchandiseSearchDto
+        {
+            Page = 0,
+            PageSize = 0
+        };
+        
+        // Act
+        var result = _controller.SearchMerchandise(searchParams);
+        
+        // Assert
+        Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
+    }
+    
+    [Test]
+    public void SearchMerchandise_MinPriceGreaterThanMaxPrice_ReturnsBadRequest()
+    {
+        // Arrange
+        var searchParams = new MerchandiseSearchDto
+        {
+            Page = 1,
+            PageSize = 10,
+            MinPrice = 100,
+            MaxPrice = 50
+        };
+        
+        // Act
+        var result = _controller.SearchMerchandise(searchParams);
+        
+        // Assert
+        Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
+    }
+    
+    [Test]
+    public void SearchMerchandise_EmptyResult_ReturnsNotFound()
+    {
+        // Arrange
+        var searchParams = new MerchandiseSearchDto
+        {
+            Page = 1,
+            PageSize = 10
+        };
+        
+        var emptyResult = new PaginatedResponse<MerchandiseDto>
+        {
+            Items = new List<MerchandiseDto>(),
+            TotalCount = 0,
+            PageNumber = searchParams.Page,
+            PageSize = searchParams.PageSize,
+            TotalPages = 0
+        };
+        
+        _mockMerchandiseService.Setup(s => s.SearchMerchandise(searchParams)).Returns(emptyResult);
+        
+        // Act
+        var result = _controller.SearchMerchandise(searchParams);
+        
+        // Assert
+        Assert.That(result, Is.InstanceOf<NotFoundObjectResult>());
+    }
+    
+    [Test]
+    public void GetCategories_ReturnsOkWithCategories()
+    {
+        // Arrange
+        var categories = new List<CategoryDto>
+        {
+            new() { Id = 1, Name = "T-Shirts" },
+            new() { Id = 2, Name = "Hoodies" }
+        };
+        
+        _mockMerchandiseService.Setup(s => s.GetCategories()).Returns(categories);
+        
+        // Act
+        var result = _controller.GetCategories();
+        
+        // Assert
+        Assert.That(result, Is.InstanceOf<OkObjectResult>());
+        var okResult = result as OkObjectResult;
+        Debug.Assert(okResult != null, nameof(okResult) + " != null");
+        Assert.That(okResult.Value, Is.EqualTo(categories));
+    }
+    
+    [Test]
+    public void GetCategories_EmptyList_ReturnsNotFound()
+    {
+        // Arrange
+        _mockMerchandiseService.Setup(s => s.GetCategories()).Returns(new List<CategoryDto>());
+        
+        // Act
+        var result = _controller.GetCategories();
         
         // Assert
         Assert.That(result, Is.InstanceOf<NotFoundObjectResult>());

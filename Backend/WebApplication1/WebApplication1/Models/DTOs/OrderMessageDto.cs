@@ -14,4 +14,4 @@ public class OrderMessageCreateDto
     public int OrderId { get; set; }
     public string Content { get; set; } = string.Empty;
     public bool IsFromAdmin { get; set; }
-} 
+}

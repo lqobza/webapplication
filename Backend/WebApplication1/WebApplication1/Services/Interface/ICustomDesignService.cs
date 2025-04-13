@@ -8,4 +8,4 @@ public interface ICustomDesignService
     Task<List<CustomDesignDto>> GetDesignsByUserIdAsync(string userId);
     Task<CustomDesignDto?> GetDesignByIdAsync(int id);
     Task DeleteDesignAsync(int id);
-} 
+}

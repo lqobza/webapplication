@@ -341,7 +341,7 @@ namespace TestProject1.ControllerTests
             {
                 Id = designId,
                 Name = "Test Design",
-                UserId = userId  // Different from the current user
+                UserId = userId
             };
             
             _mockCustomDesignService.Setup(s => s.GetDesignByIdAsync(designId))

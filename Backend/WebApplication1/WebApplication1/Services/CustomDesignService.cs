@@ -18,7 +18,7 @@ public class CustomDesignService : ICustomDesignService
     public async Task<int> CreateDesignAsync(CustomDesignCreateDto design)
     {
         _logger.LogInformation("Creating design for user {UserId} with name {DesignName}", design.UserId, design.Name);
-        
+
         try
         {
             var designId = await _customDesignRepository.CreateDesignAsync(design);
@@ -35,7 +35,7 @@ public class CustomDesignService : ICustomDesignService
     public async Task<List<CustomDesignDto>> GetDesignsByUserIdAsync(string userId)
     {
         _logger.LogInformation("Getting designs for user {UserId}", userId);
-        
+
         try
         {
             var designs = await _customDesignRepository.GetDesignsByUserIdAsync(userId);
@@ -52,18 +52,14 @@ public class CustomDesignService : ICustomDesignService
     public async Task<CustomDesignDto?> GetDesignByIdAsync(int id)
     {
         _logger.LogInformation("Getting design with ID {DesignId}", id);
-        
+
         try
         {
             var design = await _customDesignRepository.GetDesignByIdAsync(id);
             if (design == null)
-            {
                 _logger.LogWarning("Design with ID {DesignId} not found", id);
-            }
             else
-            {
                 _logger.LogInformation("Retrieved design with ID {DesignId}", id);
-            }
             return design;
         }
         catch (Exception ex)
@@ -76,7 +72,7 @@ public class CustomDesignService : ICustomDesignService
     public async Task DeleteDesignAsync(int id)
     {
         _logger.LogInformation("Deleting design with ID {DesignId}", id);
-        
+
         try
         {
             await _customDesignRepository.DeleteDesignAsync(id);
@@ -88,4 +84,4 @@ public class CustomDesignService : ICustomDesignService
             throw;
         }
     }
-} 
+}

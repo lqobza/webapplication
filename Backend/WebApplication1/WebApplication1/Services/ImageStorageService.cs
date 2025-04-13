@@ -5,7 +5,7 @@ namespace WebApplication1.Services;
 public class FileSystemImageService : IImageStorageService
 {
     private readonly string _imageDirectory;
-    
+
     public FileSystemImageService(IConfiguration configuration)
     {
         _imageDirectory = configuration["ImageStorage:Path"] ?? "wwwroot/images/merchandise";
@@ -16,13 +16,13 @@ public class FileSystemImageService : IImageStorageService
     {
         var merchPath = Path.Combine(_imageDirectory, merchandiseId);
         Directory.CreateDirectory(merchPath);
-        
+
         var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
         var filePath = Path.Combine(merchPath, fileName);
-        
+
         using var stream = new FileStream(filePath, FileMode.Create);
         await file.CopyToAsync(stream);
-        
+
         return $"/images/merchandise/{merchandiseId}/{fileName}";
     }
 
@@ -32,11 +32,8 @@ public class FileSystemImageService : IImageStorageService
         {
             path = path.Replace("/images/merchandise/", "");
             var fullPath = Path.Combine(_imageDirectory, path);
-            
-            if (File.Exists(fullPath))
-            {
-                File.Delete(fullPath);
-            }
+
+            if (File.Exists(fullPath)) File.Delete(fullPath);
         }
     }
 

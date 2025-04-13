@@ -19,10 +19,12 @@ public class Startup
     {
         var builder = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-            .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", optional: true)
+            .AddJsonFile("appsettings.json", false, true)
+            .AddJsonFile(
+                $"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json",
+                true)
             .AddEnvironmentVariables()
-            .AddUserSecrets<Startup>(optional: true);
+            .AddUserSecrets<Startup>(true);
 
         _configuration = builder.Build();
     }
@@ -40,22 +42,19 @@ public class Startup
                         .AllowCredentials();
                 });
         });
-        
+
         // Register the DbContext with dependency injection
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer(_configuration.GetConnectionString("DefaultConnection")));
- 
+
         services.AddControllers();
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen();
         services.AddHttpClient();
-        
+
         var jwtKey = _configuration["Jwt:Key"];
-        if (string.IsNullOrEmpty(jwtKey))
-        {
-            throw new ArgumentNullException("JWT Key is not configured properly.");
-        }
-        
+        if (string.IsNullOrEmpty(jwtKey)) throw new ArgumentNullException("JWT Key is not configured properly.");
+
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
@@ -76,7 +75,7 @@ public class Startup
             options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
         });
 
-        
+
         services.AddScoped<IMerchandiseRepository, MerchandiseRepository>();
         services.AddScoped<IRatingRepository, RatingRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();

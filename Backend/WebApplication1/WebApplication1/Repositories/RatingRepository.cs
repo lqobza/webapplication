@@ -22,7 +22,7 @@ public class RatingRepository : BaseRepository, IRatingRepository
 
         const string checkMerchCommand = "SELECT COUNT(*) FROM Merch WHERE id = @MerchId";
         using var checkCommand = new SqlCommand(checkMerchCommand, connection);
-        
+
         checkCommand.Parameters.Add("@MerchId", SqlDbType.Int).Value = ratingCreateDto.MerchId;
         var merchExists = (int)checkCommand.ExecuteScalar() > 0;
 
@@ -32,9 +32,10 @@ public class RatingRepository : BaseRepository, IRatingRepository
             throw new ArgumentException("Invalid Merch ID");
         }
 
-        const string insertCommand = "INSERT INTO Ratings (merch_id, rating, description) VALUES (@MerchId, @Rating, @Description)";
+        const string insertCommand =
+            "INSERT INTO Ratings (merch_id, rating, description) VALUES (@MerchId, @Rating, @Description)";
         using var command = new SqlCommand(insertCommand, connection);
-        
+
         command.Parameters.Add("@MerchId", SqlDbType.Int).Value = ratingCreateDto.MerchId;
         command.Parameters.Add("@Rating", SqlDbType.Int).Value = ratingCreateDto.Rating;
         command.Parameters.Add("@Description", SqlDbType.NVarChar, 255).Value =
@@ -55,7 +56,7 @@ public class RatingRepository : BaseRepository, IRatingRepository
         command.Parameters.Add("@MerchId", SqlDbType.Int).Value = merchId;
 
         using var reader = command.ExecuteReader();
-        
+
         while (reader.Read())
         {
             var rating = new RatingDto

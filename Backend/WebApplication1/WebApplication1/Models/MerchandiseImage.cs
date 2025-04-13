@@ -7,6 +7,6 @@ public class MerchandiseImage
     public string ImageUrl { get; set; } = string.Empty;
     public bool IsPrimary { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    
+
     public virtual Merchandise Merchandise { get; set; } = null!;
-} 
+}

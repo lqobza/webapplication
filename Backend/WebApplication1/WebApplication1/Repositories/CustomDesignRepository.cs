@@ -30,10 +30,7 @@ public class CustomDesignRepository : BaseRepository, ICustomDesignRepository
         };
 
         var result = _db.ExecuteScalar(query, parameters);
-        if (result == null)
-        {
-            throw new InvalidOperationException("Failed to get the inserted design ID");
-        }
+        if (result == null) throw new InvalidOperationException("Failed to get the inserted design ID");
         return Task.FromResult(Convert.ToInt32(result));
     }
 
@@ -76,7 +73,6 @@ public class CustomDesignRepository : BaseRepository, ICustomDesignRepository
         using var reader = _db.ExecuteReader(query, parameters);
 
         if (reader.Read())
-        {
             return Task.FromResult(new CustomDesignDto
             {
                 Id = (int)reader["id"],
@@ -86,7 +82,6 @@ public class CustomDesignRepository : BaseRepository, ICustomDesignRepository
                 BackImage = (string)reader["back_image"],
                 CreatedAt = (DateTime)reader["created_at"]
             })!;
-        }
 
         return Task.FromResult<CustomDesignDto?>(null);
     }
@@ -102,4 +97,4 @@ public class CustomDesignRepository : BaseRepository, ICustomDesignRepository
         _db.ExecuteNonQuery(query, parameters);
         return Task.CompletedTask;
     }
-} 
+}

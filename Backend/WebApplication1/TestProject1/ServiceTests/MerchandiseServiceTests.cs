@@ -259,21 +259,6 @@ public class MerchandiseServiceTests
     }
 
     [Test]
-    public async Task DeleteMerchandiseImage_ExistingImage_ReturnsTrue()
-    {
-        // Arrange
-        _mockImageRepository.Setup(x => x.DeleteImage(1))
-            .ReturnsAsync(true);
-
-        // Act
-        var result = await _merchandiseService.DeleteMerchandiseImage(1);
-
-        // Assert
-        Assert.That(result, Is.True);
-        _mockImageRepository.Verify(x => x.DeleteImage(1), Times.Once);
-    }
-
-    [Test]
     public async Task SetPrimaryImage_ValidData_ReturnsTrue()
     {
         // Arrange

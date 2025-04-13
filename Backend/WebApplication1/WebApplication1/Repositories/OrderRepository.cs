@@ -20,7 +20,7 @@ public class OrderRepository : BaseRepository, IOrderRepository
     {
         _logger.LogInformation("Creating order for customer {CustomerName}, total amount: {TotalAmount}",
             orderCreateDto.CustomerName, totalAmount);
-        
+
         const string command = @"
             INSERT INTO Orders (order_date, total_amount, customer_name, customer_email, customer_address, status, user_id)
             OUTPUT INSERTED.ID
@@ -39,11 +39,8 @@ public class OrderRepository : BaseRepository, IOrderRepository
             };
 
             var result = _db.ExecuteScalar(command, parameters);
-            if (result == null)
-            {
-                throw new InvalidOperationException("Failed to get the inserted order ID");
-            }
-            
+            if (result == null) throw new InvalidOperationException("Failed to get the inserted order ID");
+
             var orderId = Convert.ToInt32(result);
             _logger.LogInformation("Order created successfully with ID: {OrderId}", orderId);
             return Task.FromResult(orderId);
@@ -62,12 +59,15 @@ public class OrderRepository : BaseRepository, IOrderRepository
 
     public Task InsertOrderItemAsync(int orderId, OrderItemDto item)
     {
-        _logger.LogInformation("Inserting order item for order {OrderId}: MerchId={MerchId}, Size={Size}, Quantity={Quantity}",
+        _logger.LogInformation(
+            "Inserting order item for order {OrderId}: MerchId={MerchId}, Size={Size}, Quantity={Quantity}",
             orderId, item.MerchId, item.Size, item.Quantity);
 
-        var command = item.MerchId == null ? @"
+        var command = item.MerchId == null
+            ? @"
             INSERT INTO OrderItems (order_id, size, quantity, price, merchandise_name, image_url, is_custom)
-            VALUES (@orderId, @size, @quantity, @price, @merchandiseName, @imageUrl, @isCustom)" : @"
+            VALUES (@orderId, @size, @quantity, @price, @merchandiseName, @imageUrl, @isCustom)"
+            : @"
             INSERT INTO OrderItems (order_id, merch_id, size, quantity, price, merchandise_name, image_url, is_custom)
             VALUES (@orderId, @merchId, @size, @quantity, @price, @merchandiseName, @imageUrl, @isCustom)";
 
@@ -75,14 +75,11 @@ public class OrderRepository : BaseRepository, IOrderRepository
         {
             var parameters = new List<SqlParameter>
             {
-                new SqlParameter("@orderId", orderId)
+                new("@orderId", orderId)
             };
-            
-            if (item.MerchId != null)
-            {
-                parameters.Add(new SqlParameter("@merchId", item.MerchId));
-            }
-            
+
+            if (item.MerchId != null) parameters.Add(new SqlParameter("@merchId", item.MerchId));
+
             parameters.AddRange(new[]
             {
                 new SqlParameter("@size", item.Size),
@@ -94,12 +91,13 @@ public class OrderRepository : BaseRepository, IOrderRepository
             });
 
             _db.ExecuteNonQuery(command, parameters.ToArray());
-            
+
             _logger.LogInformation("Successfully inserted order item for order {OrderId}", orderId);
         }
         catch (SqlException ex)
         {
-            _logger.LogError(ex, "SQL error inserting order item for order {OrderId}: {ErrorMessage}", orderId, ex.Message);
+            _logger.LogError(ex, "SQL error inserting order item for order {OrderId}: {ErrorMessage}", orderId,
+                ex.Message);
             throw;
         }
         catch (Exception ex)
@@ -113,12 +111,9 @@ public class OrderRepository : BaseRepository, IOrderRepository
 
     public Task UpdateStockAsync(OrderItemDto item)
     {
-        if (item.IsCustom || item.MerchId == null || item.MerchId <= 0)
-        {
-            return Task.CompletedTask;
-        }
+        if (item.IsCustom || item.MerchId == null || item.MerchId <= 0) return Task.CompletedTask;
 
-        _logger.LogInformation("Updating stock for item: MerchId={MerchId}, Size={Size}, Quantity={Quantity}", 
+        _logger.LogInformation("Updating stock for item: MerchId={MerchId}, Size={Size}, Quantity={Quantity}",
             item.MerchId, item.Size, item.Quantity);
 
         const string command = @"
@@ -133,26 +128,27 @@ public class OrderRepository : BaseRepository, IOrderRepository
             new SqlParameter("@size", item.Size)
         };
 
-        _logger.LogInformation("Executing stock check query for MerchId={MerchId}, Size={Size}", 
+        _logger.LogInformation("Executing stock check query for MerchId={MerchId}, Size={Size}",
             item.MerchId, item.Size);
 
         var result = _db.ExecuteScalar(command, parameters);
 
         if (result == null)
         {
-            _logger.LogWarning("Item with ID {MerchId} and size {Size} not found in stock", 
+            _logger.LogWarning("Item with ID {MerchId} and size {Size} not found in stock",
                 item.MerchId, item.Size);
             throw new InvalidOperationException($"Item with ID {item.MerchId} and size {item.Size} not found in stock");
         }
 
         var availableStock = Convert.ToInt32(result);
         var merchandiseName = result.ToString();
-        _logger.LogInformation("Found stock information: MerchId={MerchId}, Size={Size}, Available={Available}", 
+        _logger.LogInformation("Found stock information: MerchId={MerchId}, Size={Size}, Available={Available}",
             item.MerchId, item.Size, availableStock);
 
         if (availableStock < item.Quantity)
         {
-            _logger.LogWarning("Insufficient stock for '{MerchandiseName}' (Size: {Size}). Requested: {Requested}, Available: {Available}", 
+            _logger.LogWarning(
+                "Insufficient stock for '{MerchandiseName}' (Size: {Size}). Requested: {Requested}, Available: {Available}",
                 merchandiseName, item.Size, item.Quantity, availableStock);
             throw new InvalidOperationException(
                 $"Insufficient stock for '{merchandiseName}' (Size: {item.Size}). " +
@@ -171,12 +167,13 @@ public class OrderRepository : BaseRepository, IOrderRepository
             new SqlParameter("@quantity", item.Quantity)
         };
 
-        _logger.LogInformation("Executing stock update query for MerchId={MerchId}, Size={Size}, Quantity={Quantity}", 
+        _logger.LogInformation("Executing stock update query for MerchId={MerchId}, Size={Size}, Quantity={Quantity}",
             item.MerchId, item.Size, item.Quantity);
 
         _db.ExecuteNonQuery(updateStockCommand, updateParameters);
 
-        _logger.LogInformation("Successfully updated stock for '{MerchandiseName}' (Size: {Size}). New stock: {NewStock}", 
+        _logger.LogInformation(
+            "Successfully updated stock for '{MerchandiseName}' (Size: {Size}). New stock: {NewStock}",
             merchandiseName, item.Size, availableStock - item.Quantity);
         return Task.CompletedTask;
     }
@@ -259,7 +256,8 @@ public class OrderRepository : BaseRepository, IOrderRepository
                 Size = (string)reader["size"],
                 Quantity = (int)reader["quantity"],
                 Price = (decimal)reader["price"],
-                MerchandiseName = reader["merchandise_name"] != DBNull.Value ? (string)reader["merchandise_name"] : null,
+                MerchandiseName =
+                    reader["merchandise_name"] != DBNull.Value ? (string)reader["merchandise_name"] : null,
                 ImageUrl = reader["image_url"] != DBNull.Value ? (string)reader["image_url"] : null,
                 IsCustom = reader["is_custom"] != DBNull.Value && (bool)reader["is_custom"]
             };
@@ -330,9 +328,9 @@ public class OrderRepository : BaseRepository, IOrderRepository
         };
 
         using var reader = _db.ExecuteReader(command, parameters);
-        
+
         var message = new OrderMessageDto();
-        
+
         if (reader.Read())
         {
             message.Id = (int)reader["Id"];
@@ -345,7 +343,7 @@ public class OrderRepository : BaseRepository, IOrderRepository
         {
             throw new InvalidOperationException("Failed to get the inserted message");
         }
-        
+
         return Task.FromResult(message);
     }
 
@@ -385,9 +383,9 @@ public class OrderRepository : BaseRepository, IOrderRepository
     public async Task DeleteOrderAsync(int orderId)
     {
         _logger.LogInformation("Deleting order with ID: {OrderId}", orderId);
-        
+
         const string deleteItemsCommand = @"DELETE FROM OrderItems WHERE order_id = @orderId";
-        
+
         const string deleteMessagesCommand = @"
         IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'OrderMessages')
         BEGIN
@@ -400,11 +398,11 @@ public class OrderRepository : BaseRepository, IOrderRepository
                 DELETE FROM OrderMessages WHERE OrderId = @orderId
             END
         END";
-        
+
         const string deleteOrderCommand = @"DELETE FROM Orders WHERE id = @orderId";
-        
+
         using var transaction = await _db.BeginTransactionAsync();
-        
+
         try
         {
             var deleteItemsParameters = new[]
@@ -414,7 +412,7 @@ public class OrderRepository : BaseRepository, IOrderRepository
 
             var itemsDeleted = _db.ExecuteNonQuery(deleteItemsCommand, deleteItemsParameters, transaction);
             _logger.LogInformation("Deleted {Count} order items for order {OrderId}", itemsDeleted, orderId);
-            
+
             try
             {
                 var deleteMessagesParameters = new[]
@@ -427,9 +425,11 @@ public class OrderRepository : BaseRepository, IOrderRepository
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error deleting order messages for order {OrderId}. This is not critical and the deletion process will continue.", orderId);
+                _logger.LogWarning(ex,
+                    "Error deleting order messages for order {OrderId}. This is not critical and the deletion process will continue.",
+                    orderId);
             }
-            
+
             var deleteOrderParameters = new[]
             {
                 new SqlParameter("@orderId", orderId)
@@ -437,7 +437,7 @@ public class OrderRepository : BaseRepository, IOrderRepository
 
             var orderDeleted = _db.ExecuteNonQuery(deleteOrderCommand, deleteOrderParameters, transaction);
             _logger.LogInformation("Deleted order {OrderId}: {Success}", orderId, orderDeleted > 0);
-            
+
             transaction.Commit();
             _logger.LogInformation("Order {OrderId} deleted successfully", orderId);
         }
@@ -448,7 +448,7 @@ public class OrderRepository : BaseRepository, IOrderRepository
             throw;
         }
         finally
-        { 
+        {
             transaction.Connection?.Close();
         }
     }

@@ -12,7 +12,7 @@ public interface IOrderRepository
     Task<OrderDto?> GetOrderByIdAsync(int id);
     Task UpdateOrderStatusAsync(int orderId, string status);
     Task DeleteOrderAsync(int orderId);
-    
+
     Task<OrderMessageDto> AddOrderMessageAsync(OrderMessageCreateDto messageDto);
     Task<List<OrderMessageDto>> GetOrderMessagesAsync(int orderId);
 }

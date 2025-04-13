@@ -12,7 +12,8 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
     private readonly IRatingRepository _ratingRepository;
     private readonly IDatabaseWrapper _db;
 
-    public MerchandiseRepository(IRatingRepository ratingRepository, IDatabaseWrapper databaseWrapper, ILogger<MerchandiseRepository> logger)
+    public MerchandiseRepository(IRatingRepository ratingRepository, IDatabaseWrapper databaseWrapper,
+        ILogger<MerchandiseRepository> logger)
         : base(databaseWrapper)
     {
         _ratingRepository = ratingRepository;
@@ -75,16 +76,13 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
             };
 
             if (reader["theme_id"] != DBNull.Value)
-            {
                 merchandise.Themes.Add(new ThemeDto
                 {
                     Id = (int)reader["theme_id"],
                     Name = (string)reader["theme_name"]
                 });
-            }
 
             if (reader["size_id"] != DBNull.Value)
-            {
                 merchandise.Sizes.Add(new MerchSizeDto
                 {
                     Id = (int)reader["size_id"],
@@ -92,7 +90,6 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
                     Size = reader["size_name"] == DBNull.Value ? null : (string)reader["size_name"],
                     InStock = (int)reader["size_in_stock"]
                 });
-            }
 
             merchandise.Images = GetImagesForMerchandise(merchandise.Id);
 
@@ -106,7 +103,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
             PageNumber = page,
             PageSize = pageSize,
             TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
-            HasNextPage = (page * pageSize) < totalCount,
+            HasNextPage = page * pageSize < totalCount,
             HasPreviousPage = page > 1
         };
     }
@@ -144,7 +141,6 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
                 var ratingId = (int)reader["rating_id"];
                 if (merchandise.Ratings != null &&
                     merchandise.Ratings.All(r => r.Id != ratingId))
-                {
                     merchandise.Ratings.Add(new RatingDto
                     {
                         Id = ratingId,
@@ -155,27 +151,23 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
                             : (string)reader["rating_description"],
                         CreatedAt = (DateTime)reader["rating_created_at"]
                     });
-                }
             }
 
             if (reader["theme_id"] != DBNull.Value)
             {
                 var themeId = (int)reader["theme_id"];
                 if (merchandise.Themes != null && merchandise.Themes.All(t => t.Id != themeId))
-                {
                     merchandise.Themes.Add(new ThemeDto
                     {
                         Id = themeId,
                         Name = (string)reader["theme_name"]
                     });
-                }
             }
 
             if (reader["size_id"] != DBNull.Value)
             {
                 var sizeId = (int)reader["size_id"];
                 if (merchandise.Sizes != null && merchandise.Sizes.All(s => s.Id != sizeId))
-                {
                     merchandise.Sizes.Add(new MerchSizeDto
                     {
                         Id = sizeId,
@@ -183,7 +175,6 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
                         Size = reader["size_name"] == DBNull.Value ? null : (string)reader["size_name"],
                         InStock = (int)reader["size_in_stock"]
                     });
-                }
             }
 
             merchandise.Images = GetImagesForMerchandise(merchandise.Id);
@@ -302,7 +293,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
         {
             new SqlParameter("@id", id)
         };
-        
+
         var rowsAffected = _db.ExecuteNonQuery(command, parameters);
         return rowsAffected >= 1;
     }
@@ -314,7 +305,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
             var updateFields = new List<string>();
             const string updateCommand = "[dbo].[UpdateMerchandise]";
             var parameters = new List<SqlParameter>();
-            
+
             if (merchandiseUpdateDto.Price.HasValue)
             {
                 updateFields.Add("price = @Price");
@@ -327,34 +318,34 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
                 parameters.Add(new SqlParameter("@Description", merchandiseUpdateDto.Description));
             }
 
-            if (!updateFields.Any() && merchandiseUpdateDto.Sizes == null) 
+            if (!updateFields.Any() && merchandiseUpdateDto.Sizes == null)
                 throw new ArgumentException("No fields to update.");
 
             parameters.Add(new SqlParameter("@Id", id));
-            
+
             var rowsAffected = _db.ExecuteNonQuery(updateCommand, parameters.ToArray());
 
             if (merchandiseUpdateDto.Sizes == null || !merchandiseUpdateDto.Sizes.Any()) return rowsAffected > 0;
-            
+
             var currentSizes = GetSizesByMerchId(id);
-                
+
             foreach (var sizeDto in merchandiseUpdateDto.Sizes)
             {
                 var existingSize = currentSizes.FirstOrDefault(s => s.Size == sizeDto.Size);
-                    
+
                 if (existingSize != null)
                 {
                     const string updateSizeCommand = @"
                             UPDATE MerchSize 
                             SET instock = @InStock 
                             WHERE id = @SizeId";
-                            
+
                     var sizeParams = new[]
                     {
                         new SqlParameter("@SizeId", existingSize.Id),
                         new SqlParameter("@InStock", sizeDto.InStock)
                     };
-                        
+
                     _db.ExecuteNonQuery(updateSizeCommand, sizeParams);
                     rowsAffected++;
                 }
@@ -363,28 +354,28 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
                     const string insertSizeCommand = @"
                             INSERT INTO MerchSize (merch_id, size, instock)
                             VALUES (@MerchId, @Size, @InStock)";
-                            
+
                     var sizeParams = new[]
                     {
                         new SqlParameter("@MerchId", id),
                         new SqlParameter("@Size", sizeDto.Size),
                         new SqlParameter("@InStock", sizeDto.InStock)
                     };
-                        
+
                     _db.ExecuteNonQuery(insertSizeCommand, sizeParams);
                     rowsAffected++;
                 }
             }
-                
+
             var sizesToRemove = currentSizes
                 .Where(cs => !merchandiseUpdateDto.Sizes.Any(us => us.Size == cs.Size))
                 .ToList();
-                
+
             foreach (var sizeToRemove in sizesToRemove)
             {
                 const string deleteSizeCommand = "DELETE FROM MerchSize WHERE id = @SizeId";
                 var deleteParams = new[] { new SqlParameter("@SizeId", sizeToRemove.Id) };
-                    
+
                 _db.ExecuteNonQuery(deleteSizeCommand, deleteParams);
                 rowsAffected++;
             }
@@ -416,14 +407,14 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
                 .Cast<ApparelSize>()
                 .Select(e => e.ToString())
                 .ToList(),
-            
+
             4 => Enum.GetValues(typeof(ApparelSize))
                 .Cast<ApparelSize>()
                 .Select(e => e.ToString())
                 .ToList(),
-            
+
             5 => null,
-            
+
             6 => Enum.GetValues(typeof(ShoeSize))
                 .Cast<ShoeSize>()
                 .Select(e => e.ToString())
@@ -499,10 +490,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
         }
         catch (SqlException ex)
         {
-            if (ex.Message.Contains("already exists"))
-            {
-                return -1;
-            }
+            if (ex.Message.Contains("already exists")) return -1;
 
             throw;
         }
@@ -523,10 +511,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
         }
         catch (SqlException ex)
         {
-            if (ex.Message.Contains("already exists"))
-            {
-                return -1;
-            }
+            if (ex.Message.Contains("already exists")) return -1;
 
             throw;
         }
@@ -615,7 +600,6 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
         using var reader = _db.ExecuteReader(command, parameters);
 
         while (reader.Read())
-        {
             images.Add(new MerchandiseImage
             {
                 Id = (int)reader["id"],
@@ -624,7 +608,6 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
                 IsPrimary = (bool)reader["IsPrimary"],
                 CreatedAt = reader["CreatedAt"] != DBNull.Value ? (DateTime)reader["CreatedAt"] : DateTime.UtcNow
             });
-        }
 
         return images;
     }
@@ -637,13 +620,13 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
         const string command = "[dbo].[SearchMerchandise]";
         var parameters = new List<SqlParameter>
         {
-            new SqlParameter("@PageNumber", searchParams.Page),
-            new SqlParameter("@PageSize", searchParams.PageSize),
-            new SqlParameter("@Keywords", (object?)searchParams.Keywords ?? DBNull.Value),
-            new SqlParameter("@MinPrice", (object?)searchParams.MinPrice ?? DBNull.Value),
-            new SqlParameter("@MaxPrice", (object?)searchParams.MaxPrice ?? DBNull.Value),
-            new SqlParameter("@CategoryId", (object?)searchParams.CategoryId ?? DBNull.Value),
-            new SqlParameter("@SortBy", (object?)(searchParams.SortBy?.ToString() ?? "") ?? DBNull.Value)
+            new("@PageNumber", searchParams.Page),
+            new("@PageSize", searchParams.PageSize),
+            new("@Keywords", (object?)searchParams.Keywords ?? DBNull.Value),
+            new("@MinPrice", (object?)searchParams.MinPrice ?? DBNull.Value),
+            new("@MaxPrice", (object?)searchParams.MaxPrice ?? DBNull.Value),
+            new("@CategoryId", (object?)searchParams.CategoryId ?? DBNull.Value),
+            new("@SortBy", (object?)(searchParams.SortBy?.ToString() ?? "") ?? DBNull.Value)
         };
 
         using var reader = _db.ExecuteReader(command, parameters.ToArray());
@@ -668,16 +651,13 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
             };
 
             if (reader["theme_id"] != DBNull.Value)
-            {
                 merchandise.Themes.Add(new ThemeDto
                 {
                     Id = (int)reader["theme_id"],
                     Name = (string)reader["theme_name"]
                 });
-            }
 
             if (reader["size_id"] != DBNull.Value)
-            {
                 merchandise.Sizes.Add(new MerchSizeDto
                 {
                     Id = (int)reader["size_id"],
@@ -685,7 +665,6 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
                     Size = reader["size_name"] == DBNull.Value ? null : (string)reader["size_name"],
                     InStock = (int)reader["size_in_stock"]
                 });
-            }
 
             merchandise.Images = GetImagesForMerchandise(merchandise.Id);
 
@@ -699,7 +678,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
             PageNumber = searchParams.Page,
             PageSize = searchParams.PageSize,
             TotalPages = (int)Math.Ceiling(totalCount / (double)searchParams.PageSize),
-            HasNextPage = (searchParams.Page * searchParams.PageSize) < totalCount,
+            HasNextPage = searchParams.Page * searchParams.PageSize < totalCount,
             HasPreviousPage = searchParams.Page > 1
         };
     }
