@@ -125,8 +125,12 @@ describe('AdminOrdersComponent', () => {
     const newStatus = OrderStatus.Shipped;
     const originalStatus = OrderStatus.Processing;
     
-    // Create a deep copy of the order to preserve the initial status
-    const originalOrder = JSON.parse(JSON.stringify(mockOrders[0]));
+    // Make sure the order has the original status
+    const order = component.orders.find(o => o.id === orderId);
+    if (order) {
+      order.status = originalStatus;
+      component.originalStatuses.set(orderId, originalStatus);
+    }
     
     // Set up the error response
     orderServiceMock.updateOrderStatus.and.returnValue(throwError(() => new Error('Server error')));
@@ -134,14 +138,9 @@ describe('AdminOrdersComponent', () => {
     // Spy on window.alert to avoid actual alerts during testing
     spyOn(window, 'alert');
     
-    // Update the test to not manually set originalStatuses
-    const order = component.orders.find(o => o.id === orderId);
-    if (order) {
-      order.status = originalStatus;
-    }
-    
     component.updateOrderStatus(orderId, newStatus);
     
+    // After error, status should be reset to original
     const updatedOrder = component.orders.find(o => o.id === orderId);
     expect(updatedOrder?.status).toBe(originalStatus);
     expect(window.alert).toHaveBeenCalledWith('Failed to update order status. Please try again later.');

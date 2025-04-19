@@ -54,10 +54,6 @@
       </div>
     </div>
 
-    <div class="error-message" *ngIf="error">
-      {{ error }}
-    </div>
-
     <button type="submit" [disabled]="registerForm.invalid || loading">
       {{ loading ? 'Registering...' : 'Register' }}
     </button>

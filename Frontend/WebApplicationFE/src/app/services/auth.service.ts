@@ -42,9 +42,7 @@ export class AuthService {
       username,
       email,
       password
-    }).pipe(
-      catchError(this.errorHandler.handleError('register'))
-    );
+    });
   }
 
   logout() {

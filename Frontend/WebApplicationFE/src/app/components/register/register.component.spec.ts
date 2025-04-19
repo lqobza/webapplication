@@ -1,39 +1,40 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ReactiveFormsModule } from '@angular/forms';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { RegisterComponent } from './register.component';
 import { AuthService } from '../../services/auth.service';
 import { CommonModule } from '@angular/common';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { By } from '@angular/platform-browser';
 
 describe('RegisterComponent', () => {
   let component: RegisterComponent;
-  let fixture: ComponentFixture<RegisterComponent>;
   let authServiceMock: jasmine.SpyObj<AuthService>;
   let routerMock: jasmine.SpyObj<Router>;
+  let snackBarMock: jasmine.SpyObj<MatSnackBar>;
+  let formBuilder: FormBuilder;
 
-  beforeEach(async () => {
+  beforeEach(() => {
+    // Create the spies
     authServiceMock = jasmine.createSpyObj('AuthService', ['register', 'login']);
     routerMock = jasmine.createSpyObj('Router', ['navigate']);
+    snackBarMock = jasmine.createSpyObj('MatSnackBar', ['open']);
+    formBuilder = new FormBuilder();
 
-    // Setup TestBed
-    await TestBed.configureTestingModule({
-      imports: [ReactiveFormsModule, CommonModule],
-      providers: [
-        { provide: AuthService, useValue: authServiceMock },
-        { provide: Router, useValue: routerMock }
-      ]
-    }).compileComponents();
-
-    // Initialize authService.currentUserValue to null
+    // Define the currentUserValue getter
     Object.defineProperty(authServiceMock, 'currentUserValue', {
       get: () => null
     });
 
-    // Create component
-    fixture = TestBed.createComponent(RegisterComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+    // Create the component directly
+    component = new RegisterComponent(
+      authServiceMock,
+      routerMock,
+      formBuilder,
+      snackBarMock
+    );
   });
 
   it('should create', () => {
@@ -103,7 +104,7 @@ describe('RegisterComponent', () => {
     expect(component.registerForm.get('confirmPassword')?.errors).toBeNull();
   });
 
-  it('should register and then login on successful submission', () => {
+  it('should register and show success message on successful submission', fakeAsync(() => {
     // Set valid form values
     component.registerForm.setValue({
       username: 'testuser',
@@ -112,13 +113,8 @@ describe('RegisterComponent', () => {
       confirmPassword: 'password123'
     });
     
-    // Mock successful register and login
-    authServiceMock.register.and.returnValue(of({ success: true }));
-    authServiceMock.login.and.returnValue(of({ 
-      id: 1, 
-      username: 'testuser', 
-      token: 'token123' 
-    }));
+    // Mock successful register
+    authServiceMock.register.and.returnValue(of({}));
     
     // Submit form
     component.onSubmit();
@@ -130,17 +126,21 @@ describe('RegisterComponent', () => {
       'password123'
     );
     
-    // Verify login was called
-    expect(authServiceMock.login).toHaveBeenCalledWith(
-      'testuser',
-      'password123'
+    // Verify snackbar was opened with success message
+    expect(snackBarMock.open).toHaveBeenCalledWith(
+      'Registration successful! Please login with your credentials.',
+      'Close',
+      jasmine.any(Object)
     );
     
-    // Verify navigation
-    expect(routerMock.navigate).toHaveBeenCalledWith(['/']);
-  });
+    // Fast-forward setTimeout
+    tick(2000);
+    
+    // Verify navigation to login page
+    expect(routerMock.navigate).toHaveBeenCalledWith(['/login']);
+  }));
 
-  it('should show error message when registration fails', () => {
+  it('should show error message when user already exists', () => {
     // Set valid form values
     component.registerForm.setValue({
       username: 'testuser',
@@ -149,20 +149,61 @@ describe('RegisterComponent', () => {
       confirmPassword: 'password123'
     });
     
-    // Mock failed registration
-    authServiceMock.register.and.returnValue(
-      throwError(() => ({ error: { message: 'Email already in use' } }))
-    );
+    // Mock 400 error with "User already exists" message
+    const errorResponse = {
+      status: 400,
+      error: { message: 'User already exists.' }
+    };
+    authServiceMock.register.and.returnValue(throwError(() => errorResponse));
     
     // Submit form
     component.onSubmit();
     
-    // Verify error is displayed
-    expect(component.error).toBe('Email already in use');
-    expect(component.loading).toBeFalse();
+    // Verify snackbar was opened with user exists message
+    expect(snackBarMock.open).toHaveBeenCalledWith(
+      'An account with this email already exists.',
+      'Close',
+      jasmine.any(Object)
+    );
     
     // Verify login was not called
     expect(authServiceMock.login).not.toHaveBeenCalled();
+    
+    // Verify loading is set to false
+    expect(component.loading).toBeFalse();
+  });
+
+  it('should show generic error message for other errors', () => {
+    // Set valid form values
+    component.registerForm.setValue({
+      username: 'testuser',
+      email: 'test@example.com',
+      password: 'password123',
+      confirmPassword: 'password123'
+    });
+    
+    // Mock server error
+    const errorResponse = {
+      status: 500,
+      error: { message: 'Server error' }
+    };
+    authServiceMock.register.and.returnValue(throwError(() => errorResponse));
+    
+    // Submit form
+    component.onSubmit();
+    
+    // Verify snackbar was opened with general error message
+    expect(snackBarMock.open).toHaveBeenCalledWith(
+      'Registration failed. Please try again later.',
+      'Close',
+      jasmine.any(Object)
+    );
+    
+    // Verify login was not called
+    expect(authServiceMock.login).not.toHaveBeenCalled();
+    
+    // Verify loading is set to false
+    expect(component.loading).toBeFalse();
   });
 
   it('should not call register when form is invalid', () => {

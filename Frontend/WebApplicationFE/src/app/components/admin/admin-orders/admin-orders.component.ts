@@ -40,7 +40,7 @@ export class AdminOrdersComponent implements OnInit {
   displayedColumns: string[] = ['id', 'customerName', 'orderDate', 'totalAmount', 'status', 'actions'];
   updatingOrderId: number | null = null;
   
-  private originalStatuses: Map<number, string> = new Map();
+  public originalStatuses: Map<number, string> = new Map();
   
   constructor(
     private http: HttpClient,

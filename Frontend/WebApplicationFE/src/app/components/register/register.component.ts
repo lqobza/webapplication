@@ -4,13 +4,14 @@ import { AuthService } from '../../services/auth.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-register',
   templateUrl: './register.component.html',
   styleUrls: ['./register.component.css'],
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule]
+  imports: [CommonModule, ReactiveFormsModule, MatSnackBarModule]
 })
 export class RegisterComponent {
   registerForm: FormGroup;
@@ -22,7 +23,8 @@ export class RegisterComponent {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private formBuilder: FormBuilder
+    private formBuilder: FormBuilder,
+    private snackBar: MatSnackBar
   ) {
     if (this.authService.currentUserValue) {
       this.router.navigate(['/']);
@@ -66,20 +68,35 @@ export class RegisterComponent {
     this.authService.register(username, email, password)
       .subscribe({
         next: () => {
-          this.authService.login(username, password)
-            .subscribe({
-              next: () => {
-                this.router.navigate(['/']);
-              },
-              error: error => {
-                this.error = 'Registration successful but login failed';
-                this.loading = false;
-              }
-            });
+          this.snackBar.open('Registration successful! Please login with your credentials.', 'Close', {
+            duration: 5000,
+            panelClass: ['success-snackbar']
+          });
+          this.loading = false;
+          setTimeout(() => {
+            this.router.navigate(['/login']);
+          }, 2000);
         },
         error: error => {
-          this.error = error.error?.message || 'Registration failed';
           this.loading = false;
+          if (error.status === 400) {
+            if (error.error && error.error.message === 'User already exists.') {
+              this.snackBar.open('An account with this email already exists.', 'Close', {
+                duration: 5000,
+                panelClass: ['error-snackbar']
+              });
+            } else {
+              this.snackBar.open(error.error?.message || 'Invalid registration data', 'Close', {
+                duration: 5000,
+                panelClass: ['error-snackbar']
+              });
+            }
+          } else {
+            this.snackBar.open('Registration failed. Please try again later.', 'Close', {
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            });
+          }
         }
       });
   }
