@@ -20,13 +20,13 @@ public class FileSystemImageService : IImageStorageService
         var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
         var filePath = Path.Combine(merchPath, fileName);
 
-        using var stream = new FileStream(filePath, FileMode.Create);
+        await using var stream = new FileStream(filePath, FileMode.Create);
         await file.CopyToAsync(stream);
 
         return $"/images/merchandise/{merchandiseId}/{fileName}";
     }
 
-    public async Task DeleteImageAsync(string path)
+    public Task DeleteImageAsync(string path)
     {
         if (path.StartsWith("/images/merchandise/"))
         {
@@ -35,6 +35,8 @@ public class FileSystemImageService : IImageStorageService
 
             if (File.Exists(fullPath)) File.Delete(fullPath);
         }
+
+        return Task.CompletedTask;
     }
 
     public string GetImageDirectory()

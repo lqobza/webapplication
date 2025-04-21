@@ -4,13 +4,12 @@ using WebApplication1.Repositories.Interface;
 
 namespace WebApplication1.Repositories;
 
-public class OrderRepository : BaseRepository, IOrderRepository
+public class OrderRepository : IOrderRepository
 {
     private readonly ILogger<OrderRepository> _logger;
     private readonly IDatabaseWrapper _db;
 
     public OrderRepository(ILogger<OrderRepository> logger, IDatabaseWrapper databaseWrapper)
-        : base(databaseWrapper)
     {
         _logger = logger;
         _db = databaseWrapper;

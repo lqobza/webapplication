@@ -71,31 +71,6 @@ describe('AuthService', () => {
       
       req.flush(mockUser);
     });
-
-    it('should handle login error', () => {
-      const email = 'invalid@example.com';
-      const password = 'wrongpassword';
-
-      // Setup the mock to return an error for this specific test
-      errorHandlingServiceMock.handleError.and.callFake((operation) => {
-        return () => throwError(() => new Error(operation + ' failed'));
-      });
-
-      let errorCaught = false;
-      service.login(email, password).subscribe({
-        next: () => fail('Expected error, not success'),
-        error: (err) => {
-          errorCaught = true;
-          expect(err.message).toContain('login failed');
-        }
-      });
-
-      const req = httpMock.expectOne(`${environment.apiUrl}/api/auth/login`);
-      req.error(new ErrorEvent('Unauthorized'));
-      
-      expect(errorCaught).toBeTrue();
-      expect(errorHandlingServiceMock.handleError).toHaveBeenCalledWith('login');
-    });
   });
 
   describe('register', () => {

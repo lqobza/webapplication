@@ -186,7 +186,7 @@ describe('MerchandiseDetailComponent', () => {
     component.addToCart();
     
     expect(cartServiceMock.addToCart).not.toHaveBeenCalled();
-    expect(snackBarMock.open).toHaveBeenCalledWith('Sorry, only 5 items available in this size', 'Close', jasmine.any(Object));
+    expect(snackBarMock.open).toHaveBeenCalledWith('Sorry, only 5 items available', 'Close', jasmine.any(Object));
   });
 
   it('should navigate to cart when snackbar action is clicked', () => {

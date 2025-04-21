@@ -32,9 +32,7 @@ export class AuthService {
           localStorage.setItem('currentUser', JSON.stringify(user));
           this.currentUserSubject.next(user);
           return user;
-        }),
-        catchError(this.errorHandler.handleError('login'))
-      );
+        }));
   }
 
   register(username: string, email: string, password: string) {

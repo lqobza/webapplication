@@ -10,7 +10,7 @@ public class ApplicationDbContext : DbContext
     {
     }
 
-    public DbSet<ApplicationUser> Users { get; set; }
+    public DbSet<ApplicationUser> Users { get; set; } = null!;
     public DbSet<MerchandiseImage> MerchandiseImages { get; set; } = null!;
     public DbSet<Merchandise> Merch { get; set; } = null!;
 

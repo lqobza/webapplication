@@ -175,9 +175,9 @@ export class CartComponent implements OnInit {
     return 'assets/images/placeholder.png';
   }
 
-  getItemPrice(item: CartItem): number {
-    return Math.round(item.price * item.quantity);
-  }
+  //getItemPrice(item: CartItem): number {
+  //  return Math.round(item.price * item.quantity);
+  //}
 
   removeItem(item: CartItem): void {
     this.cartService.removeItem(item);

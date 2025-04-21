@@ -65,7 +65,13 @@ export class MerchandiseDetailComponent implements OnInit {
             const validSizes = this.merchandise.sizes.filter(s => s.size !== null);
             this.hasMultipleSizes = validSizes.length > 1;
 
-            if (validSizes.length > 0) {
+            // Handle accessories (items with null size)
+            if (this.isAccessoryItem()) {
+              this.selectedSize = undefined;
+              this.inStock = this.getAccessoryStock();
+            } 
+            // Handle items with valid sizes
+            else if (validSizes.length > 0) {
               this.selectedSize = validSizes[0].size;
               this.inStock = this.getInStock(this.selectedSize);
             } else {
@@ -97,12 +103,40 @@ export class MerchandiseDetailComponent implements OnInit {
   }
 
   getInStock(size: string | undefined): number | undefined {
-    return this.merchandise && size ? this.merchandise.sizes?.find(s => s.size === size)?.inStock : undefined;
+    if (!this.merchandise) return undefined;
+    
+    // For accessories with null size
+    if (this.merchandise.sizes?.length === 1 && this.merchandise.sizes[0].size === null) {
+      return this.merchandise.sizes[0].inStock;
+    }
+    
+    // For regular items with sizes
+    return size ? this.merchandise.sizes?.find(s => s.size === size)?.inStock : undefined;
+  }
+
+  private isAccessoryItem(): boolean {
+    return !!this.merchandise?.sizes 
+      && this.merchandise.sizes.length === 1 
+      && this.merchandise.sizes[0]?.size === null;
+  }
+
+  private getAccessoryStock(): number | undefined {
+    if (this.isAccessoryItem() && this.merchandise?.sizes?.[0]) {
+      return this.merchandise.sizes[0].inStock;
+    }
+    return undefined;
   }
 
   get isAddToCartEnabled(): boolean {
     if (!this.merchandise) return false;
 
+    // For accessories or items with null size
+    if (this.isAccessoryItem()) {
+      const stock = this.getAccessoryStock();
+      return stock !== undefined && stock > 0;
+    }
+
+    // For items with sizes
     if (this.hasMultipleSizes) {
       return !!this.selectedSize && !!this.merchandise.sizes?.find(s => s.size === this.selectedSize)?.inStock;
     }
@@ -132,9 +166,15 @@ export class MerchandiseDetailComponent implements OnInit {
   }
 
   get maxQuantity(): number {
+    // For accessories with null size
+    if (this.isAccessoryItem()) {
+      const stock = this.getAccessoryStock();
+      return stock !== undefined && stock > 0 ? stock : 1;
+    }
+
     if (this.hasMultipleSizes) {
       const inStock = this.getInStock(this.selectedSize);
-      return inStock && inStock > 0 ? inStock : 1;
+      return inStock !== undefined && inStock > 0 ? inStock : 1;
     }
 
     if (this.merchandise?.sizes?.length === 1) {
@@ -149,14 +189,20 @@ export class MerchandiseDetailComponent implements OnInit {
       return;
     }
     
-    if (!this.selectedSize) {
+    // Check if this is an accessory (null size)
+    const isAccessory = this.isAccessoryItem();
+    
+    // Only require size selection for non-accessories
+    if (!isAccessory && !this.selectedSize) {
       this.snackBar.open('Please select a size', 'Close', { duration: 3000 });
       return;
     }
     
-    const stock = this.getInStock(this.selectedSize);
-    if (stock && stock < this.quantity) {
-      this.snackBar.open(`Sorry, only ${stock} items available in this size`, 'Close', { duration: 3000 });
+    // Get stock based on whether it's an accessory or not
+    const stock = isAccessory ? this.getAccessoryStock() : this.getInStock(this.selectedSize);
+    
+    if (stock !== undefined && stock < this.quantity) {
+      this.snackBar.open(`Sorry, only ${stock} items available`, 'Close', { duration: 3000 });
       return;
     }
     
@@ -164,7 +210,7 @@ export class MerchandiseDetailComponent implements OnInit {
       id: this.merchandise.id,
       merchId: this.merchandise.id,
       name: this.merchandise.name,
-      size: this.selectedSize,
+      size: isAccessory ? null : this.selectedSize,
       quantity: this.quantity,
       price: this.merchandise.price,
       imageUrl: this.selectedImage?.imageUrl
@@ -266,11 +312,14 @@ export class MerchandiseDetailComponent implements OnInit {
   }
 
   incrementQuantity(): void {
-    const stock = this.getInStock(this.selectedSize);
-    if (stock && this.quantity < stock) {
+    // Get correct stock based on whether it's an accessory or normal item
+    const isAccessory = this.isAccessoryItem();
+    const stock = isAccessory ? this.getAccessoryStock() : this.getInStock(this.selectedSize);
+    
+    if (stock !== undefined && this.quantity < stock) {
       this.quantity++;
     } else {
-      this.snackBar.open(`Sorry, only ${stock} items available in this size`, 'Close', { duration: 3000 });
+      this.snackBar.open(`Sorry, only ${stock} items available`, 'Close', { duration: 3000 });
     }
   }
 

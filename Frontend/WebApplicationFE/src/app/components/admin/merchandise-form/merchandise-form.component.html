@@ -77,12 +77,11 @@
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Brand</mat-label>
             <mat-select formControlName="brandId">
-              <mat-option [value]="0">No Brand</mat-option>
               <mat-option *ngFor="let brand of brands" [value]="brand.id">
                 {{ brand.name }}
               </mat-option>
             </mat-select>
-            <mat-error *ngIf="merchandiseForm.get('brandId')?.hasError('required')">Brand is required</mat-error>
+            <mat-error *ngIf="merchandiseForm.get('brandId')?.hasError('required')">Brand selection is required</mat-error>
           </mat-form-field>
         </div>
       </mat-card-content>

@@ -8,7 +8,7 @@
     <div class="success-icon">✓</div>
     <h2>Order Placed Successfully!</h2>
     <p>Thank you for your order. We've received your purchase request and will process it shortly.</p>
-    <p>A confirmation email will be sent to <strong>{{ customerEmail }}</strong>.</p>
+    <!--<p>A confirmation email will be sent to <strong>{{ customerEmail }}</strong>.</p>-->
     <div class="success-actions">
       <button class="continue-shopping" (click)="goToShop()">Continue Shopping</button>
     </div>
@@ -42,7 +42,7 @@
         </ng-template>
         <div class="cart-item-details">
           <p class="cart-item-name">{{ item.name }}</p>
-          <p>Size: {{ item.size }}</p>
+          <p *ngIf="item.size">Size: {{ item.size }}</p>
           <div class="quantity-controls">
             <input
               type="number"
@@ -57,7 +57,7 @@
               Only {{ item.availableStock }} in stock
             </span>
           </div>
-          <p>Price: ${{ getItemPrice(item) | number: '1.0-0' }}</p>
+          <p>Price: ${{ item.price | number: '1.0-0' }}</p>
         </div>
         <button
           class="remove-button"

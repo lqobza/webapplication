@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1" MembersFormat="NameAndType">
+  <Class Name="WebApplication1.Controllers.AuthController">
+    <Position X="7.25" Y="3" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAgIAABAAAAAAAQAAAAAAA=</HashCode>
+      <FileName>Controllers\AuthController.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Microsoft.AspNetCore.Mvc.ControllerBase" Collapsed="true">
+    <Position X="11" Y="1.5" Width="1.5" />
+    <TypeIdentifier />
+  </Class>
+  <Class Name="WebApplication1.Controllers.CustomDesignController">
+    <Position X="13.75" Y="3" Width="3.25" />
+    <TypeIdentifier>
+      <HashCode>AAABAAAAAAAAAAAAAAAAIAACIgAAAAAACAAAAAAAAAA=</HashCode>
+      <FileName>Controllers\CustomDesignController.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WebApplication1.Controllers.MerchandiseController">
+    <Position X="10" Y="3" Width="3.5" />
+    <TypeIdentifier>
+      <HashCode>AIAgAAAAQNBAAACYAIAQAAgQIQAIAAAAEAAAQAAAAQA=</HashCode>
+      <FileName>Controllers\MerchandiseController.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WebApplication1.Controllers.OrderController">
+    <Position X="6.75" Y="5.75" Width="3" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAQAAAAAAEIAAAAIAAEAAAAiCAQAAAAAAg=</HashCode>
+      <FileName>Controllers\OrderController.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WebApplication1.Controllers.RatingController">
+    <Position X="14" Y="6" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AEAAAAAAAAAAAAAAAAAACAAAIAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Controllers\RatingController.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

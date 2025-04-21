@@ -50,9 +50,9 @@
             </div>
             <div class="item-details">
               <h3>{{ item.merchandise.name || 'Product #' + item.merchandiseId }}</h3>
-              <p>Size: {{ item.size }}</p>
-              <p>Quantity: {{ item.quantity }}</p>
-              <p>Price: ${{ item.price.toFixed(2) }}</p>
+              <p><strong>Size:</strong> {{ item.size }}</p>
+              <p><strong>Quantity:</strong> {{ item.quantity }}</p>
+              <p><strong>Price:</strong> ${{ item.price/item.quantity }}</p>
             </div>
           </div>
         </div>
@@ -60,8 +60,7 @@
         <mat-divider></mat-divider>
         
         <div class="order-summary">
-          <p>Customer: {{ order.customerName }}</p>
-          <p class="total-amount">Total: <strong>${{ order.totalAmount.toFixed(2) }}</strong></p>
+          <p class="total-amount"><strong>Total:</strong> ${{ order.totalAmount }}</p>
         </div>
       </mat-card-content>
       

@@ -4,13 +4,12 @@ using WebApplication1.Repositories.Interface;
 
 namespace WebApplication1.Repositories;
 
-public class MerchandiseImageRepository : BaseRepository, IMerchandiseImageRepository
+public class MerchandiseImageRepository : IMerchandiseImageRepository
 {
     private readonly ILogger<MerchandiseImageRepository> _logger;
     private readonly IDatabaseWrapper _db;
 
     public MerchandiseImageRepository(ILogger<MerchandiseImageRepository> logger, IDatabaseWrapper databaseWrapper)
-        : base(databaseWrapper)
     {
         _logger = logger;
         _db = databaseWrapper;

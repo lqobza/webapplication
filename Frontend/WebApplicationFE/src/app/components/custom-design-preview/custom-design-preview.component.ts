@@ -107,6 +107,9 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
   
   designName: string = '';
   
+  // Aspect ratio lock option for image resizing
+  maintainAspectRatio: boolean = true;
+  
   fontFamilies = [
     'Arial', 
     'Verdana', 
@@ -147,6 +150,134 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     private snackBar: MatSnackBar,
     private authService: AuthService
   ) {}
+
+  // Format pixels for slider display
+  formatPx(value: number): string {
+    return `${value}px`;
+  }
+
+  // Image dimension getters and setters for the UI
+  getActiveImageWidth(): number {
+    if (this.activeElement && 'url' in this.activeElement) {
+      return this.activeElement.width;
+    }
+    return 100; // Default value
+  }
+
+  setActiveImageWidth(width: number): void {
+    if (this.activeElement && 'url' in this.activeElement) {
+      const oldWidth = this.activeElement.width;
+      
+      // If maintaining aspect ratio, check if change would cause height to exceed limits
+      if (this.maintainAspectRatio) {
+        const aspectRatio = this.activeElement.height / oldWidth;
+        const projectedHeight = Math.round(width * aspectRatio);
+        
+        // Don't allow change if it would cause height to go beyond limits
+        if (projectedHeight < 20 || projectedHeight > 300) {
+          return;
+        }
+        
+        this.activeElement.width = width;
+        this.activeElement.height = projectedHeight;
+      } else {
+        this.activeElement.width = width;
+      }
+      
+      this.renderCanvas();
+    }
+  }
+
+  getActiveImageHeight(): number {
+    if (this.activeElement && 'url' in this.activeElement) {
+      return this.activeElement.height;
+    }
+    return 100; // Default value
+  }
+
+  setActiveImageHeight(height: number): void {
+    if (this.activeElement && 'url' in this.activeElement) {
+      const oldHeight = this.activeElement.height;
+      
+      // If maintaining aspect ratio, check if change would cause width to exceed limits
+      if (this.maintainAspectRatio) {
+        const aspectRatio = this.activeElement.width / oldHeight;
+        const projectedWidth = Math.round(height * aspectRatio);
+        
+        // Don't allow change if it would cause width to go beyond limits
+        if (projectedWidth < 20 || projectedWidth > 300) {
+          return;
+        }
+        
+        this.activeElement.height = height;
+        this.activeElement.width = projectedWidth;
+      } else {
+        this.activeElement.height = height;
+      }
+      
+      this.renderCanvas();
+    }
+  }
+
+  // Text properties methods
+  getActiveTextFont(): string {
+    if (this.activeElement && 'text' in this.activeElement) {
+      return this.activeElement.fontFamily;
+    }
+    return this.fontFamily;
+  }
+  
+  setActiveTextFont(font: string): void {
+    if (this.activeElement && 'text' in this.activeElement) {
+      this.activeElement.fontFamily = font;
+      this.renderCanvas();
+    }
+  }
+  
+  getActiveTextSize(): number {
+    if (this.activeElement && 'text' in this.activeElement) {
+      return this.activeElement.fontSize;
+    }
+    return this.fontSize;
+  }
+  
+  setActiveTextSize(size: number): void {
+    if (this.activeElement && 'text' in this.activeElement) {
+      this.activeElement.fontSize = size;
+      this.renderCanvas();
+    }
+  }
+  
+  getActiveTextColor(): string {
+    if (this.activeElement && 'text' in this.activeElement) {
+      return this.activeElement.color;
+    }
+    return this.textColor;
+  }
+  
+  setActiveTextColor(color: string): void {
+    if (this.activeElement && 'text' in this.activeElement) {
+      this.activeElement.color = color;
+      this.renderCanvas();
+    }
+  }
+  
+  // Helper for text size input event
+  updateTextSize(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input && input.value) {
+      this.setActiveTextSize(parseInt(input.value, 10));
+    }
+  }
+
+  // Function to resize active image
+  resizeActiveImage(width: number, height: number): void {
+    if (this.activeElement && 'url' in this.activeElement) {
+      this.activeElement.width = width;
+      this.activeElement.height = height;
+      this.renderCanvas();
+    }
+  }
 
   ngOnInit(): void {
     this.tshirtFrontImage.src = 'assets/images/tshirt-front.png';
@@ -748,5 +879,14 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     this.activeElement = null;
     this.renderCanvas();
     this.snackBar.open('Cleared all designs', 'Close', { duration: 2000 });
+  }
+
+  // Helper methods to determine which controls to show
+  isImageElement(): boolean {
+    return this.activeElement !== null && 'url' in this.activeElement && !('text' in this.activeElement);
+  }
+  
+  isTextElement(): boolean {
+    return this.activeElement !== null && 'text' in this.activeElement;
   }
 }

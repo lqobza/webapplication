@@ -4,12 +4,11 @@ using WebApplication1.Repositories.Interface;
 
 namespace WebApplication1.Repositories;
 
-public class CustomDesignRepository : BaseRepository, ICustomDesignRepository
+public class CustomDesignRepository : ICustomDesignRepository
 {
     private readonly IDatabaseWrapper _db;
 
     public CustomDesignRepository(IDatabaseWrapper databaseWrapper)
-        : base(databaseWrapper)
     {
         _db = databaseWrapper;
     }

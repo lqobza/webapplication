@@ -56,11 +56,12 @@ export class LoginComponent {
     this.authService.login(email, password)
       .subscribe({
         next: () => {
+          this.loading = false;
           this.router.navigate([this.returnUrl]);
         },
         error: error => {
-          this.error = error.error?.message || 'Login failed';
           this.loading = false;
+          this.error = error.error?.message || 'Login failed';
         }
       });
   }

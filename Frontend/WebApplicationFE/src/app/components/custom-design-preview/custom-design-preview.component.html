@@ -44,6 +44,69 @@
           <mat-icon>delete</mat-icon>
         </button>
       </div>
+
+      <!-- Image resize controls (only shown for images) -->
+      <div class="size-controls" *ngIf="isImageElement()">
+        <h4>Resize Image</h4>
+        
+        <div class="aspect-ratio-toggle">
+          <mat-slide-toggle [(ngModel)]="maintainAspectRatio" color="primary">
+            <mat-icon class="lock-icon">{{ maintainAspectRatio ? 'lock' : 'lock_open' }}</mat-icon>
+            Maintain aspect ratio
+          </mat-slide-toggle>
+        </div>
+        
+        <div class="size-sliders">
+          <div class="slider-row">
+            <label>Width:</label>
+            <mat-slider min="20" max="300" step="1" [displayWith]="formatPx" class="size-slider">
+              <input matSliderThumb [ngModel]="getActiveImageWidth()" (ngModelChange)="setActiveImageWidth($event)">
+            </mat-slider>
+            <span class="size-value">{{getActiveImageWidth()}}px</span>
+          </div>
+          
+          <div class="slider-row">
+            <label>Height:</label>
+            <mat-slider min="20" max="300" step="1" [displayWith]="formatPx" class="size-slider">
+              <input matSliderThumb [ngModel]="getActiveImageHeight()" (ngModelChange)="setActiveImageHeight($event)">
+            </mat-slider>
+            <span class="size-value">{{getActiveImageHeight()}}px</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Text formatting controls (only shown for text) -->
+      <div class="text-controls" *ngIf="isTextElement()">
+        <h4>Text Formatting</h4>
+        
+        <div class="format-row">
+          <mat-form-field appearance="fill">
+            <mat-label>Font</mat-label>
+            <mat-select [value]="getActiveTextFont()" (selectionChange)="setActiveTextFont($event.value)">
+              <mat-option *ngFor="let font of fontFamilies" [value]="font" [style.fontFamily]="font">
+                {{font}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+          
+          <mat-form-field appearance="fill">
+            <mat-label>Size</mat-label>
+            <input matInput type="number" [value]="getActiveTextSize()" 
+                  (input)="updateTextSize($event)" min="10" max="72">
+          </mat-form-field>
+          
+          <div class="color-picker-small">
+            <div class="color-preview"
+                 [style.background]="getActiveTextColor()"
+                 [(colorPicker)]="textColor"
+                 [cpPosition]="'bottom'"
+                 [cpOutputFormat]="'hex'"
+                 [cpDialogDisplay]="'popup'"
+                 (colorPickerChange)="setActiveTextColor($event)">
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

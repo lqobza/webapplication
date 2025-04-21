@@ -41,7 +41,7 @@
                 <h3>{{ item.merchandise.name || 'Product #' + item.merchandiseId }}</h3>
                 <p *ngIf="item.size"><strong>Size:</strong> {{ item.size }}</p>
                 <p><strong>Quantity:</strong> {{ item.quantity }}</p>
-                <p><strong>Price:</strong> ${{ item.price.toFixed(2) }}</p>
+                <p><strong>Price:</strong> ${{ item.price/item.quantity }}</p>
               </div>
             </div>
           </div>

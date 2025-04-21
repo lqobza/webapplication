@@ -69,7 +69,7 @@ export class MerchandiseFormComponent implements OnInit {
       description: ['', [Validators.required, Validators.minLength(10)]],
       price: [0, [Validators.required, Validators.min(1), Validators.pattern(/^[0-9]+$/)]],
       categoryId: ['', Validators.required],
-      brandId: [0, Validators.required],
+      brandId: [null, Validators.required],
       sizes: this.fb.array([]),
       images: this.fb.array([])
     });
