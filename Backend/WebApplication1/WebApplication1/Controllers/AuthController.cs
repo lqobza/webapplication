@@ -34,7 +34,7 @@ public class AuthController : ControllerBase
         {
             _logger.LogWarning("Registration failed for user: {Email}. Reason: {Message}",
                 registerDto.Email, ex.Message);
-            return BadRequest(new { Message = ex.Message });
+            return BadRequest(new { ex.Message });
         }
         catch (Exception ex)
         {
@@ -61,7 +61,7 @@ public class AuthController : ControllerBase
         {
             _logger.LogWarning("Login failed for user: {Email}. Reason: {Message}",
                 loginDto.Email, ex.Message);
-            return BadRequest(new { Message = ex.Message });
+            return BadRequest(new { ex.Message });
         }
         catch (Exception ex)
         {

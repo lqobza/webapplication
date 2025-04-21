@@ -55,7 +55,7 @@ public class MerchandiseController : ControllerBase
         if (searchParams.Page < 1 || searchParams.PageSize < 1)
             return BadRequest(new { message = "Page and pageSize must be greater than 0" });
 
-        if (searchParams.MinPrice.HasValue && searchParams.MaxPrice.HasValue &&
+        if (searchParams is { MinPrice: not null, MaxPrice: not null } &&
             searchParams.MinPrice > searchParams.MaxPrice)
             return BadRequest(new { message = "MinPrice cannot be greater than MaxPrice" });
 
@@ -334,18 +334,18 @@ public class MerchandiseController : ControllerBase
         }
     }
 
-    [HttpPost("{id}/images")]
+    [HttpPost("{id:int}/images")]
     public async Task<IActionResult> UploadImage(int id, IFormFile image)
     {
         if (image.Length == 0)
             return BadRequest("No image file provided");
 
-        _logger.LogInformation($"Uploading image for merchandise {id}...");
+        _logger.LogInformation("Uploading image for merchandise {id}", id);
 
         try
         {
             var result = await _merchandiseService.UploadMerchandiseImage(id, image);
-            _logger.LogInformation($"Image uploaded successfully for merchandise {id}, image ID: {result.Id}");
+            _logger.LogInformation("Image uploaded successfully for merchandise {id}, image ID: {ResultId}", id, result.Id);
 
             return Ok(new { imageUrl = result.ImageUrl });
         }
@@ -395,7 +395,7 @@ public class MerchandiseController : ControllerBase
         return Ok(images);
     }
 
-    [HttpGet("image/{merchandiseId}/{fileName}")]
+    [HttpGet("image/{merchandiseId:int}/{fileName}")]
     public IActionResult GetImage(int merchandiseId, string fileName)
     {
         var imagePath = Path.Combine(_imageStorageService.GetImageDirectory(), merchandiseId.ToString(), fileName);
@@ -406,7 +406,7 @@ public class MerchandiseController : ControllerBase
         return File(imageFileStream, "image/jpeg");
     }
 
-    [HttpDelete("image/{merchandiseId}/{fileName}")]
+    [HttpDelete("image/{merchandiseId:int}/{fileName}")]
     public async Task<IActionResult> DeleteImage(int merchandiseId, string fileName)
     {
         _logger.LogInformation("DeleteImage endpoint called for merchandise ID: {Id}, filename: {FileName}",

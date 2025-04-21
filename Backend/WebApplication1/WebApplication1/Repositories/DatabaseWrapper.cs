@@ -32,7 +32,7 @@ public class DatabaseWrapper : IDatabaseWrapper
         // Set command type to StoredProcedure if the command text is in the format [dbo].[ProcedureName]
         if (query.StartsWith("[dbo].")) command.CommandType = CommandType.StoredProcedure;
 
-        if (parameters != null && parameters.Length > 0) command.Parameters.AddRange(parameters);
+        if (parameters is { Length: > 0 }) command.Parameters.AddRange(parameters);
         return command.ExecuteNonQuery();
     }
 
@@ -82,7 +82,7 @@ public class DatabaseWrapper : IDatabaseWrapper
 
             if (parameters is { Length: > 0 }) command.Parameters.AddRange(parameters);
 
-            // conncetion with "using" is not working in this case, as reader would be unable to read the data
+            // connection with "using" is not working in this case, as reader would be unable to read the data
             var result = command.ExecuteReader(CommandBehavior.CloseConnection);
             return result;
         }

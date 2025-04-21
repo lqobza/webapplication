@@ -22,13 +22,7 @@ public class CustomDesignController : ControllerBase
     [Authorize(Roles = "Admin,User")]
     public async Task<IActionResult> CreateDesign([FromBody] CustomDesignCreateDto designDto)
     {
-        _logger.LogInformation("CreateDesign endpoint called with design name: {DesignName}", designDto?.Name);
-
-        if (designDto == null)
-        {
-            _logger.LogWarning("Design data is null");
-            return BadRequest("Design data is required");
-        }
+        _logger.LogInformation("CreateDesign endpoint called with design name: {DesignName}", designDto.Name);
 
         if (string.IsNullOrEmpty(designDto.Name))
         {
@@ -93,7 +87,7 @@ public class CustomDesignController : ControllerBase
         }
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("{id:int}")]
     [Authorize(Roles = "Admin,User")]
     public async Task<IActionResult> GetDesignById(int id)
     {
@@ -119,7 +113,7 @@ public class CustomDesignController : ControllerBase
         }
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:int}")]
     [Authorize(Roles = "Admin,User")]
     public async Task<IActionResult> DeleteDesign(int id)
     {

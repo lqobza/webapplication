@@ -1,0 +1,179 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1" MembersFormat="NameAndType">
+  <Class Name="WebApplication1.Models.DTOs.UpdateOrderStatusDto">
+    <Position X="10.5" Y="7" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DTOs\UpdateOrderStatusDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WebApplication1.Models.DTOs.CategoryDto">
+    <Position X="14.75" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DTOs\CategoryDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WebApplication1.Models.DTOs.CustomDesignDto">
+    <Position X="17" Y="0.5" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AgACAAAAAgAAAAAAACAAAAwAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DTOs\CustomDesignDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WebApplication1.Models.DTOs.CustomDesignCreateDto">
+    <Position X="14.75" Y="0.5" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AgAAAAAAAgAAAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DTOs\CustomDesignDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WebApplication1.Models.DTOs.LoginDto">
+    <Position X="0.5" Y="2.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAACAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DTOs\LoginDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WebApplication1.Models.DTOs.MerchandiseCreateDto">
+    <Position X="6.75" Y="0.5" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAQAgAgQAAAAAAAQAAAAAAAAAAAAAAAAQAAA=</HashCode>
+      <FileName>Models\DTOs\MerchandiseCreateDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WebApplication1.Models.DTOs.MerchandiseDto">
+    <Position X="9.5" Y="0.5" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAQAgAgQQAgAAAAQAACAAABBAAAAAAAAQAAA=</HashCode>
+      <FileName>Models\DTOs\MerchandiseDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WebApplication1.Models.DTOs.MerchandiseImageDto">
+    <Position X="12.25" Y="2.25" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AQACQAAAAAAAAAAAACAAAAAAAIAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DTOs\MerchandiseImageDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WebApplication1.Models.DTOs.MerchandiseSearchDto">
+    <Position X="2.75" Y="0.5" Width="2" />
+    <TypeIdentifier>
+      <HashCode>BAAAAAAEAAAQAgAAAAAAAAAAAAAAAAAAAAAAFAAAgAA=</HashCode>
+      <FileName>Models\DTOs\MerchandiseSearchDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WebApplication1.Models.DTOs.MerchandiseUpdateDto">
+    <Position X="12.25" Y="0.5" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAQAgAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DTOs\MerchandiseUpdateDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WebApplication1.Models.DTOs.MerchSizeCreateDto">
+    <Position X="6.75" Y="3" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAgAAAAAAAAAAAAAAAAAACAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DTOs\MerchSizeCreateDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WebApplication1.Models.DTOs.MerchSizeDto">
+    <Position X="17" Y="2.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAgAAAAAAAAAAAAAAAAAACAACAAAAAAAA=</HashCode>
+      <FileName>Models\DTOs\MerchSizeDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WebApplication1.Models.DTOs.OrderCreateDto">
+    <Position X="5.5" Y="7" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAABAAACAAAAAAAAAgAQAAAAAAAAAAAAAABAAA=</HashCode>
+      <FileName>Models\DTOs\OrderCreateDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WebApplication1.Models.DTOs.OrderDto">
+    <Position X="8" Y="7" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>CAACAAAEBAAQCAAAAAAAAAAAQAAAAAAAAAAAAAABAAA=</HashCode>
+      <FileName>Models\DTOs\OrderDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WebApplication1.Models.DTOs.OrderItemDto">
+    <Position X="10.5" Y="8.5" Width="2" />
+    <TypeIdentifier>
+      <HashCode>EAACQAAAAQAAgAAAAAAAAAAAAAAACAAAAACAwAAAAAA=</HashCode>
+      <FileName>Models\DTOs\OrderItemDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WebApplication1.Models.DTOs.OrderMessageDto">
+    <Position X="8" Y="9.75" Width="2" />
+    <TypeIdentifier>
+      <HashCode>EAACAAAAAgAAAAAAAAACAAAIAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DTOs\OrderMessageDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WebApplication1.Models.DTOs.OrderMessageCreateDto">
+    <Position X="5.5" Y="9.25" Width="2" />
+    <TypeIdentifier>
+      <HashCode>EAAAAAAAAgAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DTOs\OrderMessageDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WebApplication1.Models.DTOs.RatingCreateDto">
+    <Position X="16.25" Y="7" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAgAAAAAAAAAAAAAAAAAAEAAACAAAAAAAA=</HashCode>
+      <FileName>Models\DTOs\RatingCreateDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WebApplication1.Models.DTOs.RatingDto">
+    <Position X="18.25" Y="7" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAgAAAAACAAAAAAAAAAAAEAAACAAAAAAAA=</HashCode>
+      <FileName>Models\DTOs\RatingDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WebApplication1.Models.DTOs.RegisterDto">
+    <Position X="0.5" Y="0.5" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAACAAAAAAAQAAAAAAAAAAAAACAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DTOs\RegisterDto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WebApplication1.Models.Merchandise">
+    <Position X="19" Y="0.5" Width="3" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAQAgAgAAAAAAAAQAAAAAABAAAAAAAAAQAAA=</HashCode>
+      <FileName>Models\Merchandise.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WebApplication1.Models.MerchandiseImage">
+    <Position X="19" Y="3" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AQACQAAAAAAAAAAAACAAIAAAAAAAAAAAAACAAAAAAAA=</HashCode>
+      <FileName>Models\MerchandiseImage.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WebApplication1.Models.PaginatedResponse&lt;T&gt;">
+    <Position X="2.75" Y="3" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AACAAgAAAAAADAAAAAAAAAAUAAAAAAAAAAAAEAAAAAA=</HashCode>
+      <FileName>Models\PaginatedResponse.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="WebApplication1.Models.ApplicationUser">
+    <Position X="0.5" Y="3.75" Width="2" />
+    <TypeIdentifier>
+      <HashCode>EACCAAAAACAAAAAAEQAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\ApplicationUser.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Enum Name="WebApplication1.Models.DTOs.SortOption">
+    <Position X="2.75" Y="6" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAQAAAAAAABAEAAAAAEAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DTOs\MerchandiseSearchDto.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

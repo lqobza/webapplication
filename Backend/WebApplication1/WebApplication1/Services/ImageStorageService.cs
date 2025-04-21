@@ -28,13 +28,11 @@ public class FileSystemImageService : IImageStorageService
 
     public Task DeleteImageAsync(string path)
     {
-        if (path.StartsWith("/images/merchandise/"))
-        {
-            path = path.Replace("/images/merchandise/", "");
-            var fullPath = Path.Combine(_imageDirectory, path);
+        if (!path.StartsWith("/images/merchandise/")) return Task.CompletedTask;
+        path = path.Replace("/images/merchandise/", "");
+        var fullPath = Path.Combine(_imageDirectory, path);
 
-            if (File.Exists(fullPath)) File.Delete(fullPath);
-        }
+        if (File.Exists(fullPath)) File.Delete(fullPath);
 
         return Task.CompletedTask;
     }

@@ -41,31 +41,31 @@ public class OrderService : IOrderService
 
                     await _orderRepository.InsertOrderItemAsync(orderId, item);
 
-                    if (!item.IsCustom)
+                    if (item.IsCustom) continue;
+                    try
+                    {
+                        _logger.LogInformation(
+                            "Updating stock for order {OrderId}, item: MerchId={MerchId}, Size={Size}, Quantity={Quantity}",
+                            orderId, item.MerchId, item.Size, item.Quantity);
+
+                        await _orderRepository.UpdateStockAsync(item);
+                    }
+                    catch (InvalidOperationException ex) when (ex.Message.Contains("Insufficient stock"))
+                    {
+                        _logger.LogWarning("Insufficient stock for item: {Item}. Rolling back order {OrderId}.",
+                            item, orderId);
+
                         try
                         {
-                            _logger.LogInformation(
-                                "Updating stock for order {OrderId}, item: MerchId={MerchId}, Size={Size}, Quantity={Quantity}",
-                                orderId, item.MerchId, item.Size, item.Quantity);
-
-                            await _orderRepository.UpdateStockAsync(item);
+                            await _orderRepository.DeleteOrderAsync(orderId);
                         }
-                        catch (InvalidOperationException ex) when (ex.Message.Contains("Insufficient stock"))
+                        catch (Exception rollbackEx)
                         {
-                            _logger.LogWarning("Insufficient stock for item: {Item}. Rolling back order {OrderId}.",
-                                item, orderId);
-
-                            try
-                            {
-                                await _orderRepository.DeleteOrderAsync(orderId);
-                            }
-                            catch (Exception rollbackEx)
-                            {
-                                _logger.LogError(rollbackEx, "Error rolling back order {OrderId}", orderId);
-                            }
-
-                            throw;
+                            _logger.LogError(rollbackEx, "Error rolling back order {OrderId}", orderId);
                         }
+
+                        throw;
+                    }
                 }
                 catch (Exception ex) when (!(ex is InvalidOperationException &&
                                              ex.Message.Contains("Insufficient stock")))

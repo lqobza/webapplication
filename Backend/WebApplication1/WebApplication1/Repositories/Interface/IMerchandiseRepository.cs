@@ -7,6 +7,7 @@ namespace WebApplication1.Repositories.Interface;
 public interface IMerchandiseRepository
 {
     public bool MerchandiseExists(int categoryId, string name, int brandId);
+    public bool MerchandiseExistsWithId(int id);
     public PaginatedResponse<MerchandiseDto> GetAllMerchandise(int page = 1, int pageSize = 10);
     public PaginatedResponse<MerchandiseDto> SearchMerchandise(MerchandiseSearchDto searchParams);
     public MerchandiseDto? GetMerchandiseById(int id);
@@ -21,6 +22,5 @@ public interface IMerchandiseRepository
     public List<BrandDto> GetBrands();
     public int AddCategoryToDb(CategoryCreateDto categoryCreateDto);
     public int AddThemeToDb(ThemeCreateDto themeCreateDto);
-    public T ExecuteScalar<T>(string sql, params System.Data.SqlClient.SqlParameter[] parameters);
     public List<MerchSizeDto> GetSizesByMerchId(int merchId);
 }

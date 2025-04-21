@@ -28,7 +28,7 @@ public class OrderController : ControllerBase
         _logger.LogInformation("GetAllOrders endpoint called");
 
         var isAdmin = User.Claims.Any(c =>
-            c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role" && c.Value == "Admin"
+            c is { Type: "http://schemas.microsoft.com/ws/2008/06/identity/claims/role", Value: "Admin" }
         );
 
 
@@ -133,7 +133,7 @@ public class OrderController : ControllerBase
             }
             else
             {
-                if (item.MerchId == null || item.MerchId <= 0)
+                if (item.MerchId is null or <= 0)
                 {
                     _logger.LogWarning("Invalid MerchId: {MerchId} for regular merchandise - skipping item",
                         item.MerchId);
@@ -156,25 +156,24 @@ public class OrderController : ControllerBase
         {
             var insertResult = await _orderService.CreateOrderAsync(orderCreateDto);
 
-            if (insertResult == InsertResult.Success)
+            switch (insertResult)
             {
-                _logger.LogInformation("Order created successfully");
-                return Ok(new { message = "Order created successfully" });
+                case InsertResult.Success:
+                    _logger.LogInformation("Order created successfully");
+                    return Ok(new { message = "Order created successfully" });
+                case InsertResult.Error:
+                    _logger.LogError("Internal server error while creating order: {Order}", orderCreateDtoJson);
+                    return StatusCode(StatusCodes.Status500InternalServerError,
+                        new
+                        {
+                            message =
+                                "Order creation failed due to internal server error. Please try again later or contact support."
+                        });
+                case InsertResult.AlreadyExists:
+                default:
+                    _logger.LogError("Unexpected error during order creation");
+                    return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Internal server error" });
             }
-
-            if (insertResult == InsertResult.Error)
-            {
-                _logger.LogError("Internal server error while creating order: {Order}", orderCreateDtoJson);
-                return StatusCode(StatusCodes.Status500InternalServerError,
-                    new
-                    {
-                        message =
-                            "Order creation failed due to internal server error. Please try again later or contact support."
-                    });
-            }
-
-            _logger.LogError("Unexpected error during order creation");
-            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Internal server error" });
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("Insufficient stock") ||
                                                    ex.Message.Contains("not found in stock"))
@@ -197,7 +196,7 @@ public class OrderController : ControllerBase
         }
     }
 
-    [HttpPost("{id}/cancel")]
+    [HttpPost("{id:int}/cancel")]
     public async Task<IActionResult> CancelOrder(int id)
     {
         try
@@ -229,7 +228,7 @@ public class OrderController : ControllerBase
         }
     }
 
-    [HttpPost("{id}/status")]
+    [HttpPost("{id:int}/status")]
     public async Task<IActionResult> UpdateOrderStatus(int id, [FromBody] UpdateOrderStatusDto statusDto)
     {
         try
@@ -262,7 +261,7 @@ public class OrderController : ControllerBase
         }
     }
 
-    [HttpGet("{id}/messages")]
+    [HttpGet("{id:int}/messages")]
     public async Task<IActionResult> GetOrderMessages(int id)
     {
         _logger.LogInformation("GetOrderMessages endpoint called for order {OrderId}", id);
@@ -279,7 +278,7 @@ public class OrderController : ControllerBase
         return Ok(messages);
     }
 
-    [HttpPost("{id}/messages")]
+    [HttpPost("{id:int}/messages")]
     public async Task<IActionResult> AddOrderMessage(int id, [FromBody] OrderMessageCreateDto messageDto)
     {
         _logger.LogInformation("AddOrderMessage endpoint called for order {OrderId}", id);

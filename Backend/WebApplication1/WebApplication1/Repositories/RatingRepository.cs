@@ -1,61 +1,52 @@
-﻿using System.Data;
-using System.Data.SqlClient;
+﻿using System.Data.SqlClient;
 using WebApplication1.Models.DTOs;
 using WebApplication1.Repositories.Interface;
 
 namespace WebApplication1.Repositories;
 
-public class RatingRepository : BaseRepository, IRatingRepository
+public class RatingRepository : IRatingRepository
 {
     private readonly ILogger<RatingRepository> _logger;
+    private readonly IDatabaseWrapper _db;
 
     public RatingRepository(ILogger<RatingRepository> logger, IDatabaseWrapper databaseWrapper)
-        : base(databaseWrapper)
     {
         _logger = logger;
+        _db = databaseWrapper;
     }
 
     public virtual bool AddRating(RatingCreateDto ratingCreateDto)
     {
-        using var connection = CreateConnection();
-        connection.Open();
-
         const string checkMerchCommand = "SELECT COUNT(*) FROM Merch WHERE id = @MerchId";
-        using var checkCommand = new SqlCommand(checkMerchCommand, connection);
-
-        checkCommand.Parameters.Add("@MerchId", SqlDbType.Int).Value = ratingCreateDto.MerchId;
-        var merchExists = (int)checkCommand.ExecuteScalar() > 0;
+        var checkParams = new[] { new SqlParameter("@MerchId", ratingCreateDto.MerchId) };
+        var merchExists = Convert.ToInt32(_db.ExecuteScalar(checkMerchCommand, checkParams)) > 0;
 
         if (!merchExists)
         {
-            _logger.LogWarning($"Merch ID {ratingCreateDto.MerchId} does not exist.");
+            _logger.LogWarning("Merch ID {MerchId} does not exist.", ratingCreateDto.MerchId);
             throw new ArgumentException("Invalid Merch ID");
         }
 
         const string insertCommand =
             "INSERT INTO Ratings (merch_id, rating, description) VALUES (@MerchId, @Rating, @Description)";
-        using var command = new SqlCommand(insertCommand, connection);
+        var insertParams = new[]
+        {
+            new SqlParameter("@MerchId", ratingCreateDto.MerchId),
+            new SqlParameter("@Rating", ratingCreateDto.Rating),
+            new SqlParameter("@Description", !string.IsNullOrEmpty(ratingCreateDto.Description) ? ratingCreateDto.Description : DBNull.Value)
+        };
 
-        command.Parameters.Add("@MerchId", SqlDbType.Int).Value = ratingCreateDto.MerchId;
-        command.Parameters.Add("@Rating", SqlDbType.Int).Value = ratingCreateDto.Rating;
-        command.Parameters.Add("@Description", SqlDbType.NVarChar, 255).Value =
-            !string.IsNullOrEmpty(ratingCreateDto.Description) ? ratingCreateDto.Description : DBNull.Value;
-
-        var rowsAffected = command.ExecuteNonQuery();
+        var rowsAffected = _db.ExecuteNonQuery(insertCommand, insertParams);
         return rowsAffected > 0;
     }
 
     public virtual List<RatingDto> GetRatingsForMerchandise(int merchId)
     {
         var ratings = new List<RatingDto>();
+        const string command = "SELECT * FROM Ratings WHERE merch_id = @MerchId";
+        var parameters = new[] { new SqlParameter("@MerchId", merchId) };
 
-        using var connection = CreateConnection();
-        connection.Open();
-
-        using var command = new SqlCommand("SELECT * FROM Ratings WHERE merch_id = @MerchId", connection);
-        command.Parameters.Add("@MerchId", SqlDbType.Int).Value = merchId;
-
-        using var reader = command.ExecuteReader();
+        using var reader = _db.ExecuteReader(command, parameters);
 
         while (reader.Read())
         {
@@ -69,8 +60,6 @@ public class RatingRepository : BaseRepository, IRatingRepository
             };
             ratings.Add(rating);
         }
-
-        connection.Close();
 
         return ratings;
     }

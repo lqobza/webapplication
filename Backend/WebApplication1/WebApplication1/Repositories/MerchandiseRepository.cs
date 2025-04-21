@@ -6,7 +6,7 @@ using WebApplication1.Repositories.Interface;
 
 namespace WebApplication1.Repositories;
 
-public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
+public class MerchandiseRepository : IMerchandiseRepository
 {
     private readonly ILogger<MerchandiseRepository> _logger;
     private readonly IRatingRepository _ratingRepository;
@@ -14,7 +14,6 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
 
     public MerchandiseRepository(IRatingRepository ratingRepository, IDatabaseWrapper databaseWrapper,
         ILogger<MerchandiseRepository> logger)
-        : base(databaseWrapper)
     {
         _ratingRepository = ratingRepository;
         _db = databaseWrapper;
@@ -40,6 +39,14 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
 
         var result = _db.ExecuteScalar(command, parameters);
         return Convert.ToInt32(result) > 0;
+    }
+    
+    public bool MerchandiseExistsWithId(int id)
+    {
+        const string sql = "SELECT COUNT(1) FROM Merch WHERE id = @id";
+        var parameters = new[] { new SqlParameter("@id", id) };
+        var exists = (int) _db.ExecuteScalar(sql, parameters) > 0;
+        return exists;
     }
 
     public PaginatedResponse<MerchandiseDto> GetAllMerchandise(int page = 1, int pageSize = 10)
@@ -281,7 +288,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
         }
         catch (Exception e)
         {
-            _logger.LogError("Inserting merchandise failed: " + e);
+            _logger.LogError("Inserting merchandise failed: {Exception}", e);
             return InsertResult.Error;
         }
     }
@@ -368,7 +375,7 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
             }
 
             var sizesToRemove = currentSizes
-                .Where(cs => !merchandiseUpdateDto.Sizes.Any(us => us.Size == cs.Size))
+                .Where(cs => merchandiseUpdateDto.Sizes.All(us => us.Size != cs.Size))
                 .ToList();
 
             foreach (var sizeToRemove in sizesToRemove)
@@ -571,16 +578,6 @@ public class MerchandiseRepository : BaseRepository, IMerchandiseRepository
         }
 
         return sizes;
-    }
-
-    public T ExecuteScalar<T>(string sql, params SqlParameter[] parameters)
-    {
-        using var connection = CreateConnection();
-        connection.Open();
-        using var command = new SqlCommand(sql, connection);
-        command.Parameters.AddRange(parameters);
-        var result = command.ExecuteScalar();
-        return (T)result;
     }
 
     private List<MerchandiseImage> GetImagesForMerchandise(int merchandiseId)

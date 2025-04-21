@@ -293,36 +293,6 @@ public class MerchandiseServiceTests
     }
 
     [Test]
-    public void MerchandiseExists_ExistingId_ReturnsTrue()
-    {
-        // Arrange
-        _mockMerchandiseRepository.Setup(x => x.ExecuteScalar<int>(It.IsAny<string>(), It.IsAny<System.Data.SqlClient.SqlParameter[]>()))
-            .Returns(1);
-
-        // Act
-        var result = _merchandiseService.MerchandiseExists(1);
-
-        // Assert
-        Assert.That(result, Is.True);
-        _mockMerchandiseRepository.Verify(x => x.ExecuteScalar<int>(It.IsAny<string>(), It.IsAny<System.Data.SqlClient.SqlParameter[]>()), Times.Once);
-    }
-
-    [Test]
-    public void MerchandiseExists_NonExistentId_ReturnsFalse()
-    {
-        // Arrange
-        _mockMerchandiseRepository.Setup(x => x.ExecuteScalar<int>(It.IsAny<string>(), It.IsAny<System.Data.SqlClient.SqlParameter[]>()))
-            .Returns(0);
-
-        // Act
-        var result = _merchandiseService.MerchandiseExists(999);
-
-        // Assert
-        Assert.That(result, Is.False);
-        _mockMerchandiseRepository.Verify(x => x.ExecuteScalar<int>(It.IsAny<string>(), It.IsAny<System.Data.SqlClient.SqlParameter[]>()), Times.Once);
-    }
-
-    [Test]
     public void AddCategoryToDb_NewCategory_ReturnsSuccess()
     {
         // Arrange

@@ -1,43 +1,44 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ClassDiagram MajorVersion="1" MinorVersion="1" MembersFormat="NameAndType">
-  <Class Name="WebApplication1.Controllers.AuthController">
-    <Position X="7.25" Y="3" Width="2.5" />
+  <Class Name="WebApplication1.Repositories.CustomDesignRepository" BaseTypeListCollapsed="true">
+    <Position X="12.5" Y="13.25" Width="4" />
     <TypeIdentifier>
-      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAgIAABAAAAAAAQAAAAAAA=</HashCode>
-      <FileName>Controllers\AuthController.cs</FileName>
+      <HashCode>AAAAgEAQAAQAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAA=</HashCode>
+      <FileName>Repositories\CustomDesignRepository.cs</FileName>
     </TypeIdentifier>
+    <Lollipop Position="0.2" />
   </Class>
-  <Class Name="Microsoft.AspNetCore.Mvc.ControllerBase" Collapsed="true">
-    <Position X="11" Y="1.5" Width="1.5" />
-    <TypeIdentifier />
-  </Class>
-  <Class Name="WebApplication1.Controllers.CustomDesignController">
-    <Position X="13.75" Y="3" Width="3.25" />
+  <Class Name="WebApplication1.Repositories.MerchandiseImageRepository" BaseTypeListCollapsed="true">
+    <Position X="7.5" Y="15" Width="4.5" />
     <TypeIdentifier>
-      <HashCode>AAABAAAAAAAAAAAAAAAAIAACIgAAAAAACAAAAAAAAAA=</HashCode>
-      <FileName>Controllers\CustomDesignController.cs</FileName>
+      <HashCode>AAAAgAAAQAAAAAAAAIAAAAAAIAAAAAAAAAABABACAAA=</HashCode>
+      <FileName>Repositories\MerchandiseImageRepository.cs</FileName>
     </TypeIdentifier>
+    <Lollipop Position="0.2" />
   </Class>
-  <Class Name="WebApplication1.Controllers.MerchandiseController">
-    <Position X="10" Y="3" Width="3.5" />
+  <Class Name="WebApplication1.Repositories.MerchandiseRepository" BaseTypeListCollapsed="true">
+    <Position X="7.5" Y="9" Width="4.25" />
     <TypeIdentifier>
-      <HashCode>AIAgAAAAQNBAAACYAIAQAAgQIQAIAAAAEAAAQAAAAQA=</HashCode>
-      <FileName>Controllers\MerchandiseController.cs</FileName>
+      <HashCode>AIAgggAAANBAAACAAAAQAAgAIQAIAQAAEAABgAAAgQA=</HashCode>
+      <FileName>Repositories\MerchandiseRepository.cs</FileName>
     </TypeIdentifier>
+    <Lollipop Position="0.2" />
   </Class>
-  <Class Name="WebApplication1.Controllers.OrderController">
-    <Position X="6.75" Y="5.75" Width="3" />
+  <Class Name="WebApplication1.Repositories.OrderRepository" BaseTypeListCollapsed="true">
+    <Position X="12.5" Y="9" Width="4" />
     <TypeIdentifier>
-      <HashCode>AAAAAAAAAAAQAAAAAAEIAAAAIAAEAAAAiCAQAAAAAAg=</HashCode>
-      <FileName>Controllers\OrderController.cs</FileName>
+      <HashCode>AAAAgAAAAAgAAAAAACAAAAQAMAAAAAQAAgEAACAAGBA=</HashCode>
+      <FileName>Repositories\OrderRepository.cs</FileName>
     </TypeIdentifier>
+    <Lollipop Position="0.2" />
   </Class>
-  <Class Name="WebApplication1.Controllers.RatingController">
-    <Position X="14" Y="6" Width="2.75" />
+  <Class Name="WebApplication1.Repositories.RatingRepository" BaseTypeListCollapsed="true">
+    <Position X="12.5" Y="16" Width="3.25" />
     <TypeIdentifier>
-      <HashCode>AEAAAAAAAAAAAAAAAAAACAAAIAAAAAAAAAAAAAAAAAA=</HashCode>
-      <FileName>Controllers\RatingController.cs</FileName>
+      <HashCode>AAAAgAAAAAAAAAAQAAAACAAAIAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Repositories\RatingRepository.cs</FileName>
     </TypeIdentifier>
+    <Lollipop Position="0.2" />
   </Class>
   <Font Name="Segoe UI" Size="9" />
 </ClassDiagram>

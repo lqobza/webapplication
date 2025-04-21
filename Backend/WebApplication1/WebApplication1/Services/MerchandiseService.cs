@@ -154,10 +154,7 @@ public class MerchandiseService : IMerchandiseService
 
     public bool MerchandiseExists(int id)
     {
-        const string sql = "SELECT COUNT(1) FROM Merch WHERE id = @id";
-        var parameters = new[] { new System.Data.SqlClient.SqlParameter("@id", id) };
-        var exists = _merchandiseRepository.ExecuteScalar<int>(sql, parameters) > 0;
-        return exists;
+        return _merchandiseRepository.MerchandiseExistsWithId(id);
     }
 
     public async Task<MerchandiseImageDto> UploadMerchandiseImage(int merchandiseId, IFormFile image)
