@@ -23,7 +23,7 @@ public class CustomDesignController : ControllerBase
     public async Task<IActionResult> CreateDesign([FromBody] CustomDesignCreateDto designDto)
     {
         _logger.LogInformation("CreateDesign endpoint called with design name: {DesignName}", designDto.Name);
-
+        
         if (string.IsNullOrEmpty(designDto.Name))
         {
             _logger.LogWarning("Design name is required");

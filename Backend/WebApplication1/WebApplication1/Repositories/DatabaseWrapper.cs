@@ -29,7 +29,6 @@ public class DatabaseWrapper : IDatabaseWrapper
         connection.Open();
         using var command = new SqlCommand(query, connection);
 
-        // Set command type to StoredProcedure if the command text is in the format [dbo].[ProcedureName]
         if (query.StartsWith("[dbo].")) command.CommandType = CommandType.StoredProcedure;
 
         if (parameters is { Length: > 0 }) command.Parameters.AddRange(parameters);

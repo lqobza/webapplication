@@ -162,8 +162,7 @@ export class MerchandiseListComponent implements OnInit {
 
   getImageUrl(merchandise: Merchandise): string {
     if (merchandise.images && merchandise.images.length > 0) {
-      const primaryImage = merchandise.images.find(img => img.isPrimary);
-      const imageUrl = primaryImage ? primaryImage.imageUrl : merchandise.images[0].imageUrl;
+      const imageUrl =  merchandise.images[0].imageUrl;
       
       if (imageUrl && imageUrl.startsWith('/')) {
         return `${environment.apiUrl}${imageUrl}`;

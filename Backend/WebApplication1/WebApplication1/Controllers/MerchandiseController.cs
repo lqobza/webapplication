@@ -335,6 +335,7 @@ public class MerchandiseController : ControllerBase
     }
 
     [HttpPost("{id:int}/images")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UploadImage(int id, IFormFile image)
     {
         if (image.Length == 0)
@@ -407,6 +408,7 @@ public class MerchandiseController : ControllerBase
     }
 
     [HttpDelete("image/{merchandiseId:int}/{fileName}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteImage(int merchandiseId, string fileName)
     {
         _logger.LogInformation("DeleteImage endpoint called for merchandise ID: {Id}, filename: {FileName}",

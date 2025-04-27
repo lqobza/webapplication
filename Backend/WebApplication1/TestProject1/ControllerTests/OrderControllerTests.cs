@@ -67,20 +67,7 @@ namespace TestProject1.ControllerTests
             Debug.Assert(okResult != null, nameof(okResult) + " != null");
             Assert.That(okResult.Value, Is.EqualTo(expectedOrders));
         }
-        
-        [Test]
-        public async Task GetAllOrders_AsNonAdmin_ReturnsUnauthorized()
-        {
-            // Arrange
-            SetupUserContext(isAdmin: false);
-            
-            // Act
-            var result = await _controller.GetAllOrders();
-            
-            // Assert
-            Assert.That(result, Is.InstanceOf<UnauthorizedObjectResult>());
-        }
-        
+
         [Test]
         public async Task GetOrdersByUserId_ValidUser_ReturnsOkWithOrders()
         {

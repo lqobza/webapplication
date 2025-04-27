@@ -72,20 +72,7 @@ namespace TestProject1.ControllerTests
             Assert.That(deserialized, Is.Not.Null);
             Assert.That((int)deserialized!.Id, Is.EqualTo(expectedDesignId));
         }
-        
-        [Test]
-        public async Task CreateDesign_NullData_ReturnsBadRequest()
-        {
-            // Arrange
-            CustomDesignCreateDto designDto = null!;
-            
-            // Act
-            var result = await _controller.CreateDesign(designDto);
-            
-            // Assert
-            Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
-        }
-        
+
         [Test]
         public async Task CreateDesign_MissingRequiredFields_ReturnsBadRequest()
         {

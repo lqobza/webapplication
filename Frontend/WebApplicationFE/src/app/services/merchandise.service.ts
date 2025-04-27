@@ -5,7 +5,6 @@ import { Merchandise } from '../models/merchandise.model';
 import { Category } from '../models/category.model';
 import { PaginatedResponse } from '../models/paginated-response.model';
 import { catchError } from 'rxjs/operators';
-import { ErrorHandlingService } from './error-handling.service';
 import { MerchandiseImage } from '../models/merchandise-image.model';
 import { environment } from 'src/environments/environment';
 import { MerchandiseSearch, SortOption } from '../models/merchandise-search.model';
@@ -16,7 +15,7 @@ import { MerchandiseSearch, SortOption } from '../models/merchandise-search.mode
 export class MerchandiseService {
   private apiUrl = `${environment.apiUrl}/api/merchandise`;
 
-  constructor(private http: HttpClient, private errorHandlingService: ErrorHandlingService) { }
+  constructor(private http: HttpClient) { }
 
   getAllMerchandise(page: number = 1, pageSize: number = 10): Observable<PaginatedResponse<Merchandise>> {
     return this.http.get<PaginatedResponse<Merchandise>>(`${this.apiUrl}?page=${page}&pageSize=${pageSize}`);
@@ -141,7 +140,7 @@ export class MerchandiseService {
               observer.complete();
             });
           }
-          return this.errorHandlingService.handleError<MerchandiseImage[]>('getMerchandiseImages', [])(error);
+          return [];
         })
       );
   }

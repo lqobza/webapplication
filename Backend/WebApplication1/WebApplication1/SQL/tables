@@ -105,20 +105,3 @@ CREATE INDEX idx_ratings_merch_id ON Ratings(merch_id);
 CREATE INDEX idx_merchsize_merch_id ON MerchSize(merch_id);
 CREATE INDEX idx_merchimages_merch_id ON MerchandiseImages(merch_id);
 CREATE INDEX IX_CustomDesigns_UserId ON CustomDesigns(user_id);
-
--- Helper stored procedure for future column additions
-CREATE OR ALTER PROCEDURE AddColumnIfNotExists
-    @tableName NVARCHAR(128),
-    @columnName NVARCHAR(128),
-    @columnDefinition NVARCHAR(MAX)
-AS
-BEGIN
-    DECLARE @sql NVARCHAR(MAX)
-    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(@tableName) AND name = @columnName)
-    BEGIN
-        SET @sql = N'ALTER TABLE ' + QUOTENAME(@tableName) + 
-                   N' ADD ' + QUOTENAME(@columnName) + N' ' + @columnDefinition
-        EXEC sp_executesql @sql
-        PRINT 'Added ' + @columnName + ' column to ' + @tableName + ' table'
-    END
-END; 

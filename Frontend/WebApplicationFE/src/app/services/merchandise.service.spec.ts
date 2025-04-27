@@ -2,7 +2,6 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { MerchandiseService } from './merchandise.service';
-import { ErrorHandlingService } from './error-handling.service';
 import { Merchandise } from '../models/merchandise.model';
 import { Category } from '../models/category.model';
 import { environment } from 'src/environments/environment';
@@ -11,16 +10,11 @@ import { MerchandiseSearch, SortOption } from '../models/merchandise-search.mode
 describe('MerchandiseService', () => {
   let service: MerchandiseService;
   let httpMock: HttpTestingController;
-  let errorHandlingServiceMock: jasmine.SpyObj<ErrorHandlingService>;
 
   beforeEach(() => {
-    // Create mock for ErrorHandlingService
-    errorHandlingServiceMock = jasmine.createSpyObj('ErrorHandlingService', ['handleError']);
-    
     TestBed.configureTestingModule({
       providers: [
         MerchandiseService,
-        { provide: ErrorHandlingService, useValue: errorHandlingServiceMock },
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting()
       ]

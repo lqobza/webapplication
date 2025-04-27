@@ -2,28 +2,19 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { AuthService } from './auth.service';
-import { ErrorHandlingService } from './error-handling.service';
 import { environment } from 'src/environments/environment';
-import { of, throwError } from 'rxjs';
 
 describe('AuthService', () => {
   let service: AuthService;
   let httpMock: HttpTestingController;
-  let errorHandlingServiceMock: jasmine.SpyObj<ErrorHandlingService>;
 
   beforeEach(() => {
-    // Create a mock for the ErrorHandlingService that returns an observable of empty by default
-    errorHandlingServiceMock = jasmine.createSpyObj('ErrorHandlingService', ['handleError']);
-    // By default, just return the inner function that returns an empty observable
-    errorHandlingServiceMock.handleError.and.returnValue(() => of(null));
-    
     // Clear localStorage before each test
     localStorage.clear();
 
     TestBed.configureTestingModule({
       providers: [
         AuthService,
-        { provide: ErrorHandlingService, useValue: errorHandlingServiceMock },
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting()
       ]

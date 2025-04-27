@@ -6,6 +6,7 @@ using WebApplication1.Services.Interface;
 using System.Security.Claims;
 using Microsoft.IdentityModel.JsonWebTokens;
 using System.Data.SqlClient;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WebApplication1.Controllers;
 
@@ -23,20 +24,10 @@ public class OrderController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetAllOrders()
     {
         _logger.LogInformation("GetAllOrders endpoint called");
-
-        var isAdmin = User.Claims.Any(c =>
-            c is { Type: "http://schemas.microsoft.com/ws/2008/06/identity/claims/role", Value: "Admin" }
-        );
-
-
-        if (!isAdmin)
-        {
-            _logger.LogWarning("Unauthorized access attempt to GetAllOrders");
-            return Unauthorized(new { message = "Admin access required" });
-        }
 
         try
         {
@@ -52,6 +43,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpGet("orders")]
+    [Authorize(Roles = "Admin,User")]
     public async Task<IActionResult> GetOrdersByUserId()
     {
         _logger.LogInformation("GetOrdersByUserId endpoint called");
@@ -86,6 +78,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpGet("orders/{id:int}")]
+    [Authorize(Roles = "Admin,User")]
     public async Task<IActionResult> GetOrderById(int id)
     {
         _logger.LogInformation("GetOrderById endpoint called");
@@ -103,6 +96,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpPost("create")]
+    [Authorize(Roles = "Admin,User")]
     public async Task<IActionResult> CreateOrder([FromBody] OrderCreateDto orderCreateDto)
     {
         _logger.LogInformation("CreateOrder endpoint called");
@@ -197,6 +191,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpPost("{id:int}/cancel")]
+    [Authorize(Roles = "Admin,User")]
     public async Task<IActionResult> CancelOrder(int id)
     {
         try
@@ -229,6 +224,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpPost("{id:int}/status")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateOrderStatus(int id, [FromBody] UpdateOrderStatusDto statusDto)
     {
         try
@@ -262,6 +258,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpGet("{id:int}/messages")]
+    [Authorize(Roles = "Admin,User")]
     public async Task<IActionResult> GetOrderMessages(int id)
     {
         _logger.LogInformation("GetOrderMessages endpoint called for order {OrderId}", id);
@@ -279,6 +276,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpPost("{id:int}/messages")]
+    [Authorize(Roles = "Admin,User")]
     public async Task<IActionResult> AddOrderMessage(int id, [FromBody] OrderMessageCreateDto messageDto)
     {
         _logger.LogInformation("AddOrderMessage endpoint called for order {OrderId}", id);
