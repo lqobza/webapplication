@@ -107,7 +107,6 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
   
   designName: string = '';
   
-  // Aspect ratio lock option for image resizing
   maintainAspectRatio: boolean = true;
   
   fontFamilies = [
@@ -151,29 +150,28 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     private authService: AuthService
   ) {}
 
-  // Format pixels for slider display
+  // this is for formating pixels for slider display
   formatPx(value: number): string {
     return `${value}px`;
   }
 
-  // Image dimension getters and setters for the UI
   getActiveImageWidth(): number {
     if (this.activeElement && 'url' in this.activeElement) {
       return this.activeElement.width;
     }
-    return 100; // Default value
+    return 100; //default value
   }
 
   setActiveImageWidth(width: number): void {
     if (this.activeElement && 'url' in this.activeElement) {
       const oldWidth = this.activeElement.width;
       
-      // If maintaining aspect ratio, check if change would cause height to exceed limits
+      //if aspect ratio is maintainged, check if change would cause height to exceed limits
       if (this.maintainAspectRatio) {
         const aspectRatio = this.activeElement.height / oldWidth;
         const projectedHeight = Math.round(width * aspectRatio);
         
-        // Don't allow change if it would cause height to go beyond limits
+        //don't allow change if it would cause height to go beyond limits
         if (projectedHeight < 20 || projectedHeight > 300) {
           return;
         }
@@ -192,19 +190,19 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     if (this.activeElement && 'url' in this.activeElement) {
       return this.activeElement.height;
     }
-    return 100; // Default value
+    return 100; //default value
   }
 
   setActiveImageHeight(height: number): void {
     if (this.activeElement && 'url' in this.activeElement) {
       const oldHeight = this.activeElement.height;
       
-      // If maintaining aspect ratio, check if change would cause width to exceed limits
+      //if aspect ratio is maintainged, check if change would cause width to exceed limits
       if (this.maintainAspectRatio) {
         const aspectRatio = this.activeElement.width / oldHeight;
         const projectedWidth = Math.round(height * aspectRatio);
         
-        // Don't allow change if it would cause width to go beyond limits
+        //don't allow change if it would cause width to go beyond limits
         if (projectedWidth < 20 || projectedWidth > 300) {
           return;
         }
@@ -219,7 +217,6 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     }
   }
 
-  // Text properties methods
   getActiveTextFont(): string {
     if (this.activeElement && 'text' in this.activeElement) {
       return this.activeElement.fontFamily;
@@ -262,7 +259,6 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     }
   }
   
-  // Helper for text size input event
   updateTextSize(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input && input.value) {
@@ -270,7 +266,6 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     }
   }
 
-  // Function to resize active image
   resizeActiveImage(width: number, height: number): void {
     if (this.activeElement && 'url' in this.activeElement) {
       this.activeElement.width = width;
@@ -444,7 +439,6 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
       
       ctx.fillStyle = '#0099ff';
       ctx.beginPath();
-      ctx.arc(0, -height/2 - 20, 5, 0, Math.PI * 2);
       ctx.fill();
     }
     
@@ -474,7 +468,6 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
       
       ctx.fillStyle = '#0099ff';
       ctx.beginPath();
-      ctx.arc(0, -element.height/2 - 20, 5, 0, Math.PI * 2);
       ctx.fill();
     }
     
@@ -881,7 +874,7 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     this.snackBar.open('Cleared all designs', 'Close', { duration: 2000 });
   }
 
-  // Helper methods to determine which controls to show
+  //helpers to determine which controls to show
   isImageElement(): boolean {
     return this.activeElement !== null && 'url' in this.activeElement && !('text' in this.activeElement);
   }

@@ -434,7 +434,7 @@ public class MerchandiseRepository : IMerchandiseRepository
     public List<CategoryDto> GetCategories()
     {
         var categories = new List<CategoryDto>();
-        const string command = "[dbo].[GetCategories]";
+        const string command = @"SELECT id, name FROM Category;";
 
         using var reader = _db.ExecuteReader(command);
 
@@ -451,7 +451,7 @@ public class MerchandiseRepository : IMerchandiseRepository
     public List<ThemeDto> GetThemes()
     {
         var themes = new List<ThemeDto>();
-        const string command = "[dbo].[GetThemes]";
+        const string command = @"SELECT id, name FROM Theme;";
 
         using var reader = _db.ExecuteReader(command);
 
@@ -468,7 +468,7 @@ public class MerchandiseRepository : IMerchandiseRepository
     public List<BrandDto> GetBrands()
     {
         var brands = new List<BrandDto>();
-        const string command = "[dbo].[GetBrands]";
+        const string command = @"SELECT id, name FROM Brand;";
 
         using var reader = _db.ExecuteReader(command);
 

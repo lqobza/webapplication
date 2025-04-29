@@ -386,13 +386,13 @@ public class OrderRepository : IOrderRepository
         const string deleteItemsCommand = @"DELETE FROM OrderItems WHERE order_id = @orderId";
 
         const string deleteMessagesCommand = @"
-        IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'OrderMessages')
+        IF EXISTS (SELECT * FROM OrderMessages)
         BEGIN
-            IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'OrderMessages' AND COLUMN_NAME = 'order_id')
+            IF EXISTS (SELECT * FROM OrderMessages AND COLUMN_NAME = 'order_id')
             BEGIN
                 DELETE FROM OrderMessages WHERE order_id = @orderId
             END
-            ELSE IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'OrderMessages' AND COLUMN_NAME = 'OrderId')
+            ELSE IF EXISTS (SELECT * FROM OrderMessages AND COLUMN_NAME = 'OrderId')
             BEGIN
                 DELETE FROM OrderMessages WHERE OrderId = @orderId
             END

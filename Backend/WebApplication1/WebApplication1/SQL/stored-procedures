@@ -21,7 +21,7 @@ CREATE PROC [dbo].[CheckMerchExistence]
 )
 AS
 BEGIN
-    SET @exists = 0;  -- Default to false
+    SET @exists = 0;
 
     IF EXISTS (
         SELECT 1
@@ -31,7 +31,7 @@ BEGIN
           AND brand_id = @brandId
     )
     BEGIN
-        SET @exists = 1;  -- Set to true if the record exists
+        SET @exists = 1;
     END
 END
 GO
@@ -52,11 +52,9 @@ CREATE PROC [dbo].[GetAllMerchandise]
     @PageSize int = 10
 AS
 BEGIN TRY
-    -- Get total count for metadata
     DECLARE @TotalCount int;
     SELECT @TotalCount = COUNT(DISTINCT m.id) FROM Merch m;
 
-    -- Get paginated merchandise with all their data
     WITH PaginatedMerch AS (
         SELECT DISTINCT m.id
         FROM Merch m
@@ -150,7 +148,7 @@ BEGIN TRY
              LEFT JOIN Theme t ON mt.theme_id = t.id
              LEFT JOIN MerchSize ms ON m.id = ms.merch_id
     WHERE m.id = @Id
-    ORDER BY ms.size;  -- This is CRUCIAL!
+    ORDER BY ms.size;
 END TRY
 BEGIN CATCH
     -- Handle errors
@@ -279,25 +277,21 @@ CREATE PROCEDURE [dbo].[InsertMerchandise]
     @price DECIMAL(10, 2),
     @description NVARCHAR(MAX),
     @brandId INT,
-    @sizes dbo.MerchSizeType READONLY, -- TVP for sizes
-    @themes dbo.MerchThemeType READONLY -- TVP for themes
+    @sizes dbo.MerchSizeType READONLY,
+    @themes dbo.MerchThemeType READONLY
 )
 AS
 BEGIN TRY
     SET NOCOUNT ON;
 
-    -- Start a transaction
     BEGIN TRANSACTION;
 
-    -- Declare table variable to store new merchandise ID
     DECLARE @newMerchId TABLE (ID INT);
 
-    -- Insert into Merch and capture the new ID
     INSERT INTO Merch (category_id, name, price, description, brand_id)
     OUTPUT INSERTED.ID INTO @newMerchId
     VALUES (@categoryId, @name, @price, @description, @brandId);
 
-    -- Insert into MerchSize if sizes are provided
     IF EXISTS (SELECT 1 FROM @sizes)
         BEGIN
             INSERT INTO MerchSize (merch_id, size, instock)
@@ -305,7 +299,6 @@ BEGIN TRY
             FROM @sizes;
         END
 
-    -- Insert into MerchTheme if themes are provided
     IF EXISTS (SELECT 1 FROM @themes)
         BEGIN
             INSERT INTO MerchTheme (merch_id, theme_id)
@@ -313,10 +306,9 @@ BEGIN TRY
             FROM @themes;
         END
 
-    -- Commit the transaction if all inserts succeed
     COMMIT TRANSACTION;
 
-    RETURN 0; -- Indicate successful execution
+    RETURN 0;
 END TRY
 BEGIN CATCH
     -- Rollback the transaction in case of an error
@@ -350,15 +342,13 @@ CREATE PROCEDURE [dbo].[DeleteMerchandiseById]
 AS
 BEGIN
     BEGIN TRY
-        -- Delete associated data first
         DELETE FROM MerchSize WHERE merch_id = @id;
         DELETE FROM MerchTheme WHERE merch_id = @id;
         DELETE FROM MerchandiseImages WHERE MerchId = @id;
         
-        -- Delete the main merchandise record
         DELETE FROM Merch WHERE id = @id;
 
-        RETURN 0; -- Indicate success
+        RETURN 0;
     END TRY
     BEGIN CATCH
         -- Handle errors here
@@ -416,96 +406,6 @@ BEGIN
 
     SELECT @@ROWCOUNT AS RowsAffected;
 END
-GO
-
---GetCategories
-SET NOCOUNT ON;
-SET ANSI_NULLS ON;
-SET QUOTED_IDENTIFIER ON;
-GO
-
-IF OBJECT_ID(N'[dbo].[GetCategories]', N'P') IS NOT NULL
-    DROP PROCEDURE [dbo].[GetCategories];
-GO
-
-CREATE PROCEDURE [dbo].[GetCategories]
-(
-    @CategoryId INT = NULL -- Add a parameter to filter by category
-)
-AS
-BEGIN TRY
-    SELECT id, name FROM Category WHERE (@CategoryId IS NULL OR id = @CategoryId);
-END TRY
-BEGIN CATCH
-    -- Handle errors here
-    DECLARE @MSG NVARCHAR(4000),
-        @RC INT,
-        @PR NVARCHAR(126),
-        @LN INT;
-    SELECT @MSG = ERROR_MESSAGE(),
-           @RC = ERROR_NUMBER(),
-           @PR = ERROR_PROCEDURE(),
-           @LN = ERROR_LINE();
-    RAISERROR (N'Database Error: %d, Procedure: %s, Line: %d, Text: %s', 11, 1, @RC, @PR, @LN, @MSG) WITH LOG, NOWAIT;
-END CATCH
-GO
-
---GetThemes
-SET NOCOUNT ON;
-SET ANSI_NULLS ON;
-SET QUOTED_IDENTIFIER ON;
-GO
-
-IF OBJECT_ID(N'[dbo].[GetThemes]', N'P') IS NOT NULL
-    DROP PROCEDURE [dbo].[GetThemes];
-GO
-
-CREATE PROCEDURE [dbo].[GetThemes]
-AS
-BEGIN TRY
-    SELECT id, name FROM Theme;
-END TRY
-BEGIN CATCH
-    -- Handle errors here
-    DECLARE @MSG NVARCHAR(4000),
-        @RC INT,
-        @PR NVARCHAR(126),
-        @LN INT;
-    SELECT @MSG = ERROR_MESSAGE(),
-           @RC = ERROR_NUMBER(),
-           @PR = ERROR_PROCEDURE(),
-           @LN = ERROR_LINE();
-    RAISERROR (N'Database Error: %d, Procedure: %s, Line: %d, Text: %s', 11, 1, @RC, @PR, @LN, @MSG) WITH LOG, NOWAIT;
-END CATCH
-GO
-
---GetBrands
-SET NOCOUNT ON;
-SET ANSI_NULLS ON;
-SET QUOTED_IDENTIFIER ON;
-GO
-
-IF OBJECT_ID(N'[dbo].[GetBrands]', N'P') IS NOT NULL
-    DROP PROCEDURE [dbo].[GetBrands];
-GO
-
-CREATE PROCEDURE [dbo].[GetBrands]
-AS
-BEGIN TRY
-    SELECT id, name FROM Brand;
-END TRY
-BEGIN CATCH
-    -- Handle errors here
-    DECLARE @MSG NVARCHAR(4000),
-        @RC INT,
-        @PR NVARCHAR(126),
-        @LN INT;
-    SELECT @MSG = ERROR_MESSAGE(),
-           @RC = ERROR_NUMBER(),
-           @PR = ERROR_PROCEDURE(),
-           @LN = ERROR_LINE();
-    RAISERROR (N'Database Error: %d, Procedure: %s, Line: %d, Text: %s', 11, 1, @RC, @PR, @LN, @MSG) WITH LOG, NOWAIT;
-END CATCH
 GO
 
 --AddCategoryToDb

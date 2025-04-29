@@ -1,4 +1,4 @@
-using System.Data.SqlClient;
+﻿using System.Data.SqlClient;
 using WebApplication1.Models.DTOs;
 using WebApplication1.Repositories;
 using WebApplication1.Repositories.Interface;
@@ -10,7 +10,6 @@ public class RatingRepositoryTests
 {
     private Mock<ILogger<RatingRepository>> _mockLogger = null!;
     private Mock<IDatabaseWrapper> _mockDatabaseWrapper = null!;
-    private RatingRepository _repository = null!;
 
     [SetUp]
     public void Setup()
@@ -21,8 +20,6 @@ public class RatingRepositoryTests
         // Setup connection factory
         var connection = new SqlConnection("Data Source=dummy;Initial Catalog=Test;Integrated Security=True");
         _mockDatabaseWrapper.Setup(db => db.CreateConnection()).Returns(connection);
-        
-        _repository = new RatingRepository(_mockLogger.Object, _mockDatabaseWrapper.Object);
     }
 
     [Test]
