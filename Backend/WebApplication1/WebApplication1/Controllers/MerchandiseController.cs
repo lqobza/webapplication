@@ -14,7 +14,7 @@ public class MerchandiseController : ControllerBase
 {
     private readonly ILogger<MerchandiseController> _logger;
     private readonly IMerchandiseService _merchandiseService;
-    private readonly IImageStorageService _imageStorageService;
+    private readonly IImageStorageService _imageStorageService; 
     private readonly IMerchandiseRepository _merchandiseRepository;
 
     public MerchandiseController(IMerchandiseService merchandiseService, ILogger<MerchandiseController> logger,
@@ -29,60 +29,58 @@ public class MerchandiseController : ControllerBase
     [HttpGet]
     public IActionResult GetAllMerchandise([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        _logger.LogInformation("GetAllMerchandise endpoint called with page: {Page}, pageSize: {PageSize}", page,
-            pageSize);
+        _logger.LogInformation("GetAllMerchandise endpoint called with page {Page} pageSize: {PageSize}",page,pageSize);
 
-        if (page < 1 || pageSize < 1) return BadRequest(new { message = "Page and pageSize must be greater than 0" });
+        if (page < 1 || pageSize < 1) 
+            return BadRequest(new { message ="Page and pageSize must be more than 0"});
 
         var result = _merchandiseService.GetAllMerchandise(page, pageSize);
-
-        if (result.Items.Count == 0)
-        {
+        
+        if (result.Items.Count==0){
             _logger.LogWarning("No merchandise found");
-            return NotFound(new { message = "No merchandise found." });
+            return NotFound(new { message = "No merchandise found"});
         }
 
-        _logger.LogInformation("Returning merchandise list (count: {Count}, total: {Total})",
-            result.Items.Count, result.TotalCount);
+        _logger.LogInformation("Returning merchandise list, count: {Count} total: {Total})",result.Items.Count, result.TotalCount);
+        
         return Ok(result);
     }
 
+    
     [HttpGet("search")]
     public IActionResult SearchMerchandise([FromQuery] MerchandiseSearchDto searchParams)
     {
-        _logger.LogInformation("SearchMerchandise endpoint called with parameters: {@SearchParams}", searchParams);
+        _logger.LogInformation("SearchMerchandise endpoint called with params {@SearchParams}", searchParams);
 
-        if (searchParams.Page < 1 || searchParams.PageSize < 1)
-            return BadRequest(new { message = "Page and pageSize must be greater than 0" });
-
+        if (searchParams.Page < 1 ||searchParams.PageSize < 1)
+            return BadRequest(new { message="Page and pageSize must be greater than 0"});
         if (searchParams is { MinPrice: not null, MaxPrice: not null } &&
             searchParams.MinPrice > searchParams.MaxPrice)
-            return BadRequest(new { message = "MinPrice cannot be greater than MaxPrice" });
+            return BadRequest(new { message= "MinPrice cannot be greater than MaxPrice"});
 
         var result = _merchandiseService.SearchMerchandise(searchParams);
-
         if (result.Items.Count == 0)
         {
             _logger.LogWarning("No merchandise found for search criteria");
-            return NotFound(new { message = "No merchandise found for the given search criteria." });
+            return NotFound(new { message = "No merchandise found for the given search criteria"}); 
         }
 
-        _logger.LogInformation("Returning search results (count: {Count}, total: {Total})",
-            result.Items.Count, result.TotalCount);
+        _logger.LogInformation("Returning search results, count: {Count}, total: {Total}",result.Items.Count, result.TotalCount);
         return Ok(result);
     }
 
+    
     [HttpGet("{id:int}")]
     public IActionResult GetMerchandiseById(int id)
     {
-        _logger.LogInformation("GetMerchandiseById endpoint called for ID: {id}", id);
+        _logger.LogInformation("GetMerchandiseById endpoint called with id: {id}", id);
 
         var merch = _merchandiseService.GetMerchandiseById(id);
 
         if (merch == null)
         {
             _logger.LogWarning("Merchandise not found for ID: {id}", id);
-            return NotFound(new { message = $"Merchandise with ID {id} not found." });
+            return NotFound(new { message = $"Merchandise with ID {id} not found" });
         }
 
         _logger.LogInformation("Returning merchandise with ID: {id}", id);
@@ -99,9 +97,7 @@ public class MerchandiseController : ControllerBase
         _logger.LogInformation("GetMerchandiseBySize endpoint called with size: {Size}", size);
 
         var merchList = _merchandiseService.GetMerchandiseBySize(size);
-
-        if (merchList.Count == 0)
-        {
+        if (merchList.Count == 0) {
             _logger.LogWarning("No merchandise found for size: {size}", size);
             return NotFound(new { message = $"No merchandise found for size: {size}", size });
         }
@@ -117,8 +113,7 @@ public class MerchandiseController : ControllerBase
 
         var merchList = _merchandiseService.GetMerchandiseByCategory(category);
 
-        if (merchList.Count == 0)
-        {
+        if (merchList.Count == 0) {
             _logger.LogWarning("No merchandise found for category: {category}", category);
             return NotFound(new { message = $"No merchandise found for category: {category}", category });
         }
@@ -131,11 +126,11 @@ public class MerchandiseController : ControllerBase
     [Authorize(Roles = "Admin")]
     public IActionResult InsertMerchandise([FromBody] MerchandiseCreateDto merchandiseCreateDto)
     {
-        _logger.LogInformation("InsertMerchandise endpoint called with data: {Merchandise}", merchandiseCreateDto);
+        _logger.LogInformation("InsertMerchandise endpoint called with merch {Merchandise}", merchandiseCreateDto);
 
         if (!ModelState.IsValid)
         {
-            _logger.LogWarning("Invalid input data: {ModelStateErrors}", ModelState);
+            _logger.LogWarning("Invalid input data");
             return BadRequest(ModelState);
         }
 
@@ -147,18 +142,21 @@ public class MerchandiseController : ControllerBase
             {
                 case InsertResult.Success:
                     _logger.LogInformation("Merchandise inserted successfully: {Merchandise}", merchandiseCreateDto);
-                    return Ok(new { message = "Merchandise inserted successfully." });
+                    return Ok(new { message = "Merchandise inserted successfully" });
+                
                 case InsertResult.AlreadyExists:
                     _logger.LogWarning("Merchandise already exists: {Merchandise}", merchandiseCreateDto);
-                    return Conflict(new { message = $"Merchandise {merchandiseCreateDto.Name} already exists." });
+                    return Conflict(new { message = $"Merchandise {merchandiseCreateDto.Name} already exists" });
+                
                 case InsertResult.Error:
                 default:
                     _logger.LogError("Internal server error while inserting merchandise: {Merchandise}",
                         merchandiseCreateDto);
                     return StatusCode(StatusCodes.Status500InternalServerError,
-                        new { message = "Internal server error during merchandise insert." });
+                        new{ message = "Internal server error during merchandise insert." });
             }
         }
+        
         catch (Exception ex)
         {
             _logger.LogError(ex, "Exception while inserting merchandise: {Merchandise}", merchandiseCreateDto);
@@ -171,7 +169,7 @@ public class MerchandiseController : ControllerBase
     [Authorize(Roles = "Admin")]
     public IActionResult DeleteMerchandiseById(int id)
     {
-        _logger.LogInformation("DeleteMerchandiseById endpoint called for ID: {Id}", id);
+        _logger.LogInformation("DeleteMerchandiseById endpoint called for Id {Id}", id);
 
         var isDeleted = _merchandiseService.DeleteMerchandiseById(id);
 
@@ -182,7 +180,7 @@ public class MerchandiseController : ControllerBase
                 return Ok();
             case false:
                 _logger.LogWarning("Merchandise not found with ID: {Id}", id);
-                return NotFound(new { message = $"Merchandise with ID {id} not found." });
+                return NotFound(new { message = $"Merchandise with ID {id} not found" });
         }
     }
 
@@ -199,40 +197,40 @@ public class MerchandiseController : ControllerBase
             if (!_merchandiseService.MerchandiseExists(id))
             {
                 _logger.LogWarning("Merchandise with ID {Id} not found", id);
-                return NotFound(new { message = $"Merchandise with ID {id} not found." });
+                return NotFound(new { message = $"Merchandise with ID {id} not found" });
             }
 
             if (merchandiseUpdateDto.Sizes != null)
-                foreach (var size in merchandiseUpdateDto.Sizes)
-                {
+                foreach (var size in merchandiseUpdateDto.Sizes)  {
                     if (size.InStock < 0) return BadRequest(new { message = "InStock value cannot be negative." });
 
                     if (string.IsNullOrWhiteSpace(size.Size))
-                        return BadRequest(new { message = "Size name cannot be empty." });
+                        return BadRequest(new { message = "Size name cannot be empty" });
                 }
 
             var result = _merchandiseService.UpdateMerchandise(id, merchandiseUpdateDto);
             if (result)
             {
                 _logger.LogInformation("Merchandise updated successfully: {Merchandise}", merchandiseUpdateDto);
-                return Ok(new { message = "Merchandise updated successfully." });
+                return Ok(new { message = "Merchandise updated successfully" });
             }
 
             _logger.LogWarning("Merchandise not found or no fields updated: {Merchandise}", merchandiseUpdateDto);
-            return NotFound(new { message = "Merchandise not found or no fields updated." });
+            return NotFound(new { message = "Merchandise not found or no fields updated" });
         }
         catch (ArgumentException ex)
         {
             _logger.LogError(ex, "Error in request input: {Merchandise}", merchandiseUpdateDto);
-            return BadRequest(new { message = "Invalid update values provided." });
+            return BadRequest(new { message = "Invalid update values provided" });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating merchandise: {Merchandise}", merchandiseUpdateDto);
-            return StatusCode(500, new { message = "An error occurred while updating merchandise." });
+            return StatusCode(500, new { message = "An error occurred while updating merchandise" });
         }
     }
 
+    
     [HttpGet("sizes/{categoryId:int}")]
     public IActionResult GetSizesByCategoryId(int categoryId)
     {
@@ -243,7 +241,7 @@ public class MerchandiseController : ControllerBase
         if (sizes != null && sizes.Count != 0) return Ok(sizes);
 
         _logger.LogWarning("No sizes found for categoryId: {categoryId}", categoryId);
-        return NotFound(new { message = $"No sizes found for category ID: {categoryId}." });
+        return NotFound(new { message = $"No sizes found for category ID: {categoryId}" });
     }
 
     [HttpGet("categories")]
@@ -252,9 +250,12 @@ public class MerchandiseController : ControllerBase
         _logger.LogInformation("GetCategories endpoint called");
 
         var categories = _merchandiseService.GetCategories();
-        if (categories.Count != 0) return Ok(categories);
-        _logger.LogWarning("No categories found.");
-        return NotFound(new { message = "No categories found." });
+        if (categories.Count != 0) 
+            return Ok(categories);
+        
+        _logger.LogWarning("No categories found");
+        
+        return NotFound(new{message = "No categories found" });
     }
 
     [HttpGet("themes")]
@@ -263,9 +264,11 @@ public class MerchandiseController : ControllerBase
         _logger.LogInformation("GetThemes endpoint called");
 
         var themes = _merchandiseService.GetThemes();
-        if (themes.Count != 0) return Ok(themes);
-        _logger.LogWarning("No themes found.");
-        return NotFound(new { message = "No themes found." });
+        if (themes.Count != 0) 
+            return Ok(themes);
+        
+        _logger.LogWarning("No themes found");
+        return NotFound(new { message = "No themes found" });
     }
 
     [HttpGet("brands")]
@@ -276,6 +279,7 @@ public class MerchandiseController : ControllerBase
         var brands = _merchandiseService.GetBrands();
 
         if (brands.Count != 0) return Ok(brands);
+        
         _logger.LogWarning("No brands found.");
         return NotFound(new { message = "No brands found." });
     }
@@ -284,7 +288,7 @@ public class MerchandiseController : ControllerBase
     [Authorize(Roles = "Admin")]
     public IActionResult AddCategoryToDb([FromBody] CategoryCreateDto categoryCreateDto)
     {
-        _logger.LogInformation("AddCategoryToDb endpoint called with data: {}", categoryCreateDto.Name);
+        _logger.LogInformation("AddCategoryToDb endpoint called with data {Name}", categoryCreateDto.Name);
 
         if (string.IsNullOrWhiteSpace(categoryCreateDto.Name) || !ModelState.IsValid) return BadRequest(ModelState);
 
@@ -294,24 +298,25 @@ public class MerchandiseController : ControllerBase
         switch (insertCategoryResult)
         {
             case InsertResult.Success:
-                _logger.LogInformation("Category inserted successfully: {}", categoryCreateDto.Name);
-                return Ok(new { message = "Category inserted successfully." });
+                _logger.LogInformation("Category inserted successfully {Name}", categoryCreateDto.Name);
+                return Ok(new { message = "Category inserted successfully"});
             case InsertResult.AlreadyExists:
-                _logger.LogWarning("Category already exists: {}", categoryCreateDto.Name);
-                return Conflict(new { message = $"Category {categoryCreateDto.Name} already exists." });
+                _logger.LogWarning("Category already exists: {Name}", categoryCreateDto.Name);
+                return Conflict(new { message = $"Category {categoryCreateDto.Name} already exists"});
             case InsertResult.Error:
             default:
-                _logger.LogError("Internal server error while inserting category: {}", categoryCreateDto.Name);
+                _logger.LogError("Internal server error while inserting category {Name}", categoryCreateDto.Name);
                 return StatusCode(StatusCodes.Status500InternalServerError,
-                    new { message = "Internal server error during category insert." });
+                    new { message = "Internal server error during category insert" });
         }
+        
     }
 
     [HttpPost("themes")]
     [Authorize(Roles = "Admin")]
     public IActionResult AddThemeToDb([FromBody] ThemeCreateDto themeCreateDto)
     {
-        _logger.LogInformation("AddThemeToDb endpoint called with data: {}", themeCreateDto.Name);
+        _logger.LogInformation("AddThemeToDb endpoint called with data {Name}", themeCreateDto.Name);
 
         if (string.IsNullOrWhiteSpace(themeCreateDto.Name) || !ModelState.IsValid) return BadRequest(ModelState);
 
@@ -320,17 +325,17 @@ public class MerchandiseController : ControllerBase
         switch (insertThemeResult)
         {
             case InsertResult.Success:
-                _logger.LogInformation("Theme inserted successfully: {}", themeCreateDto.Name);
-                return Ok(new { message = "Theme inserted successfully." });
+                _logger.LogInformation("Theme inserted successfully {Name}", themeCreateDto.Name);
+                return Ok(new {message="Theme inserted successfully"});
+            
             case InsertResult.AlreadyExists:
-                _logger.LogWarning("Theme already exists: {}", themeCreateDto.Name);
-                return Conflict(
-                    new { message = $"Theme {themeCreateDto.Name} already exists in the database." });
+                _logger.LogWarning("Theme already exists {Name}", themeCreateDto.Name);
+                return Conflict(new{ message = $"Theme {themeCreateDto.Name} already exists in the database" });
             case InsertResult.Error:
             default:
                 _logger.LogError("Internal server error while inserting theme: {}", themeCreateDto.Name);
                 return StatusCode(StatusCodes.Status500InternalServerError,
-                    new { message = "Theme insert was unsuccessful due to internal server error." });
+                    new {message="Internal server error"});
         }
     }
 
@@ -355,21 +360,25 @@ public class MerchandiseController : ControllerBase
             _logger.LogWarning(ex.Message);
             return NotFound(ex.Message);
         }
+        
         catch (ArgumentException ex)
         {
             _logger.LogWarning(ex.Message);
             return BadRequest(ex.Message);
         }
+        
         catch (DbUpdateException ex)
         {
             _logger.LogError(ex, "Database error uploading image for merchandise {Id}", id);
             return BadRequest($"Cannot add image to merchandise (ID: {id}): {ex.InnerException?.Message}");
         }
+        
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error uploading image for merchandise {Id}", id);
             return StatusCode(500, "Error uploading image");
         }
+        
     }
 
     [HttpGet("images/{merchandiseId:int}")]
@@ -381,15 +390,15 @@ public class MerchandiseController : ControllerBase
         if (!_merchandiseService.MerchandiseExists(merchandiseId))
         {
             _logger.LogWarning("Merchandise not found with ID: {Id}", merchandiseId);
-            return NotFound(new { message = $"Merchandise with ID {merchandiseId} not found." });
+            return NotFound(new { message = $"Merchandise with ID {merchandiseId} not found" });
         }
 
         var images = _merchandiseService.GetMerchandiseImages(merchandiseId);
 
-        if (images.Count == 0)
+        if (images.Count==0)
         {
             _logger.LogWarning("No images found for merchandise ID: {Id}", merchandiseId);
-            return NotFound(new { message = $"No images found for merchandise with ID {merchandiseId}." });
+            return NotFound(new { message = $"No images found for merchandise with ID {merchandiseId}" });
         }
 
         _logger.LogInformation("Returning {Count} images for merchandise ID: {Id}", images.Count, merchandiseId);
@@ -401,7 +410,8 @@ public class MerchandiseController : ControllerBase
     {
         var imagePath = Path.Combine(_imageStorageService.GetImageDirectory(), merchandiseId.ToString(), fileName);
 
-        if (!System.IO.File.Exists(imagePath)) return NotFound();
+        if (!System.IO.File.Exists(imagePath)) 
+             return NotFound();
 
         var imageFileStream = System.IO.File.OpenRead(imagePath);
         return File(imageFileStream, "image/jpeg");
@@ -426,8 +436,10 @@ public class MerchandiseController : ControllerBase
             }
 
             _logger.LogInformation("Image with filename {FileName} for Merchandise {Id} deleted successfully", fileName,
-                merchandiseId);
+                merchandiseId); 
+            
             return Ok();
+            
         }
         catch (Exception ex)
         {
@@ -436,6 +448,7 @@ public class MerchandiseController : ControllerBase
             return StatusCode(500, new { message = "An error occurred while deleting the image" });
         }
     }
+    
 
     [HttpGet("{id:int}/stock/{size}")]
     public IActionResult CheckStockAvailability(int id, string size, [FromQuery] int quantity = 1)
@@ -477,14 +490,13 @@ public class MerchandiseController : ControllerBase
                 "Stock check for {MerchandiseName} (ID: {Id}, Size: {Size}): Available: {Available}, Requested: {Requested}",
                 merchandiseName, id, size, sizeInfo.InStock, quantity);
 
-            return Ok(new
-            {
-                isAvailable,
-                available = sizeInfo.InStock,
-                requested = quantity,
-                merchandiseName,
-                size
-            });
+            return Ok(new {
+                    isAvailable,
+                    available = sizeInfo.InStock,
+                    requested = quantity,
+                    merchandiseName,
+                    size
+                });
         }
         catch (Exception ex)
         {
@@ -492,4 +504,6 @@ public class MerchandiseController : ControllerBase
             return StatusCode(500, new { message = "An error occurred while checking stock availability" });
         }
     }
+    
+    
 }

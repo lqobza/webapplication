@@ -6,8 +6,10 @@ namespace WebApplication1.Repositories;
 
 public class CustomDesignRepository : ICustomDesignRepository
 {
+    
     private readonly IDatabaseWrapper _db;
 
+    
     public CustomDesignRepository(IDatabaseWrapper databaseWrapper)
     {
         _db = databaseWrapper;
@@ -15,23 +17,28 @@ public class CustomDesignRepository : ICustomDesignRepository
 
     public Task<int> CreateDesignAsync(CustomDesignCreateDto design)
     {
-        const string query = @"
+        const string query= @"
             INSERT INTO CustomDesigns (user_id, name, front_image, back_image, created_at)
             OUTPUT INSERTED.ID
             VALUES (@userId, @name, @frontImage, @backImage, GETDATE())";
+        
 
         var parameters = new[]
         {
             new SqlParameter("@userId", design.UserId),
             new SqlParameter("@name", design.Name),
-            new SqlParameter("@frontImage", design.FrontImage),
+            new SqlParameter("@frontImage",design.FrontImage),
             new SqlParameter("@backImage", design.BackImage)
         };
 
         var result = _db.ExecuteScalar(query, parameters);
-        if (result == null) throw new InvalidOperationException("Failed to get the inserted design ID");
+        
+        if (result == null) 
+            throw new InvalidOperationException("Failed to get the inserted design ID"); 
+        
         return Task.FromResult(Convert.ToInt32(result));
     }
+    
 
     public Task<List<CustomDesignDto>> GetDesignsByUserIdAsync(string userId)
     {
@@ -51,7 +58,7 @@ public class CustomDesignRepository : ICustomDesignRepository
                 Id = (int)reader["id"],
                 UserId = (string)reader["user_id"],
                 Name = (string)reader["name"],
-                FrontImage = (string)reader["front_image"],
+                FrontImage =(string)reader["front_image"],
                 BackImage = (string)reader["back_image"],
                 CreatedAt = (DateTime)reader["created_at"]
             };
@@ -59,6 +66,7 @@ public class CustomDesignRepository : ICustomDesignRepository
         }
 
         return Task.FromResult(designList);
+        
     }
 
     public Task<CustomDesignDto?> GetDesignByIdAsync(int id)
@@ -75,7 +83,7 @@ public class CustomDesignRepository : ICustomDesignRepository
             return Task.FromResult(new CustomDesignDto
             {
                 Id = (int)reader["id"],
-                UserId = (string)reader["user_id"],
+                UserId = (string)reader["user_id"], 
                 Name = (string)reader["name"],
                 FrontImage = (string)reader["front_image"],
                 BackImage = (string)reader["back_image"],
@@ -87,13 +95,15 @@ public class CustomDesignRepository : ICustomDesignRepository
 
     public Task DeleteDesignAsync(int id)
     {
-        const string query = @"DELETE FROM CustomDesigns WHERE id = @id";
+        const string query=@"DELETE FROM CustomDesigns WHERE id = @id";
         var parameters = new[]
         {
-            new SqlParameter("@id", id)
+            new SqlParameter("@id",id)
         };
 
         _db.ExecuteNonQuery(query, parameters);
         return Task.CompletedTask;
     }
+    
+    
 }

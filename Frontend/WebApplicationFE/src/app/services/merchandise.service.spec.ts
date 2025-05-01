@@ -21,6 +21,7 @@ describe('MerchandiseService', () => {
     });
     
     service = TestBed.inject(MerchandiseService);
+    
     httpMock = TestBed.inject(HttpTestingController);
   });
 
@@ -33,11 +34,10 @@ describe('MerchandiseService', () => {
   });
 
   describe('getAllMerchandise', () => {
-    it('should return paginated merchandise list', () => {
-      // Mock response data
+    it('should return paginated merh list', () => {
       const mockResponse = {
         items: [
-          { id: 1, name: 'T-Shirt', price: 25, categoryId: 1, description: 'A T-shirt', images: [] }
+          { id: 1, name: 'tshirt', price: 25, categoryId: 1, description: 'description', images: [] }
         ],
         totalCount: 1,
         pageNumber: 1,
@@ -47,25 +47,20 @@ describe('MerchandiseService', () => {
         hasPreviousPage: false
       };
 
-      // Make the call
-      service.getAllMerchandise().subscribe(data => {
+      service.getAllMerchandise().subscribe(data =>{
         expect(data).toEqual(mockResponse);
         expect(data.items.length).toBe(1);
-        expect(data.items[0].name).toBe('T-Shirt');
+        expect(data.items[0].name).toBe('tshirt');
       });
 
-      // Expect a GET request to the specified URL
-      const req = httpMock.expectOne(`${environment.apiUrl}/api/merchandise?page=1&pageSize=10`);
-      expect(req.request.method).toBe('GET');
-      
-      // Resolve with mock data
-      req.flush(mockResponse);
+      const request =httpMock.expectOne(`${environment.apiUrl}/api/merchandise?page=1&pageSize=10`);
+      expect(request.request.method).toBe('GET');
+      request.flush(mockResponse);
     });
   });
 
   describe('searchMerchandise', () => {
-    it('should correctly build search parameters', () => {
-      // Create search parameters
+    it('should build search parameters', () => {
       const searchParams: MerchandiseSearch = {
         page: 1,
         pageSize: 10,
@@ -76,10 +71,9 @@ describe('MerchandiseService', () => {
         sortBy: SortOption.PriceAsc
       };
 
-      // Mock response
-      const mockResponse = {
+      const mockResponse={
         items: [
-          { id: 1, name: 'Blue Shirt', price: 25, categoryId: 1, description: 'A blue shirt', images: [] }
+          { id: 1, name: 'blue Shirt', price: 25, categoryId: 1, description: 'a blue shirt', images: []}
         ],
         totalCount: 1,
         pageNumber: 1,
@@ -88,21 +82,20 @@ describe('MerchandiseService', () => {
         hasNextPage: false,
         hasPreviousPage: false
       };
+      
 
-      // Make the call
       service.searchMerchandise(searchParams).subscribe(data => {
         expect(data).toEqual(mockResponse);
       });
 
-      // Check that the request URL and parameters are correct
-      const req = httpMock.expectOne(request => request.url === `${environment.apiUrl}/api/merchandise/search`);
-      expect(req.request.method).toBe('GET');
-      expect(req.request.params.get('keywords')).toBe('shirt');
-      expect(req.request.params.get('minPrice')).toBe('20');
-      expect(req.request.params.get('maxPrice')).toBe('50');
-      expect(req.request.params.get('categoryId')).toBe('1');
+      const request = httpMock.expectOne(request => request.url ===`${environment.apiUrl}/api/merchandise/search`);
+      expect(request.request.method).toBe('GET');
+      expect(request.request.params.get('keywords')).toBe('shirt');
+      expect(request.request.params.get('minPrice')).toBe('20');
+      expect(request.request.params.get('maxPrice')).toBe('50');
+      expect(request.request.params.get('categoryId')).toBe('1');
       
-      req.flush(mockResponse);
+      request.flush(mockResponse);
     });
   });
 
@@ -110,22 +103,22 @@ describe('MerchandiseService', () => {
     it('should return a single merchandise item by id', () => {
       const mockMerch: Merchandise = { 
         id: 1, 
-        name: 'T-Shirt', 
+        name: 'tshirt', 
         price: 25, 
         categoryId: 1, 
-        description: 'A T-shirt', 
+        description: 'a tshirt', 
         images: [] 
       };
 
       service.getMerchandiseById(1).subscribe(merch => {
         expect(merch).toEqual(mockMerch);
       });
-
       const req = httpMock.expectOne(`${environment.apiUrl}/api/merchandise/1`);
       expect(req.request.method).toBe('GET');
       req.flush(mockMerch);
     });
   });
+
 
   describe('getCategories', () => {
     it('should return list of categories', () => {
@@ -134,14 +127,15 @@ describe('MerchandiseService', () => {
         { id: 2, name: 'Hoodies' }
       ];
 
+
       service.getCategories().subscribe(categories => {
         expect(categories).toEqual(mockCategories);
         expect(categories.length).toBe(2);
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/api/merchandise/categories`);
-      expect(req.request.method).toBe('GET');
-      req.flush(mockCategories);
+      const request= httpMock.expectOne(`${environment.apiUrl}/api/merchandise/categories`);
+      expect(request.request.method).toBe('GET');
+      request.flush(mockCategories);
     });
   });
 
@@ -149,76 +143,78 @@ describe('MerchandiseService', () => {
     it('should create merchandise and return the created item', () => {
       const newMerch = {
         name: 'New T-Shirt',
-        price: 29.99,
+        price: 30,
         categoryId: 1,
         description: 'A brand new T-shirt',
         images: []
       };
-
       const mockResponse = { 
         id: 10,
         ...newMerch
       };
+
 
       service.createMerchandise(newMerch).subscribe(createdMerch => {
         expect(createdMerch).toEqual(mockResponse);
         expect(createdMerch.id).toBe(10);
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/api/merchandise`);
-      expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual(newMerch);
-      req.flush(mockResponse);
+      const request = httpMock.expectOne(`${environment.apiUrl}/api/merchandise`);
+      expect(request.request.method).toBe('POST');
+      expect(request.request.body).toEqual(newMerch);
+      request.flush(mockResponse);
     });
   });
 
-  describe('updateMerchandise', () => {
-    it('should update merchandise details', () => {
+  describe('updateMerchandise', () => { 
+    it('should update merchandise details', ()=> {
       const id = 1;
       const updates = {
         name: 'Updated T-Shirt',
-        price: 34.99
+        price: 35
       };
 
       service.updateMerchandise(id, updates).subscribe(response => {
         expect(response).toBeTruthy();
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/api/merchandise/1`);
-      expect(req.request.method).toBe('PATCH');
-      expect(req.request.body).toEqual(updates);
-      req.flush({ success: true });
+      const request = httpMock.expectOne(`${environment.apiUrl}/api/merchandise/1`);
+      expect(request.request.method).toBe('PATCH');
+      expect(request.request.body).toEqual(updates);
+      request.flush({ success: true});
     });
   });
 
   describe('deleteMerchandise', () => {
     it('should delete merchandise by id', () => {
-      const id = 1;
+      const id=1;
 
       service.deleteMerchandise(id).subscribe(response => {
         expect(response).toBeTruthy();
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/api/merchandise/1`);
-      expect(req.request.method).toBe('DELETE');
-      req.flush({ success: true });
+      const request = httpMock.expectOne(`${environment.apiUrl}/api/merchandise/1`);
+      expect(request.request.method).toBe('DELETE');
+      request.flush({ success: true });
     });
   });
 
   describe('checkStockAvailability', () => {
-    it('should check if merchandise is in stock', () => {
+    it('should check if merch is in stock', () => {
       const id = 1;
       const size = 'M';
-      const quantity = 2;
-      const mockResponse = { available: true, stock: 10 };
+      const quantity = 2; 
+      const mockResponse = { available: true, stock: 10};
 
       service.checkStockAvailability(id, size, quantity).subscribe(response => {
         expect(response).toEqual(mockResponse);
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/api/merchandise/1/stock/M?quantity=2`);
-      expect(req.request.method).toBe('GET');
-      req.flush(mockResponse);
+
+      const request = httpMock.expectOne(`${environment.apiUrl}/api/merchandise/1/stock/M?quantity=2`);
+      expect(request.request.method).toBe('GET');
+      request.flush(mockResponse);
     });
   });
 });
+ 

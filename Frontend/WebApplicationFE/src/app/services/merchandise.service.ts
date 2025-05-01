@@ -7,7 +7,7 @@ import { PaginatedResponse } from '../models/paginated-response.model';
 import { catchError } from 'rxjs/operators';
 import { MerchandiseImage } from '../models/merchandise-image.model';
 import { environment } from 'src/environments/environment';
-import { MerchandiseSearch, SortOption } from '../models/merchandise-search.model';
+import { MerchandiseSearch} from '../models/merchandise-search.model';
 
 @Injectable({
   providedIn: 'root'
@@ -16,6 +16,7 @@ export class MerchandiseService {
   private apiUrl = `${environment.apiUrl}/api/merchandise`;
 
   constructor(private http: HttpClient) { }
+
 
   getAllMerchandise(page: number = 1, pageSize: number = 10): Observable<PaginatedResponse<Merchandise>> {
     return this.http.get<PaginatedResponse<Merchandise>>(`${this.apiUrl}?page=${page}&pageSize=${pageSize}`);
@@ -46,6 +47,7 @@ export class MerchandiseService {
       params = params.set('sortBy', searchParams.sortBy.toString());
     }
     
+
     return this.http.get<PaginatedResponse<Merchandise>>(`${this.apiUrl}/search`, { params })
       .pipe(
         catchError(error => {
@@ -64,6 +66,7 @@ export class MerchandiseService {
           throw error;
         })
       );
+
   }
 
   insertMerchandise(merchandise: Merchandise): Observable<any> {
@@ -79,7 +82,7 @@ export class MerchandiseService {
   }
 
   updateMerchandise(id: number, merchandise: Partial<Merchandise>): Observable<any> {
-    return this.http.patch(`${this.apiUrl}/${id}`, merchandise);
+    return this.http.patch(`${this.apiUrl}/${id}`,merchandise);
   }
 
   getMerchandiseBySize(size: string): Observable<Merchandise[]> {
@@ -149,6 +152,7 @@ export class MerchandiseService {
     return this.http.delete(`${this.apiUrl}/${id}`);
   }
 
+
   createMerchandise(merchandise: Omit<Merchandise, 'id'>): Observable<Merchandise> {
     return new Observable<Merchandise>(observer => {
       this.http.post<Merchandise>(`${this.apiUrl}`, merchandise).subscribe({
@@ -162,4 +166,5 @@ export class MerchandiseService {
       });
     });
   }
+  
 }

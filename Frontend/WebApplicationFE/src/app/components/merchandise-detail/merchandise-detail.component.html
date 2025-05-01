@@ -1,8 +1,4 @@
-<div class="loading-state" *ngIf="!merchandise && isLoading">
-  Loading...
-</div>
-
-<div class="error-state" *ngIf="!merchandise && !isLoading && errorMessage">
+<div class="error-state" *ngIf="!merchandise && errorMessage">
   Error: {{ errorMessage }}
 </div>
 
@@ -90,7 +86,7 @@
       </div>
     </div>
     <div *ngIf="!merchandise.ratings || merchandise.ratings.length === 0">
-      <p>No reviews yet. Be the first to review this item!</p>
+      <p>No reviews yet</p>
     </div>
   
     <h3>Write a Review</h3>

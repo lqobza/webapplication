@@ -17,23 +17,25 @@ public class CustomDesignService : ICustomDesignService
 
     public async Task<int> CreateDesignAsync(CustomDesignCreateDto design)
     {
-        _logger.LogInformation("Creating design for user {UserId} with name {DesignName}", design.UserId, design.Name);
+        _logger.LogInformation("Creating design for user {UserId} with name: {DesignName}", design.UserId, design.Name);
 
         try
         {
             var designId = await _customDesignRepository.CreateDesignAsync(design);
-            _logger.LogInformation("Design created successfully with ID {DesignId}", designId);
+            _logger.LogInformation("Design created successfully with id {DesignId}", designId);
             return designId;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating design: {ErrorMessage}", ex.Message);
+            _logger.LogError(ex, "Error creating design {ErrorMessage}", ex.Message);
             throw;
         }
     }
 
+    
     public async Task<List<CustomDesignDto>> GetDesignsByUserIdAsync(string userId)
     {
+        
         _logger.LogInformation("Getting designs for user {UserId}", userId);
 
         try
@@ -44,7 +46,7 @@ public class CustomDesignService : ICustomDesignService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting designs for user {UserId}: {ErrorMessage}", userId, ex.Message);
+            _logger.LogError(ex, "Error getting designs for user {UserId}  {ErrorMessage}", userId, ex.Message);
             throw;
         }
     }
@@ -64,7 +66,7 @@ public class CustomDesignService : ICustomDesignService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting design with ID {DesignId}: {ErrorMessage}", id, ex.Message);
+            _logger.LogError(ex, "Error getting design with ID {DesignId} {ErrorMessage}", id, ex.Message);
             throw;
         }
     }
@@ -80,7 +82,7 @@ public class CustomDesignService : ICustomDesignService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error deleting design with ID {DesignId}: {ErrorMessage}", id, ex.Message);
+            _logger.LogError(ex, "Error deleting design with ID {DesignId}  {ErrorMessage}", id, ex.Message);
             throw;
         }
     }

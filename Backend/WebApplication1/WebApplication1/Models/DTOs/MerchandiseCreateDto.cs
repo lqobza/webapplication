@@ -13,8 +13,4 @@ public class MerchandiseCreateDto
     [Required] [StringLength(255)] public string Description { get; set; } = string.Empty;
 
     [Required] public int BrandId { get; set; }
-
-    public List<int>? ThemeIds { get; set; }
-
-    public List<MerchSizeCreateDto>? Sizes { get; set; }
 }

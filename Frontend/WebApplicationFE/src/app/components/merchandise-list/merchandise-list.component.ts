@@ -18,6 +18,7 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
   imports: [CommonModule, FormsModule]
 })
 export class MerchandiseListComponent implements OnInit {
+
   merchandiseList: Merchandise[] = [];
   isLoading = true;
   errorMessage: string | undefined;
@@ -34,12 +35,13 @@ export class MerchandiseListComponent implements OnInit {
   };
   
   categories: Category[] = [];
-  selectedCategoryId: number | undefined;
+  selectedCategoryId: number | undefined; 
   priceRange: { min: number | undefined, max: number | undefined } = { min: undefined, max: undefined };
   sortOption: string = '';
   searchTerm: string = '';
   private searchTerms = new Subject<string>();
   
+
   constructor(
     private merchandiseService: MerchandiseService,
     private router: Router
@@ -65,7 +67,7 @@ export class MerchandiseListComponent implements OnInit {
         this.categories = categories;
       },
       error: (error) => {
-        //console.error('Error fetching categories', error);
+        console.error('MIERTNEMMEGY :  ', error);
       }
     });
   }
@@ -87,7 +89,7 @@ export class MerchandiseListComponent implements OnInit {
     }
     
     if (this.priceRange.min !== undefined) {
-      searchParams.minPrice = this.priceRange.min;
+      searchParams.minPrice =this.priceRange.min;
     }
     
     if (this.priceRange.max !== undefined) {
@@ -120,11 +122,12 @@ export class MerchandiseListComponent implements OnInit {
           this.currentPage = this.paginationInfo.totalPages;
           this.searchMerchandise();
         }
+
       },
+
       error: (error) => {
-        //console.error('Error searching merchandise', error);
-        this.errorMessage = error.message || "Error searching merchandise";
-        this.isLoading = false;
+        this.errorMessage = error.message;  //snackbarra atirni
+        this.isLoading = false; 
         this.merchandiseList = [];
       }
     });
@@ -152,7 +155,6 @@ export class MerchandiseListComponent implements OnInit {
     if (newPage >= 1 && (!this.paginationInfo || newPage <= this.paginationInfo.totalPages)) {
       this.currentPage = newPage;
       this.searchMerchandise();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 

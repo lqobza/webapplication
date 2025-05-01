@@ -38,7 +38,6 @@ export class OrderDetailsComponent implements OnInit {
   @Input() isAdminMode: boolean = false;
 
   order: OrderDto | null = null;
-  loading: boolean = false;
   error: string | null = null;
   apiUrl = environment.apiUrl;
   orderStatuses = OrderStatus;
@@ -60,15 +59,15 @@ export class OrderDetailsComponent implements OnInit {
 
   fetchOrderDetails(): void {
     if (!this.orderId) {
-      this.error = 'Order ID is required';
+      this.error='orderId is required';
       return;
     }
 
-    this.loading = true;
     this.error = null;
 
     this.orderService.getOrderById(this.orderId).subscribe({
       next: (order) => {
+
         this.order = order;
         
         if (this.order && this.order.orderItems) {
@@ -83,13 +82,10 @@ export class OrderDetailsComponent implements OnInit {
             }
           });
         }
-        
-        this.loading = false;
+
       },
-      error: (err) => {
-        //console.error('[OrderDetails] Error fetching order details:', err);
-        this.error = 'Failed to load order details. Please try again.';
-        this.loading = false;
+      error: () => {
+        this.error = 'Failed to load order details'; //snackbarra atirni
       }
     });
   }

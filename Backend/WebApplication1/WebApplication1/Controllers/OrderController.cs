@@ -14,21 +14,25 @@ namespace WebApplication1.Controllers;
 [Route("api/[controller]")]
 public class OrderController : ControllerBase
 {
+    
     private readonly ILogger<OrderController> _logger;
     private readonly IOrderService _orderService;
 
+    
     public OrderController(IOrderService orderService, ILogger<OrderController> logger)
     {
         _orderService = orderService;
         _logger = logger;
     }
 
+    
     [HttpGet]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetAllOrders()
     {
         _logger.LogInformation("GetAllOrders endpoint called");
 
+        
         try
         {
             var orders = await _orderService.GetAllOrdersAsync();
@@ -48,14 +52,15 @@ public class OrderController : ControllerBase
     {
         _logger.LogInformation("GetOrdersByUserId endpoint called");
 
+        
         var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "userId") ??
                           User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier) ??
                           User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub);
 
         if (userIdClaim == null)
         {
-            _logger.LogWarning("User ID claim not found in token");
-            return Unauthorized(new { message = "User not authenticated or user ID not found in token" });
+            _logger.LogWarning("User ID not found in token");
+            return Unauthorized(new { message = "User ID not found in token" });
         }
 
         if (!int.TryParse(userIdClaim.Value, out var userId))
@@ -67,7 +72,7 @@ public class OrderController : ControllerBase
         _logger.LogInformation("Fetching orders for user ID: {UserId}", userId);
         var orderList = await _orderService.GetOrdersByUserIdAsync(userId);
 
-        if (orderList.Count == 0)
+        if (orderList.Count==0)
         {
             _logger.LogInformation("No orders found for user ID: {UserId}", userId);
             return NoContent();
@@ -76,6 +81,7 @@ public class OrderController : ControllerBase
         _logger.LogInformation("Returning orders list for user ID: {UserId}", userId);
         return Ok(orderList);
     }
+    
 
     [HttpGet("orders/{id:int}")]
     [Authorize(Roles = "Admin,User")]
@@ -95,6 +101,7 @@ public class OrderController : ControllerBase
         return Ok(order);
     }
 
+    
     [HttpPost("create")]
     [Authorize(Roles = "Admin,User")]
     public async Task<IActionResult> CreateOrder([FromBody] OrderCreateDto orderCreateDto)
@@ -119,14 +126,12 @@ public class OrderController : ControllerBase
 
             if (item.IsCustom)
             {
-                item.MerchId = null;
+                item.MerchId=null;
 
                 if (string.IsNullOrEmpty(item.MerchandiseName)) item.MerchandiseName = "Custom T-Shirt Design";
 
                 validItems.Add(item);
-            }
-            else
-            {
+            }  else {
                 if (item.MerchId is null or <= 0)
                 {
                     _logger.LogWarning("Invalid MerchId: {MerchId} for regular merchandise - skipping item",
@@ -149,46 +154,48 @@ public class OrderController : ControllerBase
         try
         {
             var insertResult = await _orderService.CreateOrderAsync(orderCreateDto);
-
             switch (insertResult)
             {
                 case InsertResult.Success:
                     _logger.LogInformation("Order created successfully");
                     return Ok(new { message = "Order created successfully" });
+                
                 case InsertResult.Error:
                     _logger.LogError("Internal server error while creating order: {Order}", orderCreateDtoJson);
                     return StatusCode(StatusCodes.Status500InternalServerError,
-                        new
-                        {
-                            message =
-                                "Order creation failed due to internal server error. Please try again later or contact support."
-                        });
+                        new { message = "Internal server error"});
+                
                 case InsertResult.AlreadyExists:
                 default:
                     _logger.LogError("Unexpected error during order creation");
                     return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Internal server error" });
             }
         }
+        
         catch (InvalidOperationException ex) when (ex.Message.Contains("Insufficient stock") ||
                                                    ex.Message.Contains("not found in stock"))
         {
             _logger.LogWarning("Order creation failed due to stock issue: {ErrorMessage}", ex.Message);
             return BadRequest(new { message = ex.Message });
         }
+        
         catch (SqlException ex)
         {
             _logger.LogError(ex, "SQL error during order creation: {ErrorMessage}", ex.Message);
             return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "Database error occurred while processing your order. Please try again later." });
+                new { message = "Database error occurred while processing your order" });
         }
+        
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected exception during order creation: {ErrorType} - {ErrorMessage}",
                 ex.GetType().Name, ex.Message);
             return StatusCode(StatusCodes.Status500InternalServerError,
-                new { message = "An unexpected error occurred while processing your order. Please try again later." });
+                new { message = "An unexpected error occurred while processing your order" });
         }
+        
     }
+    
 
     [HttpPost("{id:int}/cancel")]
     [Authorize(Roles = "Admin,User")]
@@ -229,18 +236,18 @@ public class OrderController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("UpdateOrderStatus endpoint called for order {OrderId} with status {Status}", id,
+            _logger.LogInformation("UpdateOrderStatus endpoint called for id {OrderId} with status {Status}", id,
                 statusDto.Status);
 
             var order = await _orderService.GetOrderByIdAsync(id);
-            if (order == null)
-            {
+            
+            
+            if (order == null) {
                 _logger.LogWarning("Order with ID {OrderId} not found", id);
                 return NotFound($"Order with ID {id} not found");
             }
 
-            if (string.IsNullOrWhiteSpace(statusDto.Status))
-            {
+            if (string.IsNullOrWhiteSpace(statusDto.Status)) {
                 _logger.LogWarning("Invalid status provided for order {OrderId}", id);
                 return BadRequest("Status cannot be empty");
             }
@@ -250,18 +257,20 @@ public class OrderController : ControllerBase
 
             return Ok(new { message = $"Order status updated to {statusDto.Status} successfully" });
         }
+        
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating status for order {OrderId}", id);
             return StatusCode(500, "An error occurred while updating the order status");
         }
+        
     }
 
     [HttpGet("{id:int}/messages")]
     [Authorize(Roles = "Admin,User")]
     public async Task<IActionResult> GetOrderMessages(int id)
     {
-        _logger.LogInformation("GetOrderMessages endpoint called for order {OrderId}", id);
+        _logger.LogInformation("GetOrderMessages endpoint called for order {OrderId} ", id);
 
         var order = await _orderService.GetOrderByIdAsync(id);
         if (order == null)
@@ -281,7 +290,8 @@ public class OrderController : ControllerBase
     {
         _logger.LogInformation("AddOrderMessage endpoint called for order {OrderId}", id);
 
-        if (messageDto.OrderId != id) return BadRequest("Order ID in the URL and message body do not match");
+        if (messageDto.OrderId!=id)
+             return BadRequest("Order ID in the URL and message body do not match");
 
         try
         {
@@ -294,4 +304,5 @@ public class OrderController : ControllerBase
             return StatusCode(500, "An error occurred while adding the message");
         }
     }
+    
 }

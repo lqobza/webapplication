@@ -57,8 +57,7 @@
     <button 
       [disabled]="currentPage === 1" 
       (click)="changePage(currentPage - 1)"
-      class="pagination-button"
-    >
+      class="pagination-button">
       Previous
     </button>
     
@@ -69,13 +68,12 @@
     <button 
       [disabled]="!paginationInfo.hasNextPage" 
       (click)="changePage(currentPage + 1)"
-      class="pagination-button"
-    >
+      class="pagination-button">
       Next
     </button>
   </div>
 
   <p *ngIf="merchandiseList.length === 0 && !isLoading && !errorMessage" class="no-merchandise">
-    No merchandise available matching your search criteria.
+    No merhandise found for search criteria
   </p>
 </div>

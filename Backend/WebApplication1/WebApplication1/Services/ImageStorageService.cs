@@ -8,7 +8,7 @@ public class FileSystemImageService : IImageStorageService
 
     public FileSystemImageService(IConfiguration configuration)
     {
-        _imageDirectory = configuration["ImageStorage:Path"] ?? "wwwroot/images/merchandise";
+        _imageDirectory = "wwwroot/images/merchandise"; //should add a path to configuration
         Directory.CreateDirectory(_imageDirectory);
     }
 
@@ -28,13 +28,17 @@ public class FileSystemImageService : IImageStorageService
 
     public Task DeleteImageAsync(string path)
     {
-        if (!path.StartsWith("/images/merchandise/")) return Task.CompletedTask;
+        
+        if (!path.StartsWith("/images/merchandise/")) 
+            return Task.CompletedTask;
+      
         path = path.Replace("/images/merchandise/", "");
         var fullPath = Path.Combine(_imageDirectory, path);
 
         if (File.Exists(fullPath)) File.Delete(fullPath);
-
+    
         return Task.CompletedTask;
+        
     }
 
     public string GetImageDirectory()

@@ -1,15 +1,10 @@
 <div class="merchandise-form-container">
   <h1 class="page-title">{{ isEditMode ? 'Edit' : 'Create' }} Merchandise</h1>
 
-  <div *ngIf="loading" class="loading-container">
-    <mat-spinner diameter="50"></mat-spinner>
-    <p>Loading merchandise data...</p>
-  </div>
-
   <div *ngIf="error" class="error-container">
     <mat-icon color="warn">error</mat-icon>
     <p>{{ error }}</p>
-    <button mat-raised-button color="primary" routerLink="/admin/merchandise">Back to Merchandise List</button>
+    <button mat-raised-button color="primary" routerLink="/admin/merchandise">Back to merchlist</button>
   </div>
 
   <form *ngIf="!loading && !error" [formGroup]="merchandiseForm" (ngSubmit)="onSubmit()" class="merchandise-form">
@@ -92,13 +87,8 @@
         <mat-card-title>Sizes and Stock</mat-card-title>
       </mat-card-header>
       <mat-card-content>
-        <div *ngIf="loadingSizes" class="loading-sizes">
-          <mat-spinner diameter="30"></mat-spinner>
-          <p>Loading available sizes...</p>
-        </div>
-        
         <div *ngIf="!merchandiseForm.get('categoryId')?.value" class="info-message">
-          <p>Please select a category to see available sizes</p>
+          <p>Select a category to see available size</p>
         </div>
         
         <div *ngIf="merchandiseForm.get('categoryId')?.value === ACCESSORY_CATEGORY_ID" class="info-message accent">
@@ -144,7 +134,7 @@
       </mat-card-header>
       <mat-card-content>
         <div *ngIf="!isEditMode" class="info-message accent">
-          <p>You'll be able to upload images after saving the merchandise.</p>
+          <p>Image upload is only available after saveing the merch first</p>
         </div>
         
         <div class="image-upload-section">
@@ -152,11 +142,6 @@
           <button type="button" mat-raised-button color="primary" (click)="fileInput.click()" [disabled]="!isEditMode && !merchandiseId">
             <mat-icon>cloud_upload</mat-icon> Upload Image
           </button>
-          
-          <div *ngIf="isUploading" class="upload-progress">
-            <p>Uploading image...</p>
-            <mat-progress-bar mode="determinate" [value]="uploadProgress"></mat-progress-bar>
-          </div>
         </div>
 
         <div *ngIf="imagesArray.length > 0" class="images-container">
@@ -180,7 +165,7 @@
         </div>
 
         <div *ngIf="isEditMode && imagesArray.length === 0" class="info-message">
-          <p>No images uploaded yet. Use the upload button above to add images.</p>
+          <p>No images uploaded yet,use the upload button to add images</p>
         </div>
       </mat-card-content>
     </mat-card>

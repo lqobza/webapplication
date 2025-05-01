@@ -24,6 +24,7 @@ public class MerchandiseRepository : IMerchandiseRepository
     {
         const string command = "[dbo].[CheckMerchExistence]";
 
+        
         var existsParam = new SqlParameter("@exists", System.Data.SqlDbType.Bit)
         {
             Direction = System.Data.ParameterDirection.Output
@@ -38,14 +39,17 @@ public class MerchandiseRepository : IMerchandiseRepository
         };
 
         var result = _db.ExecuteScalar(command, parameters);
+        
         return Convert.ToInt32(result) > 0;
     }
     
     public bool MerchandiseExistsWithId(int id)
     {
         const string sql = "SELECT COUNT(1) FROM Merch WHERE id = @id";
-        var parameters = new[] { new SqlParameter("@id", id) };
+        var parameters = new[] {new SqlParameter("@id", id)};
+        
         var exists = (int) _db.ExecuteScalar(sql, parameters) > 0;
+        
         return exists;
     }
 
@@ -55,8 +59,7 @@ public class MerchandiseRepository : IMerchandiseRepository
         var totalCount = 0;
 
         const string command = "[dbo].[GetAllMerchandise]";
-        var parameters = new[]
-        {
+        var parameters = new[]{
             new SqlParameter("@PageNumber", page),
             new SqlParameter("@PageSize", pageSize)
         };
@@ -65,11 +68,11 @@ public class MerchandiseRepository : IMerchandiseRepository
         while (reader.Read())
         {
             totalCount = (int)reader["TotalCount"];
-            var merchandise = merchList.FirstOrDefault(m => m.Id == (int)reader["id"]);
+            var merchandise = merchList.FirstOrDefault(m => m.Id==(int) reader["id"]);
 
             if (merchandise != null) continue;
             merchandise = new MerchandiseDto
-            {
+            { 
                 Id = (int)reader["id"],
                 CategoryId = (int)reader["category_id"],
                 CategoryName = (string)reader["CategoryName"],
@@ -119,7 +122,7 @@ public class MerchandiseRepository : IMerchandiseRepository
     {
         MerchandiseDto? merchandise = null;
 
-        const string command = "[dbo].[GetMerchandiseById]";
+        const string command = "[dbo].[GetMerchandiseById]"; 
         var parameters = new[]
         {
             new SqlParameter("@Id", id)
@@ -129,7 +132,7 @@ public class MerchandiseRepository : IMerchandiseRepository
         while (reader.Read())
         {
             merchandise ??= new MerchandiseDto
-            {
+            { 
                 Id = (int)reader["id"],
                 CategoryId = (int)reader["category_id"],
                 CategoryName = (string)reader["CategoryName"],
@@ -151,9 +154,9 @@ public class MerchandiseRepository : IMerchandiseRepository
                     merchandise.Ratings.Add(new RatingDto
                     {
                         Id = ratingId,
-                        MerchId = id,
+                        MerchId = id, 
                         Rating = (int)reader["rating_value"],
-                        Description = reader["rating_description"] == DBNull.Value
+                        Description = reader["rating_description"] == DBNull.Value 
                             ? null
                             : (string)reader["rating_description"],
                         CreatedAt = (DateTime)reader["rating_created_at"]
@@ -177,7 +180,7 @@ public class MerchandiseRepository : IMerchandiseRepository
                 if (merchandise.Sizes != null && merchandise.Sizes.All(s => s.Id != sizeId))
                     merchandise.Sizes.Add(new MerchSizeDto
                     {
-                        Id = sizeId,
+                        Id = sizeId, 
                         MerchId = id,
                         Size = reader["size_name"] == DBNull.Value ? null : (string)reader["size_name"],
                         InStock = (int)reader["size_in_stock"]
@@ -230,15 +233,13 @@ public class MerchandiseRepository : IMerchandiseRepository
     public List<MerchandiseDto> GetMerchandiseByCategory(int categoryId)
     {
         const string command = "[dbo].[GetMerchandiseByCategory]";
-        var parameters = new[]
-        {
-            new SqlParameter("@categoryId", categoryId)
-        };
+        var parameters = new[] {
+            new SqlParameter("@categoryId", categoryId)};
 
         using var reader = _db.ExecuteReader(command, parameters);
         var merchList = new List<MerchandiseDto>();
 
-        while (reader.Read())
+         while (reader.Read())
         {
             var merchandise = new MerchandiseDto
             {
@@ -250,6 +251,7 @@ public class MerchandiseRepository : IMerchandiseRepository
                 Description = (string)reader["description"],
                 BrandId = (int)reader["brand_id"],
                 BrandName = (string)reader["BrandName"],
+                
                 Ratings = new List<RatingDto>(),
                 Themes = new List<ThemeDto>(),
                 Sizes = new List<MerchSizeDto>()
@@ -296,12 +298,13 @@ public class MerchandiseRepository : IMerchandiseRepository
     public bool DeleteMerchandiseById(int id)
     {
         const string command = "[dbo].[DeleteMerchandiseById]";
-        var parameters = new[]
+        var parameters = new[] 
         {
             new SqlParameter("@id", id)
         };
 
         var rowsAffected = _db.ExecuteNonQuery(command, parameters);
+        
         return rowsAffected >= 1;
     }
 
@@ -341,7 +344,7 @@ public class MerchandiseRepository : IMerchandiseRepository
                 var existingSize = currentSizes.FirstOrDefault(s => s.Size == sizeDto.Size);
 
                 if (existingSize != null)
-                {
+                { 
                     const string updateSizeCommand = @"
                             UPDATE MerchSize 
                             SET instock = @InStock 
@@ -381,7 +384,7 @@ public class MerchandiseRepository : IMerchandiseRepository
             foreach (var sizeToRemove in sizesToRemove)
             {
                 const string deleteSizeCommand = "DELETE FROM MerchSize WHERE id = @SizeId";
-                var deleteParams = new[] { new SqlParameter("@SizeId", sizeToRemove.Id) };
+                var deleteParams = new[] { new SqlParameter("@SizeId", sizeToRemove.Id) }; 
 
                 _db.ExecuteNonQuery(deleteSizeCommand, deleteParams);
                 rowsAffected++;
@@ -420,7 +423,7 @@ public class MerchandiseRepository : IMerchandiseRepository
                 .Select(e => e.ToString())
                 .ToList(),
 
-            5 => null,
+            5 => null, //accessory
 
             6 => Enum.GetValues(typeof(ShoeSize))
                 .Cast<ShoeSize>()
@@ -470,7 +473,7 @@ public class MerchandiseRepository : IMerchandiseRepository
         var brands = new List<BrandDto>();
         const string command = @"SELECT id, name FROM Brand;";
 
-        using var reader = _db.ExecuteReader(command);
+        using var reader= _db.ExecuteReader(command);
 
         while (reader.Read())
             brands.Add(new BrandDto
@@ -518,7 +521,8 @@ public class MerchandiseRepository : IMerchandiseRepository
         }
         catch (SqlException ex)
         {
-            if (ex.Message.Contains("already exists")) return -1;
+            if (ex.Message.Contains("already exists")) 
+                return -1;
 
             throw;
         }
@@ -562,7 +566,7 @@ public class MerchandiseRepository : IMerchandiseRepository
             new SqlParameter("@merchId", merchId)
         };
 
-        var sizes = new List<MerchSizeDto>();
+        var sizes= new List<MerchSizeDto>();
         using var reader = _db.ExecuteReader(command, parameters);
 
         while (reader.Read())
@@ -580,7 +584,7 @@ public class MerchandiseRepository : IMerchandiseRepository
         return sizes;
     }
 
-    private List<MerchandiseImage> GetImagesForMerchandise(int merchandiseId)
+    private List<MerchandiseImage> GetImagesForMerchandise(int merchandiseId) 
     {
         const string command = @"
             SELECT id, MerchId, ImageUrl, IsPrimary, CreatedAt
@@ -608,11 +612,13 @@ public class MerchandiseRepository : IMerchandiseRepository
 
         return images;
     }
+    
 
     public PaginatedResponse<MerchandiseDto> SearchMerchandise(MerchandiseSearchDto searchParams)
     {
+        
         var merchList = new List<MerchandiseDto>();
-        var totalCount = 0;
+        var totalCount =0;
 
         const string command = "[dbo].[SearchMerchandise]";
         var parameters = new List<SqlParameter>
@@ -627,6 +633,7 @@ public class MerchandiseRepository : IMerchandiseRepository
         };
 
         using var reader = _db.ExecuteReader(command, parameters.ToArray());
+        
         while (reader.Read())
         {
             totalCount = (int)reader["TotalCount"];
@@ -678,5 +685,6 @@ public class MerchandiseRepository : IMerchandiseRepository
             HasNextPage = searchParams.Page * searchParams.PageSize < totalCount,
             HasPreviousPage = searchParams.Page > 1
         };
+        
     }
 }

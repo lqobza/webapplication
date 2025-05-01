@@ -326,13 +326,6 @@ textarea:focus {
   margin-top: 3rem;
 }
 
-.loading-state {
-  text-align: center;
-  padding: 2rem;
-  font-size: 1.2rem;
-  color: #6b7280;
-}
-
 .error-state {
   text-align: center;
   padding: 2rem;

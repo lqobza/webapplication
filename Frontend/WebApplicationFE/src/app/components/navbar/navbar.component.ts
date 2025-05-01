@@ -34,7 +34,7 @@ export class NavbarComponent {
     this.router.navigate(['/']);
   }
 
-  get userEmail(): string {
+  get userEmail(): string { 
     const user = this.authService.currentUserValue;
     return user ? user.email : '';
   }
@@ -42,4 +42,5 @@ export class NavbarComponent {
   get isAdmin(): boolean {
     return this.authService.isAdmin();
   }
+  
 }

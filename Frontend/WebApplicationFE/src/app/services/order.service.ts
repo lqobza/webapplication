@@ -26,7 +26,7 @@ export class OrderService {
             id: order.id,
             userId: order.userId || '',
             customerName: order.customerName,
-            customerEmail: order.customerEmail,
+            customerEmail: order.customerEmail, 
             customerAddress: order.customerAddress,
             orderDate: order.orderDate,
             totalAmount: order.totalAmount,
@@ -34,7 +34,7 @@ export class OrderService {
             orderItems: []
           };
           
-          if (order.items && Array.isArray(order.items)) {
+          if (order.items && Array.isArray(order.items)){
             orderDto.orderItems = order.items.map((item: any) => ({
               id: item.id,
               orderId: item.orderId,
@@ -51,12 +51,15 @@ export class OrderService {
           }
           
           return orderDto;
+
         });
       })
     );
   }
 
+
   getOrderById(id: number): Observable<OrderDto> {
+    
     return this.http.get<any>(`${this.apiUrl}/orders/${id}`).pipe(
       map(response => {
         const orderDto: OrderDto = {
@@ -72,6 +75,7 @@ export class OrderService {
         };
         
         if (response.items && Array.isArray(response.items)) {
+
           orderDto.orderItems = response.items.map((item: any) => ({
             id: item.id,
             orderId: item.orderId,
@@ -79,12 +83,13 @@ export class OrderService {
             merchandise: {
               id: item.merchId,
               name: item.merchandiseName || (item.isCustom ? 'Custom Design' : `Product #${item.merchId}`),
-              primaryImageUrl: this.getImageUrlForItem(item)
+              primaryImageUrl: this.getImageUrlForItem(item) 
             },
             size: item.size,
             quantity: item.quantity,
             price: item.price
           }));
+
         }
         
         return orderDto;
@@ -93,9 +98,10 @@ export class OrderService {
   }
 
   getUserOrders(): Observable<OrderDto[]> {
+
     return this.http.get<any[]>(`${this.apiUrl}/orders`, { observe: 'response' }).pipe(
       map(response => {
-        if (response.status === 204) {
+        if (response.status===204) {
           return [];
         }
         
@@ -134,7 +140,7 @@ export class OrderService {
     );
   }
 
-  cancelOrder(id: number): Observable<any> {
+  cancelOrder(id: number): Observable<any> { 
     return this.http.post(`${this.apiUrl}/${id}/cancel`, {});
   }
 
@@ -162,7 +168,7 @@ export class OrderService {
   }
 
   private getImageUrlForItem(item: any): string {
-    if (item.imageUrl) {
+    if (item.imageUrl){
       if (item.imageUrl.startsWith('data:image')) {
         return item.imageUrl;
       }
@@ -173,6 +179,6 @@ export class OrderService {
       return `/uploads/custom/${item.id}.jpg`;
     }
     
-    return '';
+    return ''; 
   }
 } 

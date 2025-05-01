@@ -9,6 +9,7 @@ namespace TestProject1.RepositoryTests;
 [TestFixture]
 public class OrderRepositoryTests
 {
+    
     private Mock<ILogger<OrderRepository>> _mockLogger = null!;
     private Mock<IDatabaseWrapper> _mockDatabase = null!;
     private OrderRepository _repository = null!;
@@ -26,10 +27,10 @@ public class OrderRepositoryTests
         _repository = new OrderRepository(_mockLogger.Object, _mockDatabase.Object);
     }
 
-    [Test]
-    public async Task InsertOrderAsync_ReturnsOrderId()
+    [Test] 
+    public async Task InsertOrderAsyncReturnsOrderID()
     {
-        // Arrange
+        //Arrange
         var orderCreateDto = new OrderCreateDto
         {
             CustomerName = "Test Customer",
@@ -37,27 +38,27 @@ public class OrderRepositoryTests
             CustomerAddress = "123 Test St",
             UserId = 123
         };
-        decimal totalAmount = 100.00m;
-
+        
+        var totalAmount = 100;
         _mockDatabase.Setup(x => x.ExecuteScalar(It.IsAny<string>(), It.IsAny<SqlParameter[]>()))
             .Returns(1);
 
-        // Act
+        //Act
         var result = await _repository.InsertOrderAsync(orderCreateDto, totalAmount);
 
-        // Assert
+        //Asset
         Assert.That(result, Is.EqualTo(1));
         _mockDatabase.Verify(x => x.ExecuteScalar(It.IsAny<string>(), It.Is<SqlParameter[]>(p => 
-            p.Any(param => param.ParameterName == "@totalAmount" && (decimal)param.Value == totalAmount) &&
+            p.Any(param => param.ParameterName== "@totalAmount" && (decimal)param.Value == totalAmount) &&
             p.Any(param => param.ParameterName == "@customerName" && (string)param.Value == orderCreateDto.CustomerName))), 
             Times.Once);
     }
 
     [Test]
-    public async Task InsertOrderItemAsync_ExecutesNonQuery()
+    public async Task InsertOrderItemAsyncExecutesNonQuery()
     {
-        // Arrange
-        const int orderId = 1;
+        //Arrange
+        const int orderId = 1; 
         var orderItemDto = new OrderItemDto
         {
             MerchId = 2,
@@ -68,14 +69,15 @@ public class OrderRepositoryTests
             ImageUrl = "test.jpg",
             IsCustom = false
         };
-
+    
         _mockDatabase.Setup(x => x.ExecuteNonQuery(It.IsAny<string>(), It.IsAny<SqlParameter[]>()))
             .Returns(1);
 
-        // Act
+        
+        //Act
         await _repository.InsertOrderItemAsync(orderId, orderItemDto);
 
-        // Assert
+        //Assert
         _mockDatabase.Verify(x => x.ExecuteNonQuery(It.IsAny<string>(), It.Is<SqlParameter[]>(p => 
             p.Any(param => param.ParameterName == "@orderId" && (int)param.Value == orderId) &&
             p.Any(param => param.ParameterName == "@quantity" && (int)param.Value == orderItemDto.Quantity))), 
@@ -83,9 +85,9 @@ public class OrderRepositoryTests
     }
 
     [Test]
-    public async Task UpdateStockAsync_WithSufficientStock_UpdatesStock()
+    public async Task UpdateStockAsyncWithSufficientStock_UpdatesStock()
     {
-        // Arrange
+        //Arrange
         var orderItemDto = new OrderItemDto
         {
             MerchId = 2,
@@ -95,24 +97,24 @@ public class OrderRepositoryTests
 
         _mockDatabase.Setup(x => x.ExecuteScalar(It.IsAny<string>(), It.IsAny<SqlParameter[]>()))
             .Returns(10); // Current stock is 10
-
+ 
         _mockDatabase.Setup(x => x.ExecuteNonQuery(It.IsAny<string>(), It.IsAny<SqlParameter[]>()))
             .Returns(1);
 
-        // Act
+        //Act
         await _repository.UpdateStockAsync(orderItemDto);
 
-        // Assert
+        //Assert
         _mockDatabase.Verify(x => x.ExecuteNonQuery(It.IsAny<string>(), It.Is<SqlParameter[]>(p => 
-            p.Any(param => param.ParameterName == "@merchId" && (int)param.Value == orderItemDto.MerchId) &&
-            p.Any(param => param.ParameterName == "@quantity" && (int)param.Value == orderItemDto.Quantity))), 
+            p.Any(param => param.ParameterName == "@merchId" && (int)param.Value == orderItemDto.MerchId) && 
+            p.Any(param => param.ParameterName == "@quantity" && (int)param.Value==orderItemDto.Quantity))), 
             Times.Once);
     }
 
     [Test]
-    public async Task GetAllOrdersAsync_ReturnsOrderList()
+    public async Task GetAllOrdersAsyncReturnsOrderList()
     {
-        // Arrange
+        //Arrange
         _mockReader.SetupSequence(x => x.Read())
             .Returns(true)
             .Returns(false);
@@ -120,63 +122,64 @@ public class OrderRepositoryTests
         _mockReader.Setup(x => x["id"]).Returns(1);
         _mockReader.Setup(x => x["order_date"]).Returns(DateTime.Now);
         _mockReader.Setup(x => x["total_amount"]).Returns(100.00m);
-        _mockReader.Setup(x => x["customer_name"]).Returns("Test Customer");
+        _mockReader.Setup(x => x["customer_name"]).Returns("test cstomer");
         _mockReader.Setup(x => x["customer_email"]).Returns("test@example.com");
-        _mockReader.Setup(x => x["customer_address"]).Returns("123 Test St");
+        _mockReader.Setup(x => x["customer_address"]).Returns("street 123");
         _mockReader.Setup(x => x["status"]).Returns("Created");
 
         _mockDatabase.Setup(x => x.ExecuteReader(It.IsAny<string>(), It.IsAny<SqlParameter[]>()))
             .Returns(_mockReader.Object);
 
-        // Mock the GetOrderItemsByIdAsync method
         var itemsReader = new Mock<IDataReader>();
         itemsReader.Setup(x => x.Read()).Returns(false);
         _mockDatabase.Setup(x => x.ExecuteReader(It.Is<string>(s => s.Contains("OrderItems")), It.IsAny<SqlParameter[]>()))
             .Returns(itemsReader.Object);
 
-        // Act
+        //Act
         var result = await _repository.GetAllOrdersAsync();
 
-        // Assert
+        //Assert
         Assert.That(result, Is.Not.Null);
         Assert.That(result.Count, Is.EqualTo(1));
         Assert.That(result[0].Id, Is.EqualTo(1));
-        Assert.That(result[0].CustomerName, Is.EqualTo("Test Customer"));
+        Assert.That(result[0].CustomerEmail, Is.EqualTo("test@example.com"));
     }
+    
 
     [Test]
-    public async Task DeleteOrderAsync_SuccessfulDeletion_CommitsTransaction()
+    public async Task DeleteOrderAsyncSuccessfulDeletionCommitsTransaction()
     {
-        // Arrange
-        const int orderId = 1;
-
+        
+        //Arrange
+        const int orderID = 1;
         _mockDatabase.Setup(x => x.BeginTransactionAsync())
             .ReturnsAsync(_mockTransaction.Object);
-
         _mockDatabase.Setup(x => x.ExecuteNonQuery(It.IsAny<string>(), It.IsAny<SqlParameter[]>(), It.IsAny<IDbTransaction>()))
             .Returns(1);
 
-        // Act
-        await _repository.DeleteOrderAsync(orderId);
+        //Act
+        await _repository.DeleteOrderAsync(orderID);
 
-        // Assert
+        //Assert
         _mockTransaction.Verify(x => x.Commit(), Times.Once);
     }
 
+    
     [Test]
-    public void DeleteOrderAsync_ExceptionThrown_RollbacksTransaction()
+    public void DeleteOrderAsyncExceptionThrownRollbacksTransaction()
     {
-        // Arrange
-        const int orderId = 1;
+        //Arrange
+        const int orderID = 1;
 
         _mockDatabase.Setup(x => x.BeginTransactionAsync())
             .ReturnsAsync(_mockTransaction.Object);
 
-        _mockDatabase.Setup(x => x.ExecuteNonQuery(It.IsAny<string>(), It.IsAny<SqlParameter[]>(), It.IsAny<IDbTransaction>()))
-            .Throws(new Exception("Test exception"));
+        _mockDatabase.Setup(x => x.ExecuteNonQuery(It.IsAny<string>(), It.IsAny<SqlParameter[]>(), It.IsAny<IDbTransaction>())) 
+            .Throws(new Exception("test exception"));
 
-        // Act & Assert
-        Assert.ThrowsAsync<Exception>(async () => await _repository.DeleteOrderAsync(orderId));
+        //Act Assert
+        Assert.ThrowsAsync<Exception>(async () => await _repository.DeleteOrderAsync(orderID));
         _mockTransaction.Verify(x => x.Rollback(), Times.Once);
     }
+    
 } 

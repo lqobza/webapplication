@@ -9,9 +9,9 @@
         id="username"
         formControlName="username"
       >
-      <div class="validation-error" *ngIf="f['username'].touched && f['username'].errors">
-        <div *ngIf="f['username'].errors['required']">Username is required</div>
-        <div *ngIf="f['username'].errors['minlength']">Username must be at least 3 characters</div>
+      <div class="validation-error" *ngIf="form['username'].touched && form['username'].errors">
+        <div *ngIf="form['username'].errors['required']">Username is required</div>
+        <div *ngIf="form['username'].errors['minlength']">Username must be at least 3 characters</div>
       </div>
     </div>
 
@@ -22,9 +22,9 @@
         id="email"
         formControlName="email"
       >
-      <div class="validation-error" *ngIf="f['email'].touched && f['email'].errors">
-        <div *ngIf="f['email'].errors['required']">Email is required</div>
-        <div *ngIf="f['email'].errors['email'] || f['email'].errors['pattern']">Please enter a valid email address (e.g., user&#64;example.com)</div>
+      <div class="validation-error" *ngIf="form['email'].touched && form['email'].errors">
+        <div *ngIf="form['email'].errors['required']">Email is required</div>
+        <div *ngIf="form['email'].errors['email'] || form['email'].errors['pattern']">Please enter a valid email address (e.g., user&#64;example.com)</div>
       </div>
     </div>
 
@@ -35,9 +35,9 @@
         id="password"
         formControlName="password"
       >
-      <div class="validation-error" *ngIf="f['password'].touched && f['password'].errors">
-        <div *ngIf="f['password'].errors['required']">Password is required</div>
-        <div *ngIf="f['password'].errors['minlength']">Password must be at least 6 characters</div>
+      <div class="validation-error" *ngIf="form['password'].touched && form['password'].errors">
+        <div *ngIf="form['password'].errors['required']">Password is required</div>
+        <div *ngIf="form['password'].errors['minlength']">Password must be at least 6 characters</div>
       </div>
     </div>
 
@@ -48,15 +48,17 @@
         id="confirmPassword"
         formControlName="confirmPassword"
       >
-      <div class="validation-error" *ngIf="f['confirmPassword'].touched && f['confirmPassword'].errors">
-        <div *ngIf="f['confirmPassword'].errors['required']">Please confirm your password</div>
-        <div *ngIf="f['confirmPassword'].errors['passwordMismatch']">Passwords do not match</div>
+      <div class="validation-error" *ngIf="form['confirmPassword'].touched && form['confirmPassword'].errors">
+        <div *ngIf="form['confirmPassword'].errors['required']">Please confirm your password</div>
+        <div *ngIf="form['confirmPassword'].errors['passwordMismatch']">Passwords do not match</div>
       </div>
     </div>
 
-    <button type="submit" [disabled]="registerForm.invalid || loading">
-      {{ loading ? 'Registering...' : 'Register' }}
+    <button type="submit" [disabled]="registerForm.invalid">
+      {{ 'Registering' }}
     </button>
+    
+    <!-- jelszoemlékeztető funkció -->
 
     <div class="login-link">
       Already have an account? <a routerLink="/login">Login</a>

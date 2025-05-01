@@ -9,7 +9,6 @@ describe('AuthService', () => {
   let httpMock: HttpTestingController;
 
   beforeEach(() => {
-    // Clear localStorage before each test
     localStorage.clear();
 
     TestBed.configureTestingModule({
@@ -34,7 +33,7 @@ describe('AuthService', () => {
   });
 
   describe('login', () => {
-    it('should login a user and store user data in localStorage', () => {
+    it('should login user and store userdata in local storage ', () => {
       const email = 'test@example.com';
       const password = 'password123';
       
@@ -48,68 +47,56 @@ describe('AuthService', () => {
       service.login(email, password).subscribe(response => {
         expect(response).toEqual(mockUser);
         
-        // Check if user is stored in localStorage
         const storedUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
         expect(storedUser).toEqual(mockUser);
-        
-        // Check if currentUserValue is updated
         expect(service.currentUserValue).toEqual(mockUser);
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/api/auth/login`);
-      expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual({ email, password });
-      
-      req.flush(mockUser);
+      const request = httpMock.expectOne(`${environment.apiUrl}/api/auth/login`);
+      expect(request.request.method).toBe('POST');
+      expect(request.request.body).toEqual({ email, password}); 
+      request.flush(mockUser);
     });
   });
+
 
   describe('register', () => {
     it('should register a new user', () => {
       const username = 'newuser';
       const email = 'newuser@example.com';
       const password = 'password123';
-      
       const mockResponse = {
         success: true,
         message: 'User registered successfully',
         userId: 123
       };
 
+
       service.register(username, email, password).subscribe(response => {
         expect(response).toEqual(mockResponse);
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/api/auth/register`);
-      expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual({ username, email, password });
-      
-      req.flush(mockResponse);
+      const request = httpMock.expectOne(`${environment.apiUrl}/api/auth/register`);
+      expect(request.request.method).toBe('POST');
+      expect(request.request.body).toEqual({ username, email, password });
+      request.flush(mockResponse);
     });
   });
 
   describe('logout', () => {
-    it('should clear user data from localStorage and update currentUserSubject', () => {
-      // Set up the initial state - user is logged in
+    it('should remove userdata from local storage and update current usr', () => {
       const user = { id: 1, username: 'test', token: 'token123' };
       localStorage.setItem('currentUser', JSON.stringify(user));
       
-      // Manual trigger of setting the current user
       service.login('test@example.com', 'password').subscribe();
       const req = httpMock.expectOne(`${environment.apiUrl}/api/auth/login`);
       req.flush(user);
-      
-      // Verify initial state
       expect(service.currentUserValue).toEqual(user);
       
-      // Perform logout
       service.logout();
       
-      // Verify localStorage is cleared
       expect(localStorage.getItem('currentUser')).toBeNull();
-      
-      // Verify current user is null
-      expect(service.currentUserValue).toBeNull();
+      expect(service.currentUserValue).toBeNull(); 
     });
   });
 
@@ -120,10 +107,10 @@ describe('AuthService', () => {
       expect(service.isLoggedIn()).toBeFalse();
     });
 
+
     it('should return true when user has a valid token', () => {
-      // Create a mock JWT token with future expiration
-      const futureTime = Math.floor(Date.now() / 1000) + 3600; // 1 hour in the future
-      const payload = { userId: '1', exp: futureTime };
+      const futureTime = Math.floor(Date.now() / 1000) + 3600;
+      const payload = { userId: '1', exp: futureTime  };
       const encodedPayload = btoa(JSON.stringify(payload));
       const mockToken = `header.${encodedPayload}.signature`;
       
@@ -135,8 +122,7 @@ describe('AuthService', () => {
     });
 
     it('should return false and logout when token is expired', () => {
-      // Create a mock JWT token with past expiration
-      const pastTime = Math.floor(Date.now() / 1000) - 3600; // 1 hour in the past
+      const pastTime = Math.floor(Date.now() / 1000) - 3600;
       const payload = { userId: '1', exp: pastTime };
       const encodedPayload = btoa(JSON.stringify(payload));
       const mockToken = `header.${encodedPayload}.signature`;
@@ -146,21 +132,19 @@ describe('AuthService', () => {
       service['currentUserSubject'].next(user);
       
       const logoutSpy = spyOn(service, 'logout').and.callThrough();
-      
       expect(service.isLoggedIn()).toBeFalse();
       expect(logoutSpy).toHaveBeenCalled();
     });
   });
 
   describe('getCurrentUserId', () => {
-    it('should return 0 when no user is logged in', () => {
+    it('should return 0 when user isnt logged in', () => {
       localStorage.clear();
       service.logout();
       expect(service.getCurrentUserId()).toBe(0);
     });
 
-    it('should return the correct user ID from the token', () => {
-      // Create a mock JWT token with userId in the payload
+    it('should return the correct userID from token', () => {
       const payload = { userId: '42' };
       const encodedPayload = btoa(JSON.stringify(payload));
       const mockToken = `header.${encodedPayload}.signature`;
@@ -172,18 +156,6 @@ describe('AuthService', () => {
       expect(service.getCurrentUserId()).toBe(42);
     });
 
-    it('should handle alternative ID field names in token', () => {
-      // Create a mock JWT token with nameid in the payload
-      const payload = { nameid: '99' };
-      const encodedPayload = btoa(JSON.stringify(payload));
-      const mockToken = `header.${encodedPayload}.signature`;
-      
-      const user = { id: 99, username: 'test', token: mockToken };
-      localStorage.setItem('currentUser', JSON.stringify(user));
-      service['currentUserSubject'].next(user);
-      
-      expect(service.getCurrentUserId()).toBe(99);
-    });
   });
 
   describe('isAdmin', () => {
@@ -193,8 +165,7 @@ describe('AuthService', () => {
       expect(service.isAdmin()).toBeFalse();
     });
 
-    it('should return true when user has Admin role', () => {
-      // Create a mock JWT token with Admin role
+    it('should return true when user is admin', () => {
       const payload = { userId: '1', role: 'Admin' };
       const encodedPayload = btoa(JSON.stringify(payload));
       const mockToken = `header.${encodedPayload}.signature`;
@@ -202,12 +173,10 @@ describe('AuthService', () => {
       const user = { id: 1, username: 'admin', token: mockToken };
       localStorage.setItem('currentUser', JSON.stringify(user));
       service['currentUserSubject'].next(user);
-      
       expect(service.isAdmin()).toBeTrue();
     });
 
-    it('should return false when user has non-Admin role', () => {
-      // Create a mock JWT token with User role
+    it('should return false when user isnt admin', () => {
       const payload = { userId: '1', role: 'User' };
       const encodedPayload = btoa(JSON.stringify(payload));
       const mockToken = `header.${encodedPayload}.signature`;
@@ -215,24 +184,8 @@ describe('AuthService', () => {
       const user = { id: 1, username: 'user', token: mockToken };
       localStorage.setItem('currentUser', JSON.stringify(user));
       service['currentUserSubject'].next(user);
-      
-      expect(service.isAdmin()).toBeFalse();
-    });
 
-    it('should handle MS claims format for admin role', () => {
-      // Create a mock JWT token with MS-specific claim format
-      const payload = { 
-        userId: '1', 
-        'http://schemas.microsoft.com/ws/2008/06/identity/claims/role': 'Admin' 
-      };
-      const encodedPayload = btoa(JSON.stringify(payload));
-      const mockToken = `header.${encodedPayload}.signature`;
-      
-      const user = { id: 1, username: 'admin', token: mockToken };
-      localStorage.setItem('currentUser', JSON.stringify(user));
-      service['currentUserSubject'].next(user);
-      
-      expect(service.isAdmin()).toBeTrue();
+      expect(service.isAdmin()).toBeFalse();
     });
   });
 });

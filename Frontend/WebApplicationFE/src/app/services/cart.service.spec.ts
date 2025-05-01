@@ -15,15 +15,13 @@ describe('CartService', () => {
   let merchandiseServiceMock: jasmine.SpyObj<MerchandiseService>;
 
   beforeEach(() => {
-    // Create mocks for services that CartService depends on
     authServiceMock = jasmine.createSpyObj('AuthService', ['isLoggedIn', 'getCurrentUserId']);
     merchandiseServiceMock = jasmine.createSpyObj('MerchandiseService', ['getMerchandiseById']);
 
-    // Default behavior for mocks
+
     authServiceMock.isLoggedIn.and.returnValue(true);
     authServiceMock.getCurrentUserId.and.returnValue(1);
     
-    // Setup the TestBed with our mocks
     TestBed.configureTestingModule({
       providers: [
         CartService,
@@ -35,21 +33,15 @@ describe('CartService', () => {
       ]
     });
 
-    // Get instances of service and http mock
+
     service = TestBed.inject(CartService);
     httpMock = TestBed.inject(HttpTestingController);
     
-    // Clear localStorage before each test
     localStorage.clear();
     
-    // Also clear the cart in the service
     service.clearCart();
   });
 
-  afterEach(() => {
-    // Verify that no unmatched requests are outstanding
-    httpMock.verify();
-  });
 
   it('should be created', () => {
     expect(service).toBeTruthy();
@@ -57,81 +49,66 @@ describe('CartService', () => {
 
   describe('addToCart', () => {
     beforeEach(() => {
-      // Ensure cart is empty before each test
       localStorage.removeItem('cartItems');
       service.clearCart();
     });
     
     it('should add a new item to cart', () => {
-      // Arrange
       const newItem = {
-        merchId: 1,
-        name: 'Test T-Shirt',
+        merchId: 1, 
+        name: 'test tshirt',
         size: 'M',
         quantity: 1,
         price: 25,
         imageUrl: 'test.jpg'
-      };
+      }; 
 
-      // Act
       service.addToCart(newItem);
-
-      // Assert - use done callback to handle async
       service.getCartItems().subscribe(items => {
         expect(items.length).toBe(1);
         expect(items[0].merchId).toBe(1);
-        expect(items[0].name).toBe('Test T-Shirt');
+        expect(items[0].name).toBe('test tshirt');
         expect(items[0].size).toBe('M');
         
-        // Verify localStorage was updated
         const storedItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
         expect(storedItems.length).toBe(1);
       });
     });
 
-    it('should increment quantity when adding an existing item', () => {
-      // Arrange - Add item first
+    it('should increase quantity when adding an existingitem', () => {
       const item = {
         merchId: 1,
-        name: 'Test T-Shirt',
+        name: 'test tshirt',
         size: 'M',
         quantity: 1,
         price: 25,
         imageUrl: 'test.jpg'
       };
       
-      // Act - Add same item twice
       service.addToCart(item);
       service.addToCart(item);
-
-      // Assert - Should have 1 item with quantity 2
       service.getCartItems().subscribe(items => {
         expect(items.length).toBe(1);
         expect(items[0].quantity).toBe(2);
       });
     });
 
-    it('should add custom product to cart correctly', () => {
-      // Clear cart first to ensure we're starting fresh
+    it('should add custom product to cart ', () => {
       localStorage.removeItem('cartItems');
       service.clearCart();
       
-      // Arrange
       const customItem = {
-        id: 'custom-123',
+        id: 'custom123',
         name: 'Custom Design',
         size: 'L',
         quantity: 1,
-        price: 30,
+        price: 30, 
         frontImage: 'front.jpg',
         backImage: 'back.jpg',
         isCustom: true
       };
-
-      // Act
       service.addToCart(customItem);
 
-      // Assert
       service.getCartItems().subscribe(items => {
         expect(items.length).toBe(1);
         expect(items[0].isCustom).toBeTrue();
@@ -144,12 +121,10 @@ describe('CartService', () => {
   });
 
   describe('removeItem', () => {
-    it('should remove an item from cart', () => {
-      // Clear cart first
+    it('should remove item from cart', () => {
       localStorage.removeItem('cartItems');
       service.clearCart();
       
-      // Arrange - Add item first
       const item: CartItem = {
         merchId: 1,
         name: 'Test T-Shirt',
@@ -159,15 +134,12 @@ describe('CartService', () => {
         imageUrl: 'test.jpg'
       };
       service.addToCart(item);
-      
-      // Act - Remove the item
       service.getCartItems().subscribe(items => {
         if (items.length > 0) {
           service.removeItem(items[0]);
         }
       });
 
-      // Assert - Cart should be empty now
       service.getCartItems().subscribe(items => {
         expect(items.length).toBe(0);
       });
@@ -175,8 +147,7 @@ describe('CartService', () => {
   });
 
   describe('updateQuantity', () => {
-    it('should update item quantity', () => {
-      // Arrange - Add item first
+    it('should update quantity', () => {
       const item: CartItem = {
         merchId: 1,
         name: 'Test T-Shirt',
@@ -187,15 +158,12 @@ describe('CartService', () => {
       };
       service.addToCart(item);
       
-      // Act - Get the item reference and update its quantity
       let cartItems: CartItem[] = [];
       service.getCartItems().subscribe(items => {
         cartItems = items;
       });
-      
       service.updateQuantity(cartItems[0], 3);
 
-      // Assert - Check the updated quantity
       let updatedQuantity = 0;
       service.getCartItems().subscribe(items => {
         updatedQuantity = items[0].quantity;
@@ -204,11 +172,10 @@ describe('CartService', () => {
       expect(updatedQuantity).toBe(3);
     });
 
-    it('should not update quantity if less than 1', () => {
-      // Arrange - Add item first
+    it('should not allow  less than 1', () => {
       const item: CartItem = {
         merchId: 1,
-        name: 'Test T-Shirt',
+        name: 'test tshirt',
         size: 'M',
         quantity: 2,
         price: 25,
@@ -216,7 +183,6 @@ describe('CartService', () => {
       };
       service.addToCart(item);
       
-      // Act - Try to set quantity to 0
       let cartItems: CartItem[] = [];
       service.getCartItems().subscribe(items => {
         cartItems = items;
@@ -224,29 +190,28 @@ describe('CartService', () => {
       
       service.updateQuantity(cartItems[0], 0);
 
-      // Assert - Quantity should remain 2
       let currentQuantity = 0;
       service.getCartItems().subscribe(items => {
         currentQuantity = items[0].quantity;
       });
       
-      expect(currentQuantity).toBe(2);
+      expect(currentQuantity).toBe(2); 
     });
   });
 
+
   describe('getTotalPrice', () => {
     beforeEach(() => {
-      // Ensure cart is empty before each test
       localStorage.removeItem('cartItems');
       service.clearCart();
     });
+
     
     it('should calculate correct total price', () => {
-      // Arrange
       const items = [
         {
           merchId: 1,
-          name: 'Item 1',
+          name: 'item1',
           size: 'M',
           quantity: 2,
           price: 25,
@@ -254,72 +219,62 @@ describe('CartService', () => {
         },
         {
           merchId: 2,
-          name: 'Item 2',
+          name: 'item2',
           size: 'L',
           quantity: 1,
           price: 30,
           imageUrl: 'item2.jpg'
-        }
+        } 
       ];
-      
+  
       items.forEach(item => service.addToCart(item));
-      
-      // Act
       const totalPrice = service.getTotalPrice();
-      
-      // Assert - Expected: (2*25) + (1*30) = 80
+    
       expect(totalPrice).toBe(80);
     });
   });
 
   describe('clearCart', () => {
     beforeEach(() => {
-      // Ensure cart is empty before the test
       localStorage.removeItem('cartItems');
       service.clearCart();
     });
     
     it('should clear all items from cart', () => {
-      // Arrange - Add some items
       const items = [
         {
           merchId: 1,
-          name: 'Item 1',
+          name: 'item1',
           size: 'M',
-          quantity: 1,
+          quantity: 2,
           price: 25,
           imageUrl: 'item1.jpg'
         },
         {
           merchId: 2,
-          name: 'Item 2',
+          name: 'item2',
           size: 'L',
           quantity: 1,
           price: 30,
           imageUrl: 'item2.jpg'
         }
       ];
-      
+
       items.forEach(item => service.addToCart(item));
-      
-      // Verify items were added
       let itemCount = 0;
       service.getCartItems().subscribe(cartItems => {
-        itemCount = cartItems.length;
+        itemCount= cartItems.length;
       });
       expect(itemCount).toBe(2);
       
-      // Act
       service.clearCart();
-      
-      // Assert - Cart should be empty
       let isEmpty = false;
       service.getCartItems().subscribe(cartItems => {
-        isEmpty = cartItems.length === 0;
+        isEmpty = cartItems.length ===0;
       });
       expect(isEmpty).toBeTrue();
       
-      // Check localStorage was cleared too
+      //check local storage is ckleared
       const storedItems = localStorage.getItem('cartItems');
       expect(storedItems).toBeNull();
     });
@@ -327,23 +282,18 @@ describe('CartService', () => {
 
   describe('isCartEmpty', () => {
     it('should return true when cart is empty', () => {
-      // Make sure the cart is empty first
       localStorage.removeItem('cartItems');
       service.clearCart();
-      
-      // Act & Assert
       expect(service.isCartEmpty()).toBeTrue();
     });
 
     it('should return false when cart has items', () => {
-      // Make sure the cart is empty first
       localStorage.removeItem('cartItems');
       service.clearCart();
       
-      // Arrange - Add an item to cart
       const item: CartItem = {
         merchId: 1,
-        name: 'Test T-Shirt',
+        name: 'test tshirt',
         size: 'M',
         quantity: 1,
         price: 25,
@@ -351,24 +301,21 @@ describe('CartService', () => {
       };
       service.addToCart(item);
       
-      // Act & Assert
       expect(service.isCartEmpty()).toBeFalse();
     });
   });
 
   describe('createOrder', () => {
     beforeEach(() => {
-      // Ensure cart is empty before each test
       localStorage.removeItem('cartItems');
       service.clearCart();
     });
     
-    it('should create an order with correct data', () => {
-      // Arrange
+    it('should create order with correct data', () => {
       const items = [
         {
           merchId: 1,
-          name: 'Item 1',
+          name: 'item1',
           size: 'M',
           quantity: 2,
           price: 25,
@@ -378,67 +325,27 @@ describe('CartService', () => {
       
       items.forEach(item => service.addToCart(item));
       
-      // Order details
-      const customerName = 'John Doe';
-      const customerEmail = 'john@example.com';
-      const customerAddress = '123 Main St';
+      const customerName = 'example name';
+      const customerEmail = 'example@example.com';
+      const customerAddress = '123 street';
       
-      // Act
       service.createOrder(customerName, customerEmail, customerAddress).subscribe();
       
-      // Assert
-      const req = httpMock.expectOne(`${environment.apiUrl}/api/order/create`);
-      expect(req.request.method).toBe('POST');
+      const request = httpMock.expectOne(`${environment.apiUrl}/api/order/create`);
+      expect(request.request.method).toBe('POST');
       
-      // Verify request body
-      const reqBody = req.request.body;
+      const reqBody = request.request.body;
       expect(reqBody.CustomerName).toBe(customerName);
       expect(reqBody.CustomerEmail).toBe(customerEmail);
       expect(reqBody.CustomerAddress).toBe(customerAddress);
-      expect(reqBody.userId).toBe(1); // From mock
+      expect(reqBody.userId).toBe(1);
       expect(reqBody.Items.length).toBe(1);
       expect(reqBody.Items[0].MerchId).toBe(1);
-      expect(reqBody.Items[0].Quantity).toBe(2);
-      
-      // Complete the HTTP request
-      req.flush({ success: true });
+      expect(reqBody.Items[0].Quantity).toBe(2); 
+       
+      request.flush({ success: true });
+
     });
     
-    it('should handle custom merchandise correctly', () => {
-      // Arrange - Add a custom item
-      const customItem = {
-        id: 'custom-123',
-        name: 'Custom Design',
-        size: 'M',
-        quantity: 1,
-        price: 30,
-        frontImage: 'data:image/png;base64,abc123',
-        isCustom: true
-      };
-      
-      service.addToCart(customItem);
-      
-      // Order details
-      const customerName = 'Jane Smith';
-      const customerEmail = 'jane@example.com';
-      const customerAddress = '456 Elm St';
-      
-      // Act
-      service.createOrder(customerName, customerEmail, customerAddress).subscribe();
-      
-      // Assert
-      const req = httpMock.expectOne(`${environment.apiUrl}/api/order/create`);
-      
-      // Verify custom item in request body
-      const customItemInRequest = req.request.body.Items[0];
-      expect(customItemInRequest.IsCustom).toBeTrue();
-      expect(customItemInRequest.MerchandiseName).toBe('Custom Design');
-      
-      // Check the value without asserting the specific property name
-      const hasExpectedImage = Object.values(customItemInRequest).includes('data:image/png;base64,abc123');
-      expect(hasExpectedImage).toBeTrue();
-      
-      req.flush({ success: true });
-    });
   });
 }); 

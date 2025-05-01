@@ -20,12 +20,12 @@ public class RatingController : ControllerBase
 
     [HttpPost("")]
     [Authorize(Roles = "Admin,User")]
-    public IActionResult AddRating([FromBody] RatingCreateDto ratingCreateDto)
+    public IActionResult AddRating([FromBody] RatingCreateDto ratingCreateDto) //should add checking userid to not allow multiple ratings for one item from one user
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        _logger.LogInformation("AddRating endpoint called with data: {Rating}", ratingCreateDto);
+        _logger.LogInformation("AddRating endpoint called with  {Rating}", ratingCreateDto);
         try
         {
             var result = _ratingService.AddRating(ratingCreateDto);
@@ -46,4 +46,6 @@ public class RatingController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }
+    
+    //is DeleteRating needed??
 }

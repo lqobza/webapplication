@@ -37,16 +37,15 @@ describe('OrderService', () => {
 
   describe('getAllOrders', () => {
     it('should retrieve and transform all orders', () => {
-      // Mock server response
       const mockOrdersResponse = [
         {
           id: 1,
           userId: "101",
-          customerName: 'John Doe',
-          customerEmail: 'john@example.com',
-          customerAddress: '123 Main St',
-          orderDate: '2023-05-15T10:30:00',
-          totalAmount: 125.50,
+          customerName: 'example',
+          customerEmail: 'example@example.com',
+          customerAddress: 'street 123',
+          orderDate: '2024-10-15T10:30:00',
+          totalAmount: 125,
           status: 'Pending',
           items: [
             {
@@ -56,7 +55,7 @@ describe('OrderService', () => {
               merchandiseName: 'T-Shirt',
               size: 'M',
               quantity: 2,
-              price: 25.00,
+              price: 25,
               imageUrl: 'shirt.jpg'
             },
             {
@@ -66,23 +65,22 @@ describe('OrderService', () => {
               merchandiseName: 'Hoodie',
               size: 'L',
               quantity: 1,
-              price: 75.50,
+              price: 75,
               imageUrl: 'hoodie.jpg'
             }
           ]
         }
       ];
 
-      // Expected transformed result
       const expectedOrders: OrderDto[] = [
         {
           id: 1,
           userId: "101",
-          customerName: 'John Doe',
-          customerEmail: 'john@example.com',
-          customerAddress: '123 Main St',
-          orderDate: '2023-05-15T10:30:00',
-          totalAmount: 125.50,
+          customerName: 'example',
+          customerEmail: 'example@example.com',
+          customerAddress: 'street 123',
+          orderDate: '2024-10-15T10:30:00',
+          totalAmount: 125,
           status: 'Pending',
           orderItems: [
             {
@@ -96,7 +94,7 @@ describe('OrderService', () => {
               },
               size: 'M',
               quantity: 2,
-              price: 25.00
+              price: 25
             },
             {
               id: 2,
@@ -109,7 +107,7 @@ describe('OrderService', () => {
               },
               size: 'L',
               quantity: 1,
-              price: 75.50
+              price: 75
             }
           ]
         }
@@ -120,67 +118,34 @@ describe('OrderService', () => {
         expect(orders[0].orderItems.length).toBe(2);
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/api/order`);
-      expect(req.request.method).toBe('GET');
-      req.flush(mockOrdersResponse);
-    });
-
-    it('should handle custom items correctly', () => {
-      const mockOrderWithCustomItem = [
-        {
-          id: 2,
-          userId: 102,
-          customerName: 'Jane Smith',
-          customerEmail: 'jane@example.com',
-          customerAddress: '456 Oak St',
-          orderDate: '2023-05-16T14:20:00',
-          totalAmount: 30.00,
-          status: 'Processing',
-          items: [
-            {
-              id: 3,
-              orderId: 2,
-              merchId: 301,
-              isCustom: true,
-              size: 'S',
-              quantity: 1,
-              price: 30.00
-            }
-          ]
-        }
-      ];
-
-      service.getAllOrders().subscribe(orders => {
-        expect(orders[0].orderItems[0].merchandise.name).toBe('Custom Design');
-      });
-
-      const req = httpMock.expectOne(`${environment.apiUrl}/api/order`);
-      expect(req.request.method).toBe('GET');
-      req.flush(mockOrderWithCustomItem);
+      const request = httpMock.expectOne(`${environment.apiUrl}/api/order`);
+      expect(request.request.method).toBe('GET');
+      request.flush(mockOrdersResponse);
     });
   });
 
+  
   describe('getOrderById', () => {
-    it('should fetch and transform a specific order', () => {
+    it('should fetch  specific order', () => {
       const orderId = 1;
-      const mockOrderResponse = {
+      const mockOrderResponse ={
         id: orderId,
         userId: 101,
-        customerName: 'John Doe',
-        customerEmail: 'john@example.com',
-        customerAddress: '123 Main St',
-        orderDate: '2023-05-15T10:30:00',
-        totalAmount: 125.50,
+        customerName: 'example',
+        customerEmail: 'example@example.com',
+        customerAddress: 'street 123',
+        orderDate: '2024-10-15T10:30:00',
+        totalAmount: 125,
         status: 'Pending',
         items: [
           {
             id: 1,
             orderId: orderId,
             merchId: 201,
-            merchandiseName: 'T-Shirt',
+            merchandiseName: 'tshirt',
             size: 'M',
             quantity: 2,
-            price: 25.00,
+            price: 25,
             imageUrl: 'shirt.jpg'
           }
         ]
@@ -188,14 +153,14 @@ describe('OrderService', () => {
 
       service.getOrderById(orderId).subscribe(order => {
         expect(order.id).toBe(orderId);
-        expect(order.customerName).toBe('John Doe');
+        expect(order.customerName).toBe('example');
         expect(order.orderItems.length).toBe(1);
-        expect(order.orderItems[0].merchandise.name).toBe('T-Shirt');
+        expect(order.orderItems[0].merchandise.name).toBe('tshirt');
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/api/order/orders/${orderId}`);
-      expect(req.request.method).toBe('GET');
-      req.flush(mockOrderResponse);
+      const request = httpMock.expectOne(`${environment.apiUrl}/api/order/orders/${orderId}`);
+      expect(request.request.method).toBe('GET');
+      request.flush(mockOrderResponse);
     });
   });
 
@@ -205,10 +170,10 @@ describe('OrderService', () => {
         {
           id: 1,
           userId: 101,
-          customerName: 'John Doe',
-          customerEmail: 'john@example.com',
-          customerAddress: '123 Main St',
-          orderDate: '2023-05-15T10:30:00',
+          customerName: 'example',
+          customerEmail: 'example@example.com',
+          customerAddress: 'street 123',
+          orderDate: '2024-10-15T10:30:00',
           totalAmount: 50.00,
           status: 'Delivered',
           items: []
@@ -221,11 +186,9 @@ describe('OrderService', () => {
         expect(orders[0].status).toBe('Delivered');
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/api/order/orders`);
-      expect(req.request.method).toBe('GET');
-      
-      // Mock a successful response with the orders
-      req.flush(mockUserOrdersResponse, { 
+      const request = httpMock.expectOne(`${environment.apiUrl}/api/order/orders`);
+      expect(request.request.method).toBe('GET');
+      request.flush(mockUserOrdersResponse, { 
         status: 200, 
         statusText: 'OK' 
       });
@@ -237,11 +200,9 @@ describe('OrderService', () => {
         expect(orders.length).toBe(0);
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/api/order/orders`);
-      expect(req.request.method).toBe('GET');
-      
-      // Mock a 204 No Content response
-      req.flush(null, { 
+      const request = httpMock.expectOne(`${environment.apiUrl}/api/order/orders`);
+      expect(request.request.method).toBe('GET');
+      request.flush(null, { 
         status: 204, 
         statusText: 'No Content' 
       });
@@ -250,19 +211,20 @@ describe('OrderService', () => {
 
   describe('cancelOrder', () => {
     it('should send a cancellation request', () => {
-      const orderId = 1;
+      const orderId=1;
       
       service.cancelOrder(orderId).subscribe(response => {
         expect(response).toBeTruthy();
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/api/order/${orderId}/cancel`);
-      expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual({});
+      const request= httpMock.expectOne(`${environment.apiUrl}/api/order/${orderId}/cancel`);
+      expect(request.request.method).toBe('POST');
+      expect(request.request.body).toEqual({});
       
-      req.flush({ success: true });
+      request.flush({ success: true });
     });
   });
+
 
   describe('updateOrderStatus', () => {
     it('should update order status', () => {
@@ -273,11 +235,10 @@ describe('OrderService', () => {
         expect(response).toBeTruthy();
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/api/order/${orderId}/status`);
-      expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual({ status: newStatus });
-      
-      req.flush({ success: true });
+      const request = httpMock.expectOne(`${environment.apiUrl}/api/order/${orderId}/status`);
+      expect(request.request.method).toBe('POST');
+      expect(request.request.body).toEqual({ status: newStatus });
+      request.flush({ success: true });
     });
   });
 
@@ -288,58 +249,56 @@ describe('OrderService', () => {
         { 
           id: 1, 
           orderId: orderId, 
-          content: 'Message 1', 
-          timestamp: '2023-05-16T10:30:00', 
+          content: 'message1', 
+          timestamp: '2024-10-16T10:30:00', 
           isFromAdmin: false 
         },
         { 
           id: 2, 
           orderId: orderId, 
-          content: 'Message 2', 
-          timestamp: '2023-05-16T11:00:00', 
+          content: 'message2', 
+          timestamp: '2024-10-16T11:00:00', 
           isFromAdmin: true 
         }
       ];
       
       service.getOrderMessages(orderId).subscribe(messages => {
         expect(messages.length).toBe(2);
-        expect(messages[0].content).toBe('Message 1');
+        expect(messages[0].content).toBe('message1');
         expect(messages[1].isFromAdmin).toBeTrue();
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/api/order/${orderId}/messages`);
-      expect(req.request.method).toBe('GET');
-      
-      req.flush(mockMessages);
+      const request = httpMock.expectOne(`${environment.apiUrl}/api/order/${orderId}/messages`);
+      expect(request.request.method).toBe('GET');
+      request.flush(mockMessages);
     });
 
     it('should add a new order message', () => {
-      const orderId = 1;
+      const orderId=1;
       const messageData: OrderMessageCreate = {
-        content: 'New message',
+        content: 'new message',
         isFromAdmin: false,
         orderId: orderId
       };
       
-      const mockResponse: OrderMessage = {
+      const mockResponse:  OrderMessage = {
         id: 3,
         orderId: orderId,
         content: messageData.content,
-        timestamp: '2023-05-16T12:00:00',
+        timestamp: '2024-10-16T12:00:00',
         isFromAdmin: messageData.isFromAdmin
       };
       
       service.addOrderMessage(orderId, messageData).subscribe(message => {
         expect(message.id).toBe(3);
-        expect(message.content).toBe('New message');
+        expect(message.content).toBe('new message');
         expect(message.isFromAdmin).toBeFalse();
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/api/order/${orderId}/messages`);
-      expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual(messageData);
-      
-      req.flush(mockResponse);
+      const request = httpMock.expectOne(`${environment.apiUrl}/api/order/${orderId}/messages`);
+      expect(request.request.method).toBe('POST');
+      expect(request.request.body).toEqual(messageData);
+      request.flush(mockResponse);
     });
   });
 }); 

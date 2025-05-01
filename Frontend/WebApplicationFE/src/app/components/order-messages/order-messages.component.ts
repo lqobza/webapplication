@@ -34,7 +34,6 @@ export class OrderMessagesComponent implements OnInit, OnDestroy, OnChanges {
   
   messages: OrderMessage[] = [];
   newMessage: string = '';
-  loading: boolean = false;
   error: string | null = null;
   refreshSubscription?: Subscription;
 
@@ -42,17 +41,13 @@ export class OrderMessagesComponent implements OnInit, OnDestroy, OnChanges {
 
   ngOnInit(): void {
     this.loadMessages();
-    this.setupAutoRefresh();
+    this.autoRefresh();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['orderId'] && !changes['orderId'].firstChange) {
       this.loadMessages();
-      
-      if (this.refreshSubscription) {
-        this.refreshSubscription.unsubscribe();
-      }
-      this.setupAutoRefresh();
+      this.autoRefresh();
     }
   }
 
@@ -62,33 +57,28 @@ export class OrderMessagesComponent implements OnInit, OnDestroy, OnChanges {
     }
   }
 
-  setupAutoRefresh(): void {
-    this.refreshSubscription = interval(30000)
+  autoRefresh(): void {
+    this.refreshSubscription = interval(10000)
       .pipe(
         switchMap(() => this.orderService.getOrderMessages(this.orderId))
       )
       .subscribe({
         next: (messages) => {
           this.messages = messages;
-        },
-        error: () => {
         }
       });
   }
 
   loadMessages(): void {
-    this.loading = true;
     this.error = null;
     this.messages = [];
     
     this.orderService.getOrderMessages(this.orderId).subscribe({
       next: (messages) => {
         this.messages = messages;
-        this.loading = false;
       },
-      error: (err) => {
-        this.error = 'Failed to load messages. Please try again.';
-        this.loading = false;
+      error: () => {
+        this.error = 'Failed to load messages';  //snackbarra atirni
       }
     });
   }
@@ -104,7 +94,6 @@ export class OrderMessagesComponent implements OnInit, OnDestroy, OnChanges {
       isFromAdmin: this.isAdminMode
     };
     
-    this.loading = true;
     
     this.orderService.addOrderMessage(this.orderId, messageToSend).subscribe({
       next: (message) => {
@@ -113,27 +102,20 @@ export class OrderMessagesComponent implements OnInit, OnDestroy, OnChanges {
         }
         
         this.newMessage = '';
-        this.loading = false;
       },
-      error: (err) => {
-        alert('Failed to send message. Please try again.');
-        this.loading = false;
+      error: () => {
+        alert('Failed to send message'); //snackbarra atirni
       }
     });
   }
 
   formatDate(dateString: string): string {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch (error) {
-      return dateString;
-    }
+    return  new Date(dateString).toLocaleString(undefined, {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'});
+
   }
 } 

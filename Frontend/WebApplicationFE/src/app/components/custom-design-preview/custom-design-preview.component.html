@@ -17,7 +17,7 @@
       
       <div *ngIf="isLoading" class="loading-overlay">
         <div class="spinner"></div>
-        <p>Saving your design...</p>
+        <p>Saving design</p>
       </div>
     </div>
     
@@ -45,7 +45,7 @@
         </button>
       </div>
 
-      <!-- Image resize controls (only shown for images) -->
+      <!-- kep meretezo -->
       <div class="size-controls" *ngIf="isImageElement()">
         <h4>Resize Image</h4>
         
@@ -75,7 +75,7 @@
         </div>
       </div>
       
-      <!-- Text formatting controls (only shown for text) -->
+      <!-- szoveg meretezo -->
       <div class="text-controls" *ngIf="isTextElement()">
         <h4>Text Formatting</h4>
         
@@ -83,7 +83,7 @@
           <mat-form-field appearance="fill">
             <mat-label>Font</mat-label>
             <mat-select [value]="getActiveTextFont()" (selectionChange)="setActiveTextFont($event.value)">
-              <mat-option *ngFor="let font of fontFamilies" [value]="font" [style.fontFamily]="font">
+              <mat-option *ngFor="let font of fonts" [value]="font" [style.fontFamily]="font">
                 {{font}}
               </mat-option>
             </mat-select>
@@ -130,7 +130,7 @@
       <h3>Size</h3>
       <mat-form-field appearance="fill">
         <mat-label>Select Size</mat-label>
-        <mat-select [(value)]="selectedSize" (selectionChange)="onSizeSelect($event.value)">
+        <mat-select [(value)]="selectedSize" (selectionChange)="onSizeSelected($event.value)">
           <mat-option *ngFor="let size of availableSizes" [value]="size">
             {{size}}
           </mat-option>
@@ -162,7 +162,7 @@
         <mat-form-field appearance="fill">
           <mat-label>Font</mat-label>
           <mat-select [(value)]="fontFamily">
-            <mat-option *ngFor="let font of fontFamilies" [value]="font" [style.fontFamily]="font">
+            <mat-option *ngFor="let font of fonts" [value]="font" [style.fontFamily]="font">
               {{font}}
             </mat-option>
           </mat-select>

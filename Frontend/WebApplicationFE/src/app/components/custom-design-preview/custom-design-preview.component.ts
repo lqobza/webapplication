@@ -91,6 +91,7 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
   tshirtFrontImage: HTMLImageElement = new Image();
   tshirtBackImage: HTMLImageElement = new Image();
   
+
   currentSide: TShirtSide = 'front';
   
   frontTextElements: TextElement[] = [];
@@ -100,16 +101,18 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
   
   activeElement: TextElement | ImageElement | null = null;
   
+
   newText: string = '';
   fontSize: number = 24;
   fontFamily: string = 'Arial';
   textColor: string = '#000000';
   
+
   designName: string = '';
   
   maintainAspectRatio: boolean = true;
   
-  fontFamilies = [
+  fonts = [
     'Arial', 
     'Verdana', 
     'Times New Roman', 
@@ -128,7 +131,7 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
   showModifiableArea = true;
   
   customProduct: CustomProduct = {
-    id: 'custom-' + Date.now(),
+    id: 'custom-' + Date.now(), // szukseges lehet randomabba tenni? Math.random().toString().substring(0, 10),
     name: this.designName,
     frontImage: '',
     backImage: '',
@@ -149,130 +152,6 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     private snackBar: MatSnackBar,
     private authService: AuthService
   ) {}
-
-  // this is for formating pixels for slider display
-  formatPx(value: number): string {
-    return `${value}px`;
-  }
-
-  getActiveImageWidth(): number {
-    if (this.activeElement && 'url' in this.activeElement) {
-      return this.activeElement.width;
-    }
-    return 100; //default value
-  }
-
-  setActiveImageWidth(width: number): void {
-    if (this.activeElement && 'url' in this.activeElement) {
-      const oldWidth = this.activeElement.width;
-      
-      //if aspect ratio is maintainged, check if change would cause height to exceed limits
-      if (this.maintainAspectRatio) {
-        const aspectRatio = this.activeElement.height / oldWidth;
-        const projectedHeight = Math.round(width * aspectRatio);
-        
-        //don't allow change if it would cause height to go beyond limits
-        if (projectedHeight < 20 || projectedHeight > 300) {
-          return;
-        }
-        
-        this.activeElement.width = width;
-        this.activeElement.height = projectedHeight;
-      } else {
-        this.activeElement.width = width;
-      }
-      
-      this.renderCanvas();
-    }
-  }
-
-  getActiveImageHeight(): number {
-    if (this.activeElement && 'url' in this.activeElement) {
-      return this.activeElement.height;
-    }
-    return 100; //default value
-  }
-
-  setActiveImageHeight(height: number): void {
-    if (this.activeElement && 'url' in this.activeElement) {
-      const oldHeight = this.activeElement.height;
-      
-      //if aspect ratio is maintainged, check if change would cause width to exceed limits
-      if (this.maintainAspectRatio) {
-        const aspectRatio = this.activeElement.width / oldHeight;
-        const projectedWidth = Math.round(height * aspectRatio);
-        
-        //don't allow change if it would cause width to go beyond limits
-        if (projectedWidth < 20 || projectedWidth > 300) {
-          return;
-        }
-        
-        this.activeElement.height = height;
-        this.activeElement.width = projectedWidth;
-      } else {
-        this.activeElement.height = height;
-      }
-      
-      this.renderCanvas();
-    }
-  }
-
-  getActiveTextFont(): string {
-    if (this.activeElement && 'text' in this.activeElement) {
-      return this.activeElement.fontFamily;
-    }
-    return this.fontFamily;
-  }
-  
-  setActiveTextFont(font: string): void {
-    if (this.activeElement && 'text' in this.activeElement) {
-      this.activeElement.fontFamily = font;
-      this.renderCanvas();
-    }
-  }
-  
-  getActiveTextSize(): number {
-    if (this.activeElement && 'text' in this.activeElement) {
-      return this.activeElement.fontSize;
-    }
-    return this.fontSize;
-  }
-  
-  setActiveTextSize(size: number): void {
-    if (this.activeElement && 'text' in this.activeElement) {
-      this.activeElement.fontSize = size;
-      this.renderCanvas();
-    }
-  }
-  
-  getActiveTextColor(): string {
-    if (this.activeElement && 'text' in this.activeElement) {
-      return this.activeElement.color;
-    }
-    return this.textColor;
-  }
-  
-  setActiveTextColor(color: string): void {
-    if (this.activeElement && 'text' in this.activeElement) {
-      this.activeElement.color = color;
-      this.renderCanvas();
-    }
-  }
-  
-  updateTextSize(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input && input.value) {
-      this.setActiveTextSize(parseInt(input.value, 10));
-    }
-  }
-
-  resizeActiveImage(width: number, height: number): void {
-    if (this.activeElement && 'url' in this.activeElement) {
-      this.activeElement.width = width;
-      this.activeElement.height = height;
-      this.renderCanvas();
-    }
-  }
 
   ngOnInit(): void {
     this.tshirtFrontImage.src = 'assets/images/tshirt-front.png';
@@ -298,6 +177,80 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     canvas.addEventListener('mouseleave', this.handleCanvasMouseUp.bind(this));
     
     this.renderCanvas();
+  }
+
+  formatPx(value: number): string {
+    return `${value}px`;
+  }
+
+  getActiveImageWidth(): number {
+    if (this.activeElement && 'url' in this.activeElement) {
+      return this.activeElement.width;
+    }
+    return 100;
+  }
+
+  setActiveImageWidth(width: number): void {
+    if (this.activeElement && 'url' in this.activeElement) {
+      const oldWidth = this.activeElement.width;
+      
+      //if aspect ratio is maintainged, check if change would be over the limit
+      if (this.maintainAspectRatio) {
+        const aspectRatio = this.activeElement.height / oldWidth;
+        const projectedHeight = Math.round(width * aspectRatio);
+        
+        //don't allow change in case its over the limit
+        if (projectedHeight < 20 || projectedHeight > 300) {
+          return;
+        }
+        
+        this.activeElement.width = width;
+        this.activeElement.height = projectedHeight;
+      } else {
+        this.activeElement.width = width;
+      }
+      
+      this.renderCanvas();
+    }
+  }
+
+  getActiveImageHeight(): number {
+    if (this.activeElement && 'url' in this.activeElement) {
+      return this.activeElement.height;
+    }
+    return 100;
+  }
+
+  setActiveImageHeight(height: number): void {
+    if (this.activeElement && 'url' in this.activeElement) {
+      const oldHeight = this.activeElement.height;
+      
+      //if aspect ratio is maintainged, check if change would be over the limit
+      if (this.maintainAspectRatio) {
+        const aspectRatio = this.activeElement.width / oldHeight;
+        const projectedWidth = Math.round(height * aspectRatio);
+        
+        //don't allow change in case its over the limit
+        if (projectedWidth < 20 || projectedWidth > 300) {
+          return;
+        }
+        
+        this.activeElement.height = height;
+        this.activeElement.width = projectedWidth;
+      } else {
+        this.activeElement.height = height;
+      }
+      
+      this.renderCanvas();
+    }
+  }
+
+  resizeActiveImage(width: number, height: number): void {
+    if (this.activeElement && 'url' in this.activeElement) {
+      this.activeElement.width = width;
+      this.activeElement.height = height;
+      this.renderCanvas();
+    }
   }
 
   get currentTextElements(): TextElement[] {
@@ -411,7 +364,7 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     const g = parseInt(hexColor.slice(3, 5), 16);
     const b = parseInt(hexColor.slice(5, 7), 16);
     
-    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    const brightness = (r*299 + g*587 + b*114) / 1000;
     
     return brightness < 128;
   }
@@ -426,7 +379,7 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     ctx.fillStyle = element.color;
     ctx.textAlign = 'center';
     
-    ctx.fillText(element.text, 0, 0);
+    ctx.fillText(element.text,0, 0);
     
     if (this.activeElement === element) {
       const metrics = ctx.measureText(element.text);
@@ -484,6 +437,7 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     
     for (let i = this.currentTextElements.length - 1; i >= 0; i--) {
       const text = this.currentTextElements[i];
+
       if (this.isPointInText(x, y, text)) {
         this.activeElement = text;
         text.isDragging = true;
@@ -496,7 +450,8 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     if (!this.activeElement) {
       for (let i = this.currentImageElements.length - 1; i >= 0; i--) {
         const img = this.currentImageElements[i];
-        if (this.isPointInImage(x, y, img)) {
+
+        if (this.isPointInImage (x, y, img)) {
           this.activeElement = img;
           img.isDragging = true;
           this.dragStartX = x - img.x;
@@ -526,10 +481,14 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
       
       newX = Math.max(this.modifiableAreaX + halfWidth, Math.min(newX, this.modifiableAreaX + this.modifiableAreaWidth - halfWidth));
       newY = Math.max(this.modifiableAreaY + halfHeight, Math.min(newY, this.modifiableAreaY + this.modifiableAreaHeight - halfHeight));
+      
     } else {
+
       const ctx = canvas.getContext('2d');
+
       if (ctx) {
         ctx.font = `${this.activeElement.fontSize}px ${this.activeElement.fontFamily}`;
+
         const metrics = ctx.measureText(this.activeElement.text);
         const halfWidth = metrics.width / 2;
         const halfHeight = this.activeElement.fontSize / 2;
@@ -554,45 +513,47 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
   isPointInText(x: number, y: number, text: TextElement): boolean {
     const canvas = this.designCanvas.nativeElement;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return false;
+    if (!ctx)
+        return false;
     
     ctx.font = `${text.fontSize}px ${text.fontFamily}`;
     const metrics = ctx.measureText(text.text);
     const width = metrics.width;
     const height = text.fontSize;
     
-    const rotatedPoint = this.rotatePoint(
+    const rotatedPint = this.rotatePoint(
       x - text.x, 
       y - text.y, 
-      -text.rotation * Math.PI / 180
+      -text.rotation * Math.PI / 180,
     );
     
-    return (
-      rotatedPoint.x >= -width/2 - 5 &&
-      rotatedPoint.x <= width/2 + 5 &&
-      rotatedPoint.y >= -height/2 - 5 &&
-      rotatedPoint.y <= height/2 + 5
+    return(
+      rotatedPint.x >= -width/2 - 5 &&
+      rotatedPint.x <= width/2 + 5 && 
+      rotatedPint.y >= -height/2 - 5 &&
+      rotatedPint.y <= height/2 + 5
     );
   }
 
   isPointInImage(x: number, y: number, img: ImageElement): boolean {
-    const rotatedPoint = this.rotatePoint(
+    const rotatedPint = this.rotatePoint(
       x - img.x, 
       y - img.y, 
       -img.rotation * Math.PI / 180
     );
     
     return (
-      rotatedPoint.x >= -img.width/2 - 5 &&
-      rotatedPoint.x <= img.width/2 + 5 &&
-      rotatedPoint.y >= -img.height/2 - 5 &&
-      rotatedPoint.y <= img.height/2 + 5
+      rotatedPint.x >= -img.width/2 - 5 &&
+      rotatedPint.x <= img.width/2 + 5 &&
+      rotatedPint.y >= -img.height/2 - 5 &&
+      rotatedPint.y <= img.height/2 + 5
     );
   }
 
   rotatePoint(x: number, y: number, angle: number): {x: number, y: number} {
     const cos = Math.cos(angle);
     const sin = Math.sin(angle);
+
     return {
       x: x * cos - y * sin,
       y: x * sin + y * cos
@@ -605,16 +566,16 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     this.renderCanvas();
   }
 
-  onSizeSelect(size: string): void {
+  onSizeSelected(size: string): void {
     this.selectedSize = size;
     this.customProduct.size = size;
   }
 
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
+  onFileSelected(incomingEvent: Event): void {
+    const input = incomingEvent.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = (event)=> {
         const img = new Image();
         img.onload = () => {
           const maxWidth = this.canvasWidth * 0.3;
@@ -623,8 +584,8 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
           let width = img.width;
           let height = img.height;
           
-          if (width > maxWidth) {
-            height = (maxWidth / width) * height;
+          if (width > maxWidth) { 
+            height = (maxWidth / width) *height;
             width = maxWidth;
           }
           
@@ -636,8 +597,8 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
           const newImage: ImageElement = {
             id: 'img-' + Date.now(),
             url: img.src,
-            x: this.modifiableAreaX + (this.modifiableAreaWidth / 2),
-            y: this.modifiableAreaY + (this.modifiableAreaHeight / 2),
+            x: this.modifiableAreaX+(this.modifiableAreaWidth / 2),
+            y: this.modifiableAreaY+(this.modifiableAreaHeight / 2),
             width: width,
             height: height,
             rotation: 0,
@@ -653,8 +614,10 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
           this.activeElement = newImage;
           this.renderCanvas();
         };
-        img.src = e.target?.result as string;
+
+        img.src = event.target?.result as string;
       };
+
       reader.readAsDataURL(input.files[0]);
       
       input.value = '';
@@ -676,7 +639,7 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
       isDragging: false
     };
     
-    if (this.currentSide === 'front') {
+    if (this.currentSide=== 'front') {
       this.frontTextElements.push(newTextElement);
     } else {
       this.backTextElements.push(newTextElement);
@@ -733,8 +696,9 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
 
   saveDesign(): Promise<number> {
     return new Promise((resolve, reject) => {
+
       if (!this.designName.trim()) {
-        this.snackBar.open('Please enter a name for your design', 'Close', { duration: 3000 });
+        this.snackBar.open('Enter name for your desin', 'Close', { duration: 3000 });
         reject('Design name is required');
         return;
       }
@@ -749,12 +713,11 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
       
       const originalActiveElement = this.activeElement;
       const originalSide = this.currentSide;
-      
+
       this.showModifiableArea = false;
       this.renderCanvas();
       
       const currentSideImage = this.captureCanvasImage();
-      
       const otherSide = originalSide === 'front' ? 'back' : 'front';
       
       this.switchSide(otherSide);
@@ -779,15 +742,15 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
         }).subscribe({
           next: (response) => {
             this.isLoading = false;
-            this.snackBar.open('Design saved successfully!', 'Close', { duration: 3000 });
+            this.snackBar.open('Design saved successfully', 'Close', { duration: 3000 });
             this.designName = '';
             resolve(response.id);
           },
           error: (error) => {
-            this.isLoading = false;
-            //console.error('Error saving design:', error);
+            this.isLoading = false; 
+            console.error('HIBA:' +  error);
             
-            let errorMessage = 'Failed to save design. Please try again.';
+            let errorMessage = 'Failed to save design';
             if (error.error && typeof error.error === 'string') {
               errorMessage = error.error;
             } else if (error.message) {
@@ -804,12 +767,12 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
 
   addToCart(): void {
     if (!this.designName.trim()) {
-      this.snackBar.open('Please enter a name for your design before adding to cart', 'Close', { duration: 3000 });
+      this.snackBar.open('Enter name for design before adding to cart', 'Close', { duration: 3000 });
       return;
     }
     
     if (!this.authService.isLoggedIn()) {
-      this.snackBar.open('You must be logged in to save designs and add to cart', 'Close', { duration: 3000 });
+      this.snackBar.open('You must be logged in to save design and add to cart', 'Close', { duration: 3000 });
       return;
     }
     
@@ -836,26 +799,25 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
               this.cartService.addToCart(customProduct);
               this.snackBar.open('Design saved and added to cart!', 'Close', { duration: 3000 });
             },
-            error: (error) => {
+            error: () => {
               this.isLoading = false;
-              //console.error('Error fetching saved design:', error);
               this.snackBar.open('Design was saved but could not be added to cart. Please try again.', 'Close', { duration: 5000 });
             }
           });
       })
-      .catch(error => {
+      .catch(() => { //biztonsag kedveertt
         this.isLoading = false;
-        //console.error('Error in save and add to cart process:', error);
       });
   }
 
   clearDesign(): void {
+
     if (this.currentSide === 'front') {
       this.frontTextElements = [];
       this.frontImageElements = [];
     } else {
       this.backTextElements = [];
-      this.backImageElements = [];
+      this.backImageElements = []; 
     }
     
     this.activeElement = null;
@@ -874,7 +836,55 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
     this.snackBar.open('Cleared all designs', 'Close', { duration: 2000 });
   }
 
-  //helpers to determine which controls to show
+  getActiveTextFont(): string {
+    if (this.activeElement && 'text' in this.activeElement) {
+      return this.activeElement.fontFamily;
+    }
+    return this.fontFamily;
+  }
+  
+  setActiveTextFont(font: string): void {
+    if (this.activeElement && 'text' in this.activeElement) {
+      this.activeElement.fontFamily = font;
+      this.renderCanvas();
+    }
+  }
+  
+  getActiveTextSize(): number {
+    if (this.activeElement && 'text' in this.activeElement) {
+      return this.activeElement.fontSize;
+    }
+    return this.fontSize;
+  }
+  
+  setActiveTextSize(size: number): void {
+    if (this.activeElement && 'text' in this.activeElement) {
+      this.activeElement.fontSize = size;
+      this.renderCanvas();
+    }
+  }
+  
+  getActiveTextColor(): string {
+    if (this.activeElement && 'text' in this.activeElement) {
+      return this.activeElement.color;
+    }
+    return this.textColor;
+  }
+  
+  setActiveTextColor(color: string): void {
+    if (this.activeElement && 'text' in this.activeElement) {
+      this.activeElement.color = color;
+      this.renderCanvas();
+    }
+  }
+  
+  updateTextSize(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input && input.value) {
+      this.setActiveTextSize(parseInt(input.value, 10));
+    }
+  }
+
   isImageElement(): boolean {
     return this.activeElement !== null && 'url' in this.activeElement && !('text' in this.activeElement);
   }
@@ -882,4 +892,6 @@ export class CustomDesignPreviewComponent implements OnInit, AfterViewInit {
   isTextElement(): boolean {
     return this.activeElement !== null && 'text' in this.activeElement;
   }
+
 }
+

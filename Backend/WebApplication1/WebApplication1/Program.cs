@@ -11,7 +11,7 @@ builder.ConfigureWebHostDefaults(webBuilder =>
         Path.Combine(Directory.GetCurrentDirectory(), "..", "frontend", "dist")
     );
 });
-//DotEnv.Read("ConnectionStrings__DefaultConnection");
+
 var app = builder.Build();
 
 app.Run();

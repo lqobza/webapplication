@@ -7,25 +7,19 @@
     </button>
   </div>
 
-  <div *ngIf="loading" class="loading-container">
-    <mat-spinner diameter="50"></mat-spinner>
-    <p>Loading your designs...</p>
-  </div>
-
   <div *ngIf="error" class="error-container">
     <mat-icon color="warn">error</mat-icon>
     <p>{{ error }}</p>
     <button mat-raised-button color="primary" (click)="loadDesigns()">Try Again</button>
   </div>
 
-  <div *ngIf="!loading && !error && designs.length === 0" class="empty-container">
+  <div *ngIf="!error && designs.length === 0" class="empty-container">
     <mat-icon>brush</mat-icon>
-    <h2>No Designs Found</h2>
-    <p>You haven't created any custom designs yet.</p>
-    <button mat-raised-button color="primary" (click)="createNewDesign()">Create Your First Design</button>
+    <p>No custom designs yet</p>
+    <button mat-raised-button color="primary" (click)="createNewDesign()">Create your first design</button>
   </div>
 
-  <div *ngIf="!loading && !error && designs.length > 0" class="designs-grid">
+  <div *ngIf="!error && designs.length > 0" class="designs-grid">
     <mat-card *ngFor="let design of designs" class="design-card">
       <mat-card-header>
         <mat-card-title>{{ design.name }}</mat-card-title>

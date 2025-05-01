@@ -39,8 +39,8 @@ export class LoginComponent {
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
 
     this.route.queryParams.subscribe(params => {
-      if (params['expired'] === 'true') {
-        this.errorMessage = 'Your session has expired. Please log in again.';
+      if (params['expired']=== 'true') {
+        this.errorMessage = 'Your session has expired. Please log in again.'; //snackbarra atirni
       }
     });
   }
@@ -61,7 +61,7 @@ export class LoginComponent {
         },
         error: error => {
           this.loading = false;
-          this.error = error.error?.message || 'Login failed';
+          this.error = error.error?.message || 'Login failed'; //snackbarra atirni
         }
       });
   }

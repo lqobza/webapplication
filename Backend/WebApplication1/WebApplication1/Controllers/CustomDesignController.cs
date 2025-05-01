@@ -11,6 +11,7 @@ public class CustomDesignController : ControllerBase
 {
     private readonly ICustomDesignService _customDesignService;
     private readonly ILogger<CustomDesignController> _logger;
+    
 
     public CustomDesignController(ICustomDesignService customDesignService, ILogger<CustomDesignController> logger)
     {
@@ -22,7 +23,7 @@ public class CustomDesignController : ControllerBase
     [Authorize(Roles = "Admin,User")]
     public async Task<IActionResult> CreateDesign([FromBody] CustomDesignCreateDto designDto)
     {
-        _logger.LogInformation("CreateDesign endpoint called with design name: {DesignName}", designDto.Name);
+        _logger.LogInformation("CreateDesign endpoint called with: {DesignName}", designDto.Name);
         
         if (string.IsNullOrEmpty(designDto.Name))
         {
@@ -32,7 +33,7 @@ public class CustomDesignController : ControllerBase
 
         if (string.IsNullOrEmpty(designDto.UserId))
         {
-            _logger.LogWarning("User ID is required");
+            _logger.LogWarning("UserId is required");
             return BadRequest("User ID is required");
         }
 
@@ -48,25 +49,28 @@ public class CustomDesignController : ControllerBase
             return BadRequest("Back image is required");
         }
 
+        
         try
         {
             _logger.LogInformation("Creating design for user {UserId}", designDto.UserId);
             var designId = await _customDesignService.CreateDesignAsync(designDto);
-            _logger.LogInformation("Design created successfully with ID: {DesignId}", designId);
-            return Ok(new { Id = designId });
+            _logger.LogInformation("Design created with ID: {DesignId}", designId);
+            return Ok(new {Id=designId});
         }
+        
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating design: {ErrorMessage}", ex.Message);
             return StatusCode(500, "An error occurred while creating the design");
         }
+        
     }
 
     [HttpGet("user/{userId}")]
     [Authorize(Roles = "Admin,User")]
     public async Task<IActionResult> GetDesignsByUserId(string userId)
     {
-        _logger.LogInformation("GetDesignsByUserId endpoint called for user: {UserId}", userId);
+        _logger.LogInformation("GetDesignsByUserId endpoint called with {UserId}", userId);
 
         if (string.IsNullOrEmpty(userId))
         {
@@ -78,12 +82,13 @@ public class CustomDesignController : ControllerBase
         {
             var designs = await _customDesignService.GetDesignsByUserIdAsync(userId);
             _logger.LogInformation("Retrieved {Count} designs for user {UserId}", designs.Count, userId);
+            
             return Ok(designs);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving designs for user {UserId}: {ErrorMessage}", userId, ex.Message);
-            return StatusCode(500, "An error occurred while retrieving designs");
+            _logger.LogError(ex, "Error retrieving designs for {UserId} {ErrorMessage}", userId, ex.Message);
+            return StatusCode(500,"An error occurred while retrieving designs");
         }
     }
 
@@ -91,13 +96,13 @@ public class CustomDesignController : ControllerBase
     [Authorize(Roles = "Admin,User")]
     public async Task<IActionResult> GetDesignById(int id)
     {
-        _logger.LogInformation("GetDesignById endpoint called for design: {DesignId}", id);
+        _logger.LogInformation("GetDesignById endpoint called with id {DesignId}", id);
 
         try
         {
             var design = await _customDesignService.GetDesignByIdAsync(id);
 
-            if (design == null)
+            if (design ==null)
             {
                 _logger.LogWarning("Design with ID {DesignId} not found", id);
                 return NotFound($"Design with ID {id} not found");
@@ -105,33 +110,35 @@ public class CustomDesignController : ControllerBase
 
             _logger.LogInformation("Retrieved design with ID {DesignId}", id);
             return Ok(design);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving design with ID {DesignId}: {ErrorMessage}", id, ex.Message);
+        }catch (Exception ex) {
+            _logger.LogError(ex, "Error retrieving design with ID {DesignId} {ErrorMessage}", id, ex.Message);
+            
             return StatusCode(500, "An error occurred while retrieving the design");
         }
     }
 
+    
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "Admin,User")]
     public async Task<IActionResult> DeleteDesign(int id)
     {
-        _logger.LogInformation("DeleteDesign endpoint called for design: {DesignId}", id);
+        _logger.LogInformation("DeleteDesign endpoint called witgh id: {DesignId}", id);
 
         try
         {
             var design = await _customDesignService.GetDesignByIdAsync(id);
 
-            if (design == null)
+            if (design ==null)
             {
                 _logger.LogWarning("Design with ID {DesignId} not found", id);
                 return NotFound($"Design with ID {id} not found");
             }
 
             var currentUserId = User.FindFirst("userId")?.Value;
+            
             if (currentUserId != design.UserId)
             {
+                
                 _logger.LogWarning("User {UserId} attempted to delete design {DesignId} owned by {OwnerId}",
                     currentUserId, id, design.UserId);
                 return new ObjectResult("You do not have permission to delete this design")
@@ -142,10 +149,10 @@ public class CustomDesignController : ControllerBase
 
             await _customDesignService.DeleteDesignAsync(id);
             _logger.LogInformation("Design with ID {DesignId} deleted successfully", id);
+            
             return NoContent();
-        }
-        catch (Exception ex)
-        {
+            
+        }catch (Exception ex){
             _logger.LogError(ex, "Error deleting design with ID {DesignId}: {ErrorMessage}", id, ex.Message);
             return StatusCode(500, "An error occurred while deleting the design");
         }

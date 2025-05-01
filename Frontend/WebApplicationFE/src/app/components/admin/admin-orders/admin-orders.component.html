@@ -1,24 +1,19 @@
 <div class="admin-orders-container">
   <h1 class="page-title">Manage Orders</h1>
 
-  <div *ngIf="loading" class="loading-container">
-    <mat-spinner diameter="50"></mat-spinner>
-    <p>Loading orders...</p>
-  </div>
-
   <div *ngIf="error" class="error-container">
     <mat-icon color="warn">error</mat-icon>
     <p>{{ error }}</p>
     <button mat-raised-button color="primary" (click)="fetchAllOrders()">Try Again</button>
   </div>
 
-  <div *ngIf="!loading && !error && orders.length === 0" class="empty-state">
+  <div *ngIf="!error && orders.length === 0" class="empty-state">
     <mat-icon class="empty-icon">receipt_long</mat-icon>
     <h2>No Orders Found</h2>
     <p>There are no orders in the system yet.</p>
   </div>
 
-  <div *ngIf="!loading && !error && orders.length > 0" class="orders-table-container">
+  <div *ngIf="!error && orders.length > 0" class="orders-table-container">
     <table mat-table [dataSource]="orders" class="orders-table">
       <ng-container matColumnDef="id">
         <th mat-header-cell *matHeaderCellDef>Order ID</th>

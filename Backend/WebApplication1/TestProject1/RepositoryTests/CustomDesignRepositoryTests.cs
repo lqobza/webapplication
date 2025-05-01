@@ -25,13 +25,13 @@ public class CustomDesignRepositoryTests
     }
 
     [Test]
-    public async Task CreateDesignAsync_ValidDesign_ReturnsDesignId()
+    public async Task CreateDesignAsyncValidDesignReturnsDesignId()
     {
-        // Arrange
-        var designCreateDto = new CustomDesignCreateDto
+        //Arrange
+        var designCreateDto =new CustomDesignCreateDto
         {
             UserId = "user123",
-            Name = "Test Design",
+            Name = "test design",
             FrontImage = "front.jpg",
             BackImage = "back.jpg"
         };
@@ -39,10 +39,11 @@ public class CustomDesignRepositoryTests
         _mockDatabase.Setup(x => x.ExecuteScalar(It.IsAny<string>(), It.IsAny<SqlParameter[]>()))
             .Returns(1);
 
-        // Act
+        //Act
         var result = await _repository.CreateDesignAsync(designCreateDto);
 
-        // Assert
+        
+        //Assert
         Assert.That(result, Is.EqualTo(1));
         _mockDatabase.Verify(x => x.ExecuteScalar(It.IsAny<string>(), It.Is<SqlParameter[]>(p => 
             p.Any(param => param.ParameterName == "@userId" && (string)param.Value == designCreateDto.UserId) &&
@@ -51,38 +52,39 @@ public class CustomDesignRepositoryTests
     }
 
     [Test]
-    public void CreateDesignAsync_NullResult_ThrowsException()
+    public void CreateDesignAsyncNullResultThrowsException()
     {
-        // Arrange
+        
+        //Arrange
         var designCreateDto = new CustomDesignCreateDto
         {
             UserId = "user123",
-            Name = "Test Design",
+            Name = "test design", 
             FrontImage = "front.jpg",
             BackImage = "back.jpg"
         };
-
+    
         _mockDatabase.Setup(x => x.ExecuteScalar(It.IsAny<string>(), It.IsAny<SqlParameter[]>()))
             .Returns(null);
 
-        // Act & Assert
+        //Act,Assert
         Assert.ThrowsAsync<InvalidOperationException>(async () => await _repository.CreateDesignAsync(designCreateDto));
     }
 
     [Test]
-    public async Task GetDesignsByUserIdAsync_ReturnsDesignList()
+    public async Task GetDesignsByUserIDAsyncReturnsDesignList()
     {
-        // Arrange
-        const string userId = "user123";
+        //Arrange
+        const string userId="user123";
 
         _mockReader.SetupSequence(x => x.Read())
-            .Returns(true)
+             .Returns(true)
             .Returns(true)
             .Returns(false);
 
         _mockReader.Setup(x => x["id"]).Returns(1);
         _mockReader.Setup(x => x["user_id"]).Returns(userId);
-        _mockReader.Setup(x => x["name"]).Returns("Test Design");
+        _mockReader.Setup(x => x["name"]).Returns("test design");
         _mockReader.Setup(x => x["front_image"]).Returns("front.jpg");
         _mockReader.Setup(x => x["back_image"]).Returns("back.jpg");
         _mockReader.Setup(x => x["created_at"]).Returns(DateTime.Now);
@@ -90,20 +92,21 @@ public class CustomDesignRepositoryTests
         _mockDatabase.Setup(x => x.ExecuteReader(It.IsAny<string>(), It.IsAny<SqlParameter[]>()))
             .Returns(_mockReader.Object);
 
-        // Act
+        //act
         var result = await _repository.GetDesignsByUserIdAsync(userId);
 
-        // Assert
+        
+        //Assert
         Assert.That(result, Is.Not.Null);
         Assert.That(result.Count, Is.EqualTo(2));
         Assert.That(result[0].UserId, Is.EqualTo(userId));
-        Assert.That(result[0].Name, Is.EqualTo("Test Design"));
+        Assert.That(result[0].Name, Is.EqualTo("test design"));
     }
 
     [Test]
-    public async Task GetDesignByIdAsync_ExistingDesign_ReturnsDesign()
+    public async Task GetDesignByIdAsyncExistingDesignReturnsDesign()
     {
-        // Arrange
+        //Arrange
         const int designId = 1;
         const string userId = "user123";
 
@@ -113,57 +116,53 @@ public class CustomDesignRepositoryTests
 
         _mockReader.Setup(x => x["id"]).Returns(designId);
         _mockReader.Setup(x => x["user_id"]).Returns(userId);
-        _mockReader.Setup(x => x["name"]).Returns("Test Design");
+        _mockReader.Setup(x => x["name"]).Returns("test design");
         _mockReader.Setup(x => x["front_image"]).Returns("front.jpg");
         _mockReader.Setup(x => x["back_image"]).Returns("back.jpg");
         _mockReader.Setup(x => x["created_at"]).Returns(DateTime.Now);
 
-        _mockDatabase.Setup(x => x.ExecuteReader(It.IsAny<string>(), It.IsAny<SqlParameter[]>()))
+        _mockDatabase.Setup(x =>x.ExecuteReader(It.IsAny<string>(), It.IsAny<SqlParameter[]>()))
             .Returns(_mockReader.Object);
 
-        // Act
+        //Act
         var result = await _repository.GetDesignByIdAsync(designId);
 
-        // Assert
+        //Assert
         Assert.That(result, Is.Not.Null);
         Assert.That(result.Id, Is.EqualTo(designId));
         Assert.That(result.UserId, Is.EqualTo(userId));
-        Assert.That(result.Name, Is.EqualTo("Test Design"));
+        Assert.That(result.Name, Is.EqualTo("test design"));
     }
 
     [Test]
-    public async Task GetDesignByIdAsync_NonExistentDesign_ReturnsNull()
+    public async Task GetDesignByIdAsynNonExistentDesignRerurnsNull()
     {
-        // Arrange
+        //Arrange
         const int designId = 999;
-
-        _mockReader.Setup(x => x.Read()).Returns(false);
-
-        _mockDatabase.Setup(x => x.ExecuteReader(It.IsAny<string>(), It.IsAny<SqlParameter[]>()))
+        _mockReader.Setup(x=> x.Read()).Returns(false);
+        _mockDatabase.Setup(x=> x.ExecuteReader(It.IsAny<string>(), It.IsAny<SqlParameter[]>()))
             .Returns(_mockReader.Object);
-
-        // Act
+    
+        //Act
         var result = await _repository.GetDesignByIdAsync(designId);
-
-        // Assert
+        //Assert
         Assert.That(result, Is.Null);
     }
 
     [Test]
-    public async Task DeleteDesignAsync_CallsExecuteNonQuery()
+    public async Task DeleteDesignAsyncCallsExecuteNonQuery()
     {
-        // Arrange
-        const int designId = 1;
-
+        //Arrange
+        const int designId = 1; 
         _mockDatabase.Setup(x => x.ExecuteNonQuery(It.IsAny<string>(), It.IsAny<SqlParameter[]>()))
             .Returns(1);
 
-        // Act
+        //Act
         await _repository.DeleteDesignAsync(designId);
 
-        // Assert
+        //Assert
         _mockDatabase.Verify(x => x.ExecuteNonQuery(It.IsAny<string>(), It.Is<SqlParameter[]>(p => 
-            p.Any(param => param.ParameterName == "@id" && (int)param.Value == designId))), 
+            p.Any(param => param.ParameterName=="@id" && (int)param.Value == designId))), 
             Times.Once);
     }
-} 
+}

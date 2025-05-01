@@ -13,6 +13,6 @@ export class RatingService {
   constructor(private http: HttpClient) { }
 
   insertRating(rating: RatingDto): Observable<any> {
-    return this.http.post(`${this.apiUrl}`, rating);
+    return this.http.post(`${this.apiUrl}`,rating);
   }
 }

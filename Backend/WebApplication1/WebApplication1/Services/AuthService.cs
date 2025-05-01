@@ -17,6 +17,7 @@ public class AuthService : IAuthService
     private readonly IConfiguration _configuration;
     private readonly ApplicationDbContext _context;
 
+    
     public AuthService(IConfiguration configuration, ApplicationDbContext context)
     {
         _configuration = configuration;
@@ -26,15 +27,16 @@ public class AuthService : IAuthService
     public async Task<string> RegisterUserAsync(RegisterDto registerDto)
     {
         var existingUser = await _context.Users.SingleOrDefaultAsync(u => u.Email == registerDto.Email);
-        if (existingUser != null) throw new ArgumentException("User already exists.");
+        if (existingUser!=null)  
+            throw new ArgumentException("User already exists.");
 
         var salt = new byte[128 / 8];
-        using (var rng = RandomNumberGenerator.Create())
+        using (var rng = RandomNumberGenerator.Create()) 
         {
             rng.GetBytes(salt);
         }
 
-        var saltString = Convert.ToBase64String(salt);
+        var saltString= Convert.ToBase64String(salt);
         var passwordHash = HashPassword(registerDto.Password, salt);
 
         var user = new ApplicationUser
@@ -54,12 +56,14 @@ public class AuthService : IAuthService
     public async Task<string> LoginAsync(LoginDto loginDto)
     {
         var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == loginDto.Email);
-        if (user == null) throw new ArgumentException("Invalid email or password.");
+        if (user == null)
+            throw new ArgumentException("Invalid email or password.");
 
         var salt = Convert.FromBase64String(user.PasswordSalt);
-        var passwordHash = HashPassword(loginDto.Password, salt);
+        var passwordHash =HashPassword(loginDto.Password, salt);
 
-        if (passwordHash != user.PasswordHash) throw new ArgumentException("Invalid email or password.");
+        if (passwordHash != user.PasswordHash)
+            throw new ArgumentException("Invalid email or password.");
 
         return GenerateJwtToken(user);
     }
@@ -75,12 +79,14 @@ public class AuthService : IAuthService
 
         return hashed;
     }
+    
 
     private string GenerateJwtToken(ApplicationUser user)
     {
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
+        
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Username),
@@ -93,7 +99,7 @@ public class AuthService : IAuthService
         var token = new JwtSecurityToken(
             _configuration["Jwt:Issuer"],
             _configuration["Jwt:Audience"],
-            claims,
+            claims, 
             expires: DateTime.Now.AddHours(3),
             signingCredentials: credentials);
 

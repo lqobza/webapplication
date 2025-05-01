@@ -16,59 +16,78 @@ public class DatabaseWrapper : IDatabaseWrapper
     public SqlConnection CreateConnection()
     {
         var connectionString = _configuration.GetConnectionString("DefaultConnection");
-        if (string.IsNullOrEmpty(connectionString))
-            throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+        if (string.IsNullOrEmpty(connectionString)) 
+            throw new InvalidOperationException("Connection string 'DefaultConnection'  not found.");
+        
         return new SqlConnection(connectionString);
     }
 
     public int ExecuteNonQuery(string query, params SqlParameter[]? parameters)
     {
-        if (string.IsNullOrEmpty(query)) throw new ArgumentNullException(nameof(query));
+        
+        if (string.IsNullOrEmpty(query)) 
+            throw new ArgumentNullException(nameof(query));
 
         using var connection = CreateConnection();
         connection.Open();
+        
         using var command = new SqlCommand(query, connection);
 
-        if (query.StartsWith("[dbo].")) command.CommandType = CommandType.StoredProcedure;
+        if (query.StartsWith("[dbo]."))
+             command.CommandType=CommandType.StoredProcedure;
 
-        if (parameters is { Length: > 0 }) command.Parameters.AddRange(parameters);
+        if (parameters is { Length: > 0 }) 
+            command.Parameters.AddRange(parameters);
+        
         return command.ExecuteNonQuery();
     }
 
+    
     public int ExecuteNonQuery(string query, SqlParameter[]? parameters, IDbTransaction? transaction)
     {
-        if (string.IsNullOrEmpty(query)) throw new ArgumentNullException(nameof(query));
+        if (string.IsNullOrEmpty(query)) 
+            throw new ArgumentNullException(nameof(query));
 
-        if (transaction == null) return ExecuteNonQuery(query, parameters);
+        if (transaction==null) 
+            return ExecuteNonQuery(query, parameters);
 
         var command = new SqlCommand(query, (SqlConnection)transaction.Connection);
         command.Transaction = (SqlTransaction)transaction;
 
-        if (query.StartsWith("[dbo].")) command.CommandType = CommandType.StoredProcedure;
+        if (query.StartsWith("[dbo]."))
+            command.CommandType = CommandType.StoredProcedure;
 
-        if (parameters is { Length: > 0 }) command.Parameters.AddRange(parameters);
+        if (parameters is { Length: > 0 }) 
+            command.Parameters.AddRange(parameters);
 
         return command.ExecuteNonQuery();
     }
 
+    
     public object ExecuteScalar(string query, params SqlParameter[]? parameters)
     {
         if (string.IsNullOrEmpty(query)) throw new ArgumentNullException(nameof(query));
 
         using var connection = CreateConnection();
         connection.Open();
+        
         using var command = new SqlCommand(query, connection);
 
-        if (query.StartsWith("[dbo].")) command.CommandType = CommandType.StoredProcedure;
+        if (query.StartsWith("[dbo].")) 
+            command.CommandType = CommandType.StoredProcedure;
 
-        if (parameters is { Length: > 0 }) command.Parameters.AddRange(parameters);
-        var result = command.ExecuteScalar();
+        if (parameters is { Length: > 0 })
+            command.Parameters.AddRange(parameters);
+        var result=command.ExecuteScalar();
+        
         return result == DBNull.Value ? null : result;
     }
 
     public IDataReader ExecuteReader(string query, params SqlParameter[]? parameters)
     {
-        if (string.IsNullOrEmpty(query)) throw new ArgumentNullException(nameof(query));
+        
+        if (string.IsNullOrEmpty(query)) 
+            throw new ArgumentNullException(nameof(query));
 
         SqlConnection connection = null!;
         try
@@ -81,7 +100,8 @@ public class DatabaseWrapper : IDatabaseWrapper
 
             if (parameters is { Length: > 0 }) command.Parameters.AddRange(parameters);
 
-            // connection with "using" is not working in this case, as reader would be unable to read the data
+            //conection "using" -al nem mukodik, mert a readert meg kell tartani, hogy olvasni tudjon
+            // https://stackoverflow.com/questions/5689263/what-is-the-use-advantage-of-using-commandbehavior-closeconnection-in-executerea
             var result = command.ExecuteReader(CommandBehavior.CloseConnection);
             return result;
         }
@@ -94,18 +114,19 @@ public class DatabaseWrapper : IDatabaseWrapper
 
     public async Task<IDbTransaction> BeginTransactionAsync()
     {
-        SqlConnection connection = null!;
+        SqlConnection connection=null!;
         try
         {
-            connection = CreateConnection();
+            connection=CreateConnection();
             await connection.OpenAsync();
             return connection.BeginTransaction();
         }
+        
         catch
         {
-            //closing the connection if an exception occurs
             connection.Close();
             throw;
         }
     }
+    
 }

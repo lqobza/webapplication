@@ -1,8 +1,5 @@
 <div class="order-details-container">
-  <div *ngIf="loading" class="loading-container">
-    <mat-spinner diameter="50"></mat-spinner>
-    <p>Loading order details...</p>
-  </div>
+
 
   <div *ngIf="error" class="error-container">
     <mat-icon color="warn">error</mat-icon>
@@ -10,7 +7,7 @@
     <button mat-raised-button color="primary" (click)="fetchOrderDetails()">Try Again</button>
   </div>
 
-  <div *ngIf="!loading && !error && order" class="order-details">
+  <div *ngIf="!error && order" class="order-details">
     <mat-card class="order-header-card">
       <button *ngIf="dialogRef" mat-icon-button class="close-button" (click)="closeDialog()">
         <mat-icon>close</mat-icon>

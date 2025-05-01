@@ -6,25 +6,20 @@
     </button>
   </div>
 
-  <div *ngIf="loading" class="loading-container">
-    <mat-spinner diameter="50"></mat-spinner>
-    <p>Loading merchandise...</p>
-  </div>
-
-  <div *ngIf="error" class="error-container">
+   <div *ngIf="error" class="error-container">
     <mat-icon color="warn">error</mat-icon>
     <p>{{ error }}</p>
     <button mat-raised-button color="primary" (click)="fetchMerchandise(pageIndex + 1, pageSize)">Try Again</button>
   </div>
 
-  <div *ngIf="!loading && !error && merchandiseList.length === 0" class="empty-state">
+  <div *ngIf="!error && merchandiseList.length === 0" class="empty-state">
     <mat-icon class="empty-icon">inventory_2</mat-icon>
     <h2>No Merchandise Found</h2>
     <p>There are no merchandise items in the system.</p>
     <button mat-raised-button color="primary" routerLink="/admin/merchandise/create">Add New Merchandise</button>
   </div>
 
-  <div *ngIf="!loading && !error && merchandiseList.length > 0" class="merchandise-table-container">
+  <div *ngIf="!error && merchandiseList.length > 0" class="merchandise-table-container">
     <table mat-table [dataSource]="merchandiseList" class="merchandise-table" matSort>
       <ng-container matColumnDef="id">
         <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>

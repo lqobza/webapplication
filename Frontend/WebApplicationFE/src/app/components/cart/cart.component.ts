@@ -26,8 +26,9 @@ interface StockCheckResult {
 export class CartComponent implements OnInit {
   cartItems: CartItem[] = [];
   totalPrice: number = 0;
-  isLoading: boolean = true;
   errorMessage: string | null = null;
+
+
   private isFetchingDetails: boolean = false;
 
   customerName: string = '';
@@ -78,12 +79,10 @@ export class CartComponent implements OnInit {
   }
 
   loadCartItems(): void {
-    this.isLoading = true;
     this.cartService.getCartItems().subscribe({
       next: (items) => {
         this.cartItems = items;
         this.updateTotalPrice();
-        this.isLoading = false;
         
         if (!this.isFetchingDetails) {
           this.loadMerchandiseDetails();
@@ -92,8 +91,7 @@ export class CartComponent implements OnInit {
         this.checkItemsStockAvailability();
       },
       error: () => {
-        this.errorMessage = 'Failed to load cart items. Please try again later.';
-        this.isLoading = false;
+        this.errorMessage = 'Failed to load cart items';
       }
     });
   }
@@ -104,14 +102,12 @@ export class CartComponent implements OnInit {
     }
 
     if (this.cartItems.length === 0) {
-      this.isLoading = false;
       return;
     }
 
     const itemsNeedingDetails = this.cartItems.filter(item => !item.imageUrl || !item.name);
     
     if (itemsNeedingDetails.length === 0) {
-      this.isLoading = false;
       return;
     }
 
@@ -121,7 +117,7 @@ export class CartComponent implements OnInit {
     
     const merchandiseObservables = merchandiseIds.map(id => 
       this.merchandiseService.getMerchandiseById(id).pipe(
-        catchError(error => {
+        catchError(() => {
           return of(null);
         })
       )
@@ -130,7 +126,6 @@ export class CartComponent implements OnInit {
     forkJoin(merchandiseObservables)
       .pipe(
         finalize(() => {
-          this.isLoading = false;
           this.isFetchingDetails = false;
         })
       )
@@ -141,8 +136,6 @@ export class CartComponent implements OnInit {
               this.cartService.updateMerchandiseDetails(merch);
             }
           });
-        },
-        error: (error) => {
         }
       });
   }
@@ -224,19 +217,19 @@ export class CartComponent implements OnInit {
     this.orderError = null;
     
     if (!this.customerName || !this.customerEmail || !this.customerAddress) {
-      this.orderError = 'Please fill in all customer details.';
+      this.orderError = 'Fill in all customer details';
       this.orderSubmitting = false;
       return;
     }
 
     if (this.cartItems.length === 0) {
-      this.orderError = 'Your cart is empty. Please add items before placing an order.';
+      this.orderError = 'Cart is empty, add items before placing an order.';
       this.orderSubmitting = false;
       return;
     }
 
     this.checkStockAvailability().pipe(
-      switchMap(stockCheckResult => {
+      switchMap(stockCheckResult=>{
         if (!stockCheckResult.success) {
           this.orderSubmitting = false;
           this.orderError = stockCheckResult.message || 'Stock check failed';
@@ -259,14 +252,11 @@ export class CartComponent implements OnInit {
           this.cartItems = [];
         }
       },
-      error: (error) => {
+      error: (error) => {     //snackbarra atirni
         this.orderSubmitting = false;
         
-        //console.error('Order creation error:', error);
-        
         if (error.error && error.error.message) {
-          if (error.error.message.includes('Insufficient stock') || 
-              error.error.message.includes('not found in stock')) {
+          if (error.error.message.includes('Insufficient stock') ||error.error.message.includes('not found in stock')) { 
             this.orderError = error.error.message;
             
             this.checkItemsStockAvailability();
@@ -274,10 +264,11 @@ export class CartComponent implements OnInit {
             this.orderError = error.error.message;
           }
         } else if (error.status === 0) {
-          this.orderError = 'Unable to connect to the server. Please check your internet connection and try again.';
+          this.orderError = 'Unable to connect to the server';
         } else {
-          this.orderError = 'Failed to create order. Please try again later.';
+          this.orderError = 'Failed to create order';
         }
+
       }
     });
   }
@@ -291,7 +282,7 @@ export class CartComponent implements OnInit {
     
     const stockCheckObservables = regularItems.map(item => 
       this.merchandiseService.checkStockAvailability(item.merchId, item.size, item.quantity).pipe(
-        catchError(error => {
+        catchError(() => {
           return of({ 
             isAvailable: false, 
             error: true,
@@ -324,6 +315,7 @@ export class CartComponent implements OnInit {
         }
         
         return of({ success: true } as StockCheckResult);
+        
       })
     );
   }
@@ -352,5 +344,6 @@ export class CartComponent implements OnInit {
           }
         });
     });
+
   }
 }

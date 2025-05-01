@@ -14,60 +14,64 @@ public class AuthController : ControllerBase
     public AuthController(IAuthService authService, ILogger<AuthController> logger)
     {
         _authService = authService;
-        _logger = logger;
+        _logger = logger; 
     }
 
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterDto registerDto)
     {
-        _logger.LogInformation("Registration attempt for user: {Email}", registerDto.Email);
-
+        _logger.LogInformation("Registration endpoint called with {Email}", registerDto.Email);
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
         try
         {
-            var token = await _authService.RegisterUserAsync(registerDto);
-            _logger.LogInformation("Registration successful for user: {Email}", registerDto.Email);
+            var token= await _authService.RegisterUserAsync(registerDto);
+            _logger.LogInformation("Registration successful for: {Email}", registerDto.Email);
             return Ok(new { Token = token });
         }
         catch (ArgumentException ex)
         {
-            _logger.LogWarning("Registration failed for user: {Email}. Reason: {Message}",
-                registerDto.Email, ex.Message);
+            _logger.LogWarning("Registration failed for: {Email} {Message}",registerDto.Email, ex.Message);
             return BadRequest(new { ex.Message });
         }
+        
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error during registration for user: {Email}",
+            _logger.LogError(ex, "Unexpected error during registration for: {Email}",
                 registerDto.Email);
             return StatusCode(500, new { Message = "An error occurred while processing your request." });
         }
     }
 
+    
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
     {
-        _logger.LogInformation("Login attempt for user: {Email}", loginDto.Email);
+        
+        _logger.LogInformation("Login enfpoint called {Email}", loginDto.Email);
 
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
         try
         {
             var token = await _authService.LoginAsync(loginDto);
-            _logger.LogInformation("Login successful for user: {Email}", loginDto.Email);
+            _logger.LogInformation("Login successful for {Email}", loginDto.Email);
+            
             return Ok(new { Token = token });
         }
         catch (ArgumentException ex)
         {
-            _logger.LogWarning("Login failed for user: {Email}. Reason: {Message}",
+            _logger.LogWarning("Login failed for: {Email} {Message}",
                 loginDto.Email, ex.Message);
-            return BadRequest(new { ex.Message });
+            return BadRequest(new {ex.Message});
         }
+        
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error during login for user: {Email}",
+            _logger.LogError(ex,"Unexpected error during login for: {Email}",
                 loginDto.Email);
             return StatusCode(500, new { Message = "An error occurred while processing your request." });
         }
     }
+    
 }

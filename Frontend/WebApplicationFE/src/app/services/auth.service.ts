@@ -54,17 +54,17 @@ export class AuthService {
     
     try {
       const tokenParts = currentUser.token.split('.');
-      if (tokenParts.length === 3) {
-        const payload = JSON.parse(atob(tokenParts[1]));
-        
-        if (payload.exp && payload.exp * 1000 < Date.now()) {
-          this.logout();
-          return false;
-        }
+
+      const payload = JSON.parse(atob(tokenParts[1]));
+      
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        this.logout();
+        return false;
       }
+      
       return true;
+
     } catch (error) {
-      //console.error('Error checking token expiration:', error);
       return false;
     }
   }
@@ -77,28 +77,22 @@ export class AuthService {
   getCurrentUserId(): number {
     const token = this.getToken();
     if (!token) {
-      //console.error('No token found');
+      //console.error('nincs token');
       return 0;
     }
 
     try {
       const tokenParts = token.split('.');
-      if (tokenParts.length !== 3) {
-        //console.error('Invalid token format');
-        return 0;
-      }
 
       const payload = JSON.parse(atob(tokenParts[1]));
-      const userId = payload.userId || payload.nameid || payload.sub || payload.id;
+      const userId = payload.userId;
       
       if (!userId) {
-        //console.error('User ID not found in token payload');
         return 0;
       }
 
-      return parseInt(userId, 10);
+      return parseInt(userId, 10); //nem biztos, hogy kell még ide
     } catch (error) {
-      //console.error('Error decoding token:', error);
       return 0;
     }
   }
@@ -119,7 +113,6 @@ export class AuthService {
       return payload.role === 'Admin' || 
              payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] === 'Admin';
     } catch (error) {
-      //console.error('Error checking admin status:', error);
       return false;
     }
   }

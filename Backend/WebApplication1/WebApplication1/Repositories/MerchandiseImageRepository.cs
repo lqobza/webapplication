@@ -20,20 +20,17 @@ public class MerchandiseImageRepository : IMerchandiseImageRepository
         const string command = @"
                 SELECT id, MerchId, ImageUrl, IsPrimary, CreatedAt
                 FROM MerchandiseImages
-                WHERE MerchId = @MerchandiseId
-            ";
+                WHERE MerchId = @MerchandiseId";
 
-        var parameters = new[]
-        {
+        
+        var parameters = new[] {
             new SqlParameter("@MerchandiseId", merchandiseId)
         };
-
         var images = new List<MerchandiseImageDto>();
-        using var reader = _db.ExecuteReader(command, parameters);
+        using var reader = _db.ExecuteReader(command, parameters); 
 
         while (reader.Read())
-            images.Add(new MerchandiseImageDto
-            {
+            images.Add(new MerchandiseImageDto {
                 Id = (int)reader["id"],
                 MerchandiseId = (int)reader["MerchId"],
                 ImageUrl = (string)reader["ImageUrl"],
@@ -42,6 +39,7 @@ public class MerchandiseImageRepository : IMerchandiseImageRepository
             });
 
         return await Task.FromResult(images);
+        
     }
 
     public async Task<MerchandiseImageDto> AddImage(int merchandiseId, string imageUrl, bool isPrimary = false)
@@ -49,13 +47,13 @@ public class MerchandiseImageRepository : IMerchandiseImageRepository
         try
         {
             const string command = "SELECT COUNT(1) FROM Merch WHERE id = @id";
-            var checkParam = new SqlParameter("@id", merchandiseId);
+            var checkParam=new SqlParameter("@id", merchandiseId);
             var count = Convert.ToInt32(_db.ExecuteScalar(command, checkParam));
 
-            if (count == 0) throw new KeyNotFoundException($"Merchandise with ID {merchandiseId} does not exist");
+            if (count == 0)
+                throw new KeyNotFoundException($"Merchandise with ID {merchandiseId} does not exist");
 
-            if (isPrimary)
-            {
+            if (isPrimary){
                 const string updateExistingCommand = @"
                         UPDATE MerchandiseImages 
                         SET IsPrimary = 0 
@@ -74,15 +72,14 @@ public class MerchandiseImageRepository : IMerchandiseImageRepository
                     OUTPUT INSERTED.Id, INSERTED.MerchId, INSERTED.ImageUrl, INSERTED.IsPrimary, INSERTED.CreatedAt
                     VALUES (@MerchId, @ImageUrl, @IsPrimary, @CreatedAt)";
 
-            var insertParams = new[]
-            {
+            var insertParams = new[]{
                 new SqlParameter("@MerchId", merchandiseId),
                 new SqlParameter("@ImageUrl", imageUrl),
                 new SqlParameter("@IsPrimary", isPrimary),
                 new SqlParameter("@CreatedAt", DateTime.UtcNow)
             };
 
-            using var reader = _db.ExecuteReader(insertCommand, insertParams);
+            using var reader= _db.ExecuteReader(insertCommand, insertParams);
             var imageDto = new MerchandiseImageDto();
 
             if (reader.Read())
@@ -92,13 +89,11 @@ public class MerchandiseImageRepository : IMerchandiseImageRepository
                 imageDto.ImageUrl = (string)reader["ImageUrl"];
                 imageDto.IsPrimary = (bool)reader["IsPrimary"];
                 imageDto.CreatedAt = (DateTime)reader["CreatedAt"];
-            }
-            else
-            {
+            } else {
                 throw new InvalidOperationException("Failed to insert merchandise image");
             }
-
             return await Task.FromResult(imageDto);
+            
         }
         catch (Exception ex)
         {
@@ -107,14 +102,15 @@ public class MerchandiseImageRepository : IMerchandiseImageRepository
             throw;
         }
     }
+    
 
     public async Task<bool> DeleteImage(int imageId)
     {
         const string command = "DELETE FROM MerchandiseImages WHERE Id = @ImageId";
-        var parameters = new[]
-        {
+        
+        var parameters = new[]{
             new SqlParameter("@ImageId", imageId)
-        };
+        }; 
 
         var rowsAffected = _db.ExecuteNonQuery(command, parameters);
         return await Task.FromResult(rowsAffected > 0);
@@ -139,13 +135,13 @@ public class MerchandiseImageRepository : IMerchandiseImageRepository
                 SET IsPrimary = 1 
                 WHERE Id = @ImageId AND MerchId = @MerchId";
 
-        var updateParams = new[]
-        {
+        var updateParams = new[]{
             new SqlParameter("@ImageId", imageId),
             new SqlParameter("@MerchId", merchandiseId)
         };
 
-        var rowsAffected = _db.ExecuteNonQuery(updateCommand, updateParams);
+        var rowsAffected=_db.ExecuteNonQuery(updateCommand, updateParams); 
+        
         return await Task.FromResult(rowsAffected > 0);
     }
 
@@ -153,22 +149,22 @@ public class MerchandiseImageRepository : IMerchandiseImageRepository
     {
         try
         {
+            
             const string command = @"
                     SELECT id, MerchId, ImageUrl, IsPrimary, CreatedAt
                     FROM MerchandiseImages
                     WHERE MerchId = @MerchandiseId
                 ";
 
-            var parameters = new[]
-            {
+            var parameters =new[]{
                 new SqlParameter("@MerchandiseId", merchandiseId)
             };
 
-            var images = new List<MerchandiseImageDto>();
+            var images=new List<MerchandiseImageDto>();
             using var reader = _db.ExecuteReader(command, parameters);
 
             while (reader.Read())
-                images.Add(new MerchandiseImageDto
+                images.Add(new MerchandiseImageDto 
                 {
                     Id = (int)reader["id"],
                     MerchandiseId = (int)reader["MerchId"],

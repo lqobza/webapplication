@@ -39,10 +39,11 @@ public class MerchandiseService : IMerchandiseService
 
     public List<MerchandiseDto> GetMerchandiseBySize(string size)
     {
-        if (string.IsNullOrWhiteSpace(size)) throw new ArgumentException("Size cannot be empty");
+        if (string.IsNullOrWhiteSpace(size)) 
+            throw new ArgumentException("Size cannot be empty");
 
         size = size.Trim().ToUpper();
-
+        
         return _merchandiseRepository.GetMerchandiseBySize(size);
     }
 
@@ -137,8 +138,9 @@ public class MerchandiseService : IMerchandiseService
 
         var dbDeleteResult = await _imageRepository.DeleteImage(imageToDelete.Id);
 
-        if (fileExists) File.Delete(imagePath);
-
+        if (fileExists) 
+            File.Delete(imagePath);
+        
         return dbDeleteResult;
     }
 

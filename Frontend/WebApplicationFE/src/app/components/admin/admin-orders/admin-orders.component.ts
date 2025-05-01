@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
@@ -34,7 +33,6 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 })
 export class AdminOrdersComponent implements OnInit {
   orders: OrderDto[] = [];
-  loading = true;
   error: string | null = null;
   orderStatuses = OrderStatus;
   displayedColumns: string[] = ['id', 'customerName', 'orderDate', 'totalAmount', 'status', 'actions'];
@@ -43,7 +41,6 @@ export class AdminOrdersComponent implements OnInit {
   public originalStatuses: Map<number, string> = new Map();
   
   constructor(
-    private http: HttpClient,
     private orderService: OrderService,
     private dialog: MatDialog
   ) {}
@@ -53,7 +50,6 @@ export class AdminOrdersComponent implements OnInit {
   }
 
   fetchAllOrders(): void {
-    this.loading = true;
     this.error = null;
     
     this.orderService.getAllOrders().subscribe({
@@ -71,37 +67,30 @@ export class AdminOrdersComponent implements OnInit {
                 if (!item.merchandise.primaryImageUrl.startsWith('http')) {
                   item.merchandise.primaryImageUrl = `${this.orderService.getApiUrl()}${item.merchandise.primaryImageUrl}`;
                 }
+
               }
             });
           }
         });
-        
-        this.loading = false;
       },
-      error: (err: any) => {
+      error: (err: any) => {    //snackbarra atirni
         if (err.status === 401) {
-          this.error = 'You are not authorized to view all orders. Admin access required.';
+          this.error = 'You are not authorized to view all orders. Admin access required.';    
         } else {
-          this.error = 'Failed to load orders. Please try again later.';
+          this.error = 'Failed to load orders';
         }
-        this.loading = false;
       }
     });
   }
 
   formatDate(dateString: string | Date): string {
-    try {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch (error) {
-      //console.error('Error formatting date:', error);
-      return String(dateString);
-    }
+    return new Date(dateString).toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 
   onStatusChange(order: OrderDto, newStatus: string): void {
@@ -111,13 +100,7 @@ export class AdminOrdersComponent implements OnInit {
       return;
     }
     
-    let warningMessage = '';
-    if (originalStatus === 'Delivered' || originalStatus === 'Cancelled') {
-      warningMessage = `\n\nWarning: Changing from ${originalStatus} status is unusual and may cause issues.`;
-    }
-    
-    
-    const confirmed = confirm(`Are you sure you want to change the order status from ${originalStatus} to ${newStatus}?${warningMessage}`);
+    const confirmed = confirm(`Are you sure you  want to change the order status from ${originalStatus} to ${newStatus}?`);
     
     if (confirmed) {
       this.updateOrderStatus(order.id, newStatus);
@@ -141,13 +124,11 @@ export class AdminOrdersComponent implements OnInit {
         
         this.updatingOrderId = null;
       },
-      error: (err: any) => {
+      error: () => {    //snackbarra lehetne jelezni
         const order = this.orders.find(o => o.id === orderId);
         if (order) {
           order.status = this.originalStatuses.get(orderId) || order.status;
         }
-        
-        alert('Failed to update order status. Please try again later.');
         this.updatingOrderId = null;
       }
     });

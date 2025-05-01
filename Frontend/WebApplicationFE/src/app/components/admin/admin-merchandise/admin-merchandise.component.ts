@@ -9,7 +9,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, MatPaginator, PageEvent } from '@angular/material/paginator';
 import { MatSortModule } from '@angular/material/sort';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatDialogModule} from '@angular/material/dialog';
 import { Merchandise } from '../../../models/merchandise.model';
 import { MerchandiseService } from '../../../services/merchandise.service';
 import { Category } from '../../../models/category.model';
@@ -30,18 +30,18 @@ import { PaginatedResponse } from '../../../models/paginated-response.model';
     MatSortModule,
     MatProgressSpinnerModule,
     MatDialogModule
+
   ],
   templateUrl: './admin-merchandise.component.html',
   styleUrls: ['./admin-merchandise.component.css']
 })
 export class AdminMerchandiseComponent implements OnInit, AfterViewInit {
   merchandiseList: Merchandise[] = [];
-  loading = true;
   error: string | null = null;
   displayedColumns: string[] = ['id', 'name', 'price', 'category', 'actions'];
   categories: Category[] = [];
   categoryMap: Map<number, string> = new Map();
-  
+    
   totalItems = 0;
   pageSize = 10;
   pageIndex = 0;
@@ -51,7 +51,6 @@ export class AdminMerchandiseComponent implements OnInit, AfterViewInit {
   
   constructor(
     private merchandiseService: MerchandiseService,
-    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -79,15 +78,11 @@ export class AdminMerchandiseComponent implements OnInit, AfterViewInit {
             .filter(category => category.id !== undefined)
             .map(category => [category.id as number, category.name])
         );
-      },
-      error: (err) => {
-        //console.error('Error fetching categories:', err);
       }
     });
   }
 
   fetchMerchandise(page: number = 1, pageSize: number = 10): void {
-    this.loading = true;
     this.error = null;
     
     this.merchandiseService.getAllMerchandise(page, pageSize).subscribe({
@@ -105,22 +100,20 @@ export class AdminMerchandiseComponent implements OnInit, AfterViewInit {
           if (this.paginator.length !== response.totalCount) {
             this.paginator.length = response.totalCount;
           }
+
         }
-        
-        this.loading = false;
+
       },
-      error: (err) => {
-        this.error = 'Failed to load merchandise data. Please try again later.';
-        this.loading = false;
-        //console.error('Error fetching merchandise:', err);
+      error: () => {
+        this.error = 'Failed to load merchandise data';
       }
     });
   }
 
   getCategoryName(categoryId: number | undefined): string {
-    if (categoryId === undefined || categoryId === null) {
+    if (categoryId === undefined || categoryId === null)
       return 'Unknown';
-    }
+
     return this.categoryMap.get(categoryId) || 'Unknown';
   }
 
@@ -133,9 +126,8 @@ export class AdminMerchandiseComponent implements OnInit, AfterViewInit {
       next: () => {
         this.fetchMerchandise(this.pageIndex + 1, this.pageSize);
       },
-      error: (err: any) => {
-        alert('Failed to delete merchandise. Please try again later.');
-        //console.error('Error deleting merchandise:', err);
+      error: () => {
+        alert('Failed to delete merchandise');
       }
     });
   }

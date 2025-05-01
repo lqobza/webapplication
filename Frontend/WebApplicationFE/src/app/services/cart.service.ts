@@ -16,7 +16,7 @@ export class CartService {
   private cartItems$ = new BehaviorSubject<CartItem[]>([]);
   private merchandiseDetails: Map<number, Merchandise> = new Map();
 
-  constructor(
+  constructor( 
     private merchandiseService: MerchandiseService, 
     private http: HttpClient,
     private authService: AuthService,
@@ -37,11 +37,11 @@ export class CartService {
         this.cartItems = JSON.parse(storedCartItems);
         
         await this.fetchMerchandiseDetails().catch((error) => {
-          //console.error('[CartService] Failed to fetch merchandise details:', error);
+          //console.error('FETCH MERCH hiba:  ', error);
         });
         this.cartItems$.next(this.cartItems);
       } catch (error) {
-        //console.error('[CartService] Error parsing stored cart items:', error);
+        //console.error('FETCH MERCH hiba2:', error);
         this.clearCart();
       }
     }
@@ -53,7 +53,7 @@ export class CartService {
 
   getCartItem(merchandiseId: number, size: string): CartItem | undefined {
     const item = this.cartItems.find(
-      (item) => item.merchId === merchandiseId && item.size === size
+      (item)=>item.merchId === merchandiseId && item.size ===size
     );
     return item;
   }
@@ -78,7 +78,7 @@ export class CartService {
         isCustom: true
       };
     } else {
-      cartItem = {
+      cartItem = { 
         merchId: item.merchId || item.id,
         name: item.name,
         size: item.size || 'M',
@@ -89,7 +89,7 @@ export class CartService {
     }
 
     const existingItemIndex = this.cartItems.findIndex(i => 
-      i.merchId === cartItem.merchId && 
+      i.merchId === cartItem.merchId &&
       i.size === cartItem.size && 
       (i.isCustom === cartItem.isCustom) &&
       (i.id === cartItem.id)
@@ -112,7 +112,7 @@ export class CartService {
   }
 
   clearCart(): void {
-    this.cartItems = [];
+    this.cartItems= [];
     this.merchandiseDetails.clear();
     localStorage.removeItem('cartItems');
     this.cartItems$.next(this.cartItems);
@@ -135,7 +135,7 @@ export class CartService {
     
     try {
       const merchandiseArray = await Promise.all(
-        ids.map((id) => {
+        ids.map((id) => { 
           return this.merchandiseService.getMerchandiseById(id).toPromise();
         })
       );
@@ -162,7 +162,7 @@ export class CartService {
       
       this.saveCart();
     } catch (error) {
-      //console.error('[CartService] Failed to fetch merchandise details:', error);
+      //console.error('UPDATE hiba', error);
       throw error;
     }
   }
@@ -176,7 +176,7 @@ export class CartService {
 
   getMerchandiseDetails(merchandiseId: number): Merchandise | undefined {
     const details = this.merchandiseDetails.get(merchandiseId);
-    return details;
+    return details; 
   }
 
   isCartEmpty(): boolean {
@@ -186,24 +186,8 @@ export class CartService {
 
   private saveCart(): void {
     if (this.authService.isLoggedIn()) {
-      try {
-        localStorage.setItem('cartItems', JSON.stringify(this.cartItems));
-      } catch (e) {
-        //console.error('Error saving cart to localStorage:', e);
-        if (e instanceof DOMException && e.name === 'QuotaExceededError') {
-          const cartWithoutImages = this.cartItems.map(item => {
-            const copy = {...item};
-            if (copy.frontImage) {
-              copy.frontImage = copy.frontImage.substring(0, 100);
-            }
-            if (copy.backImage) {
-              copy.backImage = copy.backImage.substring(0, 100);
-            }
-            return copy;
-          });
-          localStorage.setItem('cartItems', JSON.stringify(cartWithoutImages));
-        }
-      }
+      localStorage.setItem('cartItems', JSON.stringify(this.cartItems));
+      
       this.cartItems$.next(this.cartItems);
     }
   }
@@ -243,7 +227,7 @@ export class CartService {
     });
     
     const order = {
-      CustomerName: customerName,
+      CustomerName:customerName,
       CustomerEmail: customerEmail,
       CustomerAddress: customerAddress,
       userId: this.authService.getCurrentUserId(),
@@ -256,12 +240,14 @@ export class CartService {
   updateMerchandiseDetails(merchandise: Merchandise): void {
     if (merchandise && merchandise.id) {
       const existingMerch = this.merchandiseDetails.get(merchandise.id);
+
       if (existingMerch && 
           existingMerch.name === merchandise.name && 
           JSON.stringify(existingMerch.images) === JSON.stringify(merchandise.images)) {
         return;
       }
       
+
       this.merchandiseDetails.set(merchandise.id, merchandise);
       
       let cartUpdated = false;

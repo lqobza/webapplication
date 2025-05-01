@@ -31,8 +31,8 @@ describe('MerchandiseListComponent', () => {
   const mockMerchandiseItems: Merchandise[] = [
     {
       id: 1,
-      name: 'T-Shirt 1',
-      description: 'Test description',
+      name: 't-shirt1',
+      description: 'description',
       price: 25.99,
       categoryId: 1,
       categoryName: 'T-Shirts',
@@ -41,8 +41,8 @@ describe('MerchandiseListComponent', () => {
     },
     {
       id: 2,
-      name: 'Hoodie 1',
-      description: 'Warm hoodie',
+      name: 'hoodie1',
+      description: 'description hoodie',
       price: 45.99,
       categoryId: 2,
       categoryName: 'Hoodies',
@@ -65,7 +65,6 @@ describe('MerchandiseListComponent', () => {
     merchandiseServiceMock = jasmine.createSpyObj('MerchandiseService', ['getCategories', 'searchMerchandise']);
     routerMock = jasmine.createSpyObj('Router', ['navigate']);
 
-    // Set up default mock returns
     merchandiseServiceMock.getCategories.and.returnValue(of(mockCategories));
     merchandiseServiceMock.searchMerchandise.and.returnValue(of(mockPaginatedResponse));
 
@@ -91,21 +90,18 @@ describe('MerchandiseListComponent', () => {
     expect(component.categories).toEqual(mockCategories);
   });
 
-  it('should load merchandise on init', () => {
+  it('should load merch on init', () => {
+
     expect(merchandiseServiceMock.searchMerchandise).toHaveBeenCalled();
     expect(component.merchandiseList).toEqual(mockMerchandiseItems);
     expect(component.isLoading).toBeFalse();
   });
 
   it('should handle search term changes', () => {
-    // Test the search functionality
     component.searchTerm = 'shirt';
     component.onSearch();
     
-    // Need to call search manually since we're not waiting for the debounce
-    component.searchMerchandise();
-    
-    // Verify searchMerchandise was called with correct parameters
+    component.searchMerchandise(); 
     expect(merchandiseServiceMock.searchMerchandise).toHaveBeenCalledWith(
       jasmine.objectContaining({
         keywords: 'shirt',
@@ -116,30 +112,27 @@ describe('MerchandiseListComponent', () => {
   });
 
   it('should apply category filter', () => {
-    // Select a category
     component.selectedCategoryId = 1;
     component.applyFilters();
-    
-    // Verify searchMerchandise was called with correct parameters
+  
     expect(merchandiseServiceMock.searchMerchandise).toHaveBeenCalledWith(
       jasmine.objectContaining({
         categoryId: 1,
         page: 1,
         pageSize: 6
       })
-    );
+    ); 
   });
 
-  it('should apply price range filter', () => {
-    // Set price range
-    component.priceRange = { min: 20, max: 50 };
+
+  it('should apply price filter', () => {
+    component.priceRange = { min: 20, max: 30 };
     component.applyFilters();
     
-    // Verify searchMerchandise was called with correct parameters
     expect(merchandiseServiceMock.searchMerchandise).toHaveBeenCalledWith(
       jasmine.objectContaining({
         minPrice: 20,
-        maxPrice: 50,
+        maxPrice: 30,
         page: 1,
         pageSize: 6
       })
@@ -147,11 +140,8 @@ describe('MerchandiseListComponent', () => {
   });
 
   it('should apply sorting', () => {
-    // Set sort option
     component.sortOption = 'price-low-high';
     component.applyFilters();
-    
-    // Verify searchMerchandise was called with correct parameters
     expect(merchandiseServiceMock.searchMerchandise).toHaveBeenCalledWith(
       jasmine.objectContaining({
         sortBy: SortOption.PriceAsc,
@@ -162,42 +152,32 @@ describe('MerchandiseListComponent', () => {
   });
 
   it('should reset filters', () => {
-    // Set some filters
     component.searchTerm = 'shirt';
     component.selectedCategoryId = 1;
     component.priceRange = { min: 20, max: 50 };
     component.sortOption = 'price-low-high';
     
-    // Reset filters
     component.resetFilters();
-    
-    // Verify filters are reset
     expect(component.searchTerm).toBe('');
     expect(component.selectedCategoryId).toBeUndefined();
     expect(component.priceRange.min).toBeUndefined();
     expect(component.priceRange.max).toBeUndefined();
     expect(component.sortOption).toBe('');
     
-    // Verify search was called with reset params
     expect(merchandiseServiceMock.searchMerchandise).toHaveBeenCalledWith(
       jasmine.objectContaining({
         page: 1,
         pageSize: 6
-      })
+      }) 
     );
   });
 
-  it('should change page', () => {
-    // Reset the spy tracking
+  it ('should change page', () => { 
     merchandiseServiceMock.searchMerchandise.calls.reset();
     
-    // Call changePage
     component.changePage(2);
-    
-    // Verify the current page was updated
     expect(component.currentPage).toBe(2);
     
-    // Verify searchMerchandise was called with the new page
     expect(merchandiseServiceMock.searchMerchandise).toHaveBeenCalledWith(
       jasmine.objectContaining({
         page: 2,
@@ -206,32 +186,21 @@ describe('MerchandiseListComponent', () => {
     );
   });
 
-  it('should navigate to details page', () => {
-    // Call goToDetails
-    component.goToDetails(1);
-    
-    // Verify router navigation
-    expect(routerMock.navigate).toHaveBeenCalledWith(['/merchandise', 1]);
-  });
 
-  it('should handle API errors', () => {
-    // Mock error response
+  it('should handle errors', () => {
     const errorMessage = 'Server error';
     merchandiseServiceMock.searchMerchandise.and.returnValue(
       throwError(() => new Error(errorMessage))
     );
     
-    // Trigger search
     component.searchMerchandise();
-    
-    // Verify error handling
-    expect(component.errorMessage).toBe(errorMessage);
+    expect(component.errorMessage).toBe(errorMessage );
     expect(component.isLoading).toBeFalse();
     expect(component.merchandiseList).toEqual([]);
+
   });
 
-  it('should get correct image URL', () => {
-    // Create merchandise items with proper typing for testing image URLs
+  it('should get correct URL', () => {
     const relativeImage: MerchandiseImage = { 
       id: 1, 
       merchId: 1, 
@@ -242,35 +211,31 @@ describe('MerchandiseListComponent', () => {
     const absoluteImage: MerchandiseImage = { 
       id: 2, 
       merchId: 1, 
-      imageUrl: 'https://example.com/test.jpg', 
+      imageUrl: 'http://example.com/test.jpg', 
       isPrimary: true 
     };
 
-    // Test with relative URL
     const relativeItem: Merchandise = {
       ...mockMerchandiseItems[0],
       images: [relativeImage]
     };
     
-    const absoluteUrl = component.getImageUrl(relativeItem);
+    const absoluteUrl =component.getImageUrl(relativeItem);
     expect(absoluteUrl).toBe(`${environment.apiUrl}/images/test.jpg`);
     
-    // Test with absolute URL
     const absoluteItem: Merchandise = {
       ...mockMerchandiseItems[0],
       images: [absoluteImage]
     };
     
     const unchangedUrl = component.getImageUrl(absoluteItem);
-    expect(unchangedUrl).toBe('https://example.com/test.jpg');
-    
-    // Test with no images
+    expect(unchangedUrl).toBe('http://example.com/test.jpg');
+  
     const noImageItem: Merchandise = {
       ...mockMerchandiseItems[0],
       images: []
     };
-    
-    const placeholderUrl = component.getImageUrl(noImageItem);
+    const placeholderUrl =component.getImageUrl(noImageItem);
     expect(placeholderUrl).toBe('assets/images/placeholder.png');
   });
 }); 

@@ -59,10 +59,11 @@ interface CustomProduct {
   ]
 })
 export class MyDesignsComponent implements OnInit {
+
   designs: CustomDesign[] = [];
-  loading = true;
   error: string | null = null;
   availableSizes = ['S', 'M', 'L', 'XL', 'XXL'];
+
 
   constructor(
     private http: HttpClient,
@@ -76,28 +77,25 @@ export class MyDesignsComponent implements OnInit {
     this.loadDesigns();
   }
 
+
   loadDesigns(): void {
     if (!this.authService.isLoggedIn()) {
       this.error = 'You must be logged in to view your designs';
-      this.loading = false;
       return;
     }
 
     const userId = this.authService.getCurrentUserId();
     this.http.get<CustomDesign[]>(`${environment.apiUrl}/api/customdesign/user/${userId}`)
       .subscribe({
-        next: (designs) => {
+        next: (designs)=>{
           this.designs = designs.map(design => ({
             ...design,
             selectedSize: 'M',
             selectedQuantity: 1
-          }));
-          this.loading = false;
+          }));   
         },
-        error: (error) => {
-          //console.error('Error loading designs:', error);
-          this.error = 'Failed to load your designs. Please try again.';
-          this.loading = false;
+        error: () => {
+          this.error = 'Failed to load your designs';
         }
       });
   }
@@ -110,10 +108,7 @@ export class MyDesignsComponent implements OnInit {
     if (!design.selectedQuantity || design.selectedQuantity < 1) {
       design.selectedQuantity = 1;
     }
-    
-    const truncatedFrontImage = design.frontImage ? 
-      (design.frontImage.length > 100 ? design.frontImage.substring(0, 100) + '...' : design.frontImage) : null;
-    
+        
     const customProduct: CustomProduct = {
       id: 'custom-' + design.id,
       name: design.name,
@@ -139,7 +134,7 @@ export class MyDesignsComponent implements OnInit {
             this.snackBar.open('Design deleted successfully', 'Close', { duration: 3000 });
           },
           error: (error) => {
-            //console.error('Error deleting design:', error);
+            //console.error('TORLES HIBA ', error);
             this.snackBar.open('Failed to delete design', 'Close', { duration: 3000 });
           }
         });
@@ -151,10 +146,11 @@ export class MyDesignsComponent implements OnInit {
   }
 
   formatDate(date: string | Date): string {
-    return new Date(date).toLocaleDateString('en-US', {
+    return new Date(date).toLocaleDateString(undefined, {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
   }
+
 } 

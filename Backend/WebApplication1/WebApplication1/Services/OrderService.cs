@@ -7,6 +7,7 @@ namespace WebApplication1.Services;
 
 public class OrderService : IOrderService
 {
+    
     private readonly IOrderRepository _orderRepository;
     private readonly ILogger<OrderService> _logger;
 
@@ -22,37 +23,38 @@ public class OrderService : IOrderService
         {
             _logger.LogInformation("Creating order with {ItemCount} items", orderCreateDto.Items.Count);
 
-            foreach (var item in orderCreateDto.Items)
-                _logger.LogInformation(
-                    "Order item: MerchId={MerchId}, Size={Size}, Quantity={Quantity}, Price={Price}, IsCustom={IsCustom}",
-                    item.MerchId, item.Size, item.Quantity, item.Price, item.IsCustom);
+            //foreach (var item in orderCreateDto.Items)
+                //_logger.LogInformation(
+                //     "Order item: MerchId={MerchId} Size={Size}, Quantity={Quantity}, Price={Price}, IsCustom={IsCustom}",
+                //   item.MerchId, item.Size, item.Quantity, item.Price, item.IsCustom);
 
-            var totalAmount = orderCreateDto.Items.Sum(i => i.Price);
+            var totalAmount = orderCreateDto.Items.Sum(i =>i.Price);
 
             var orderId = await _orderRepository.InsertOrderAsync(orderCreateDto, totalAmount);
-            _logger.LogInformation("Order created with ID: {OrderId}", orderId);
+            _logger.LogInformation("Order created with ID {OrderId}", orderId);
 
             foreach (var item in orderCreateDto.Items)
                 try
                 {
                     _logger.LogInformation(
-                        "Inserting order item for order {OrderId}: MerchId={MerchId}, Size={Size}, Quantity={Quantity}",
+                        "Inserting order item for order {OrderId} MerchId={MerchId}, Size={Size}, Quantity={Quantity}",
                         orderId, item.MerchId, item.Size, item.Quantity);
 
                     await _orderRepository.InsertOrderItemAsync(orderId, item);
 
-                    if (item.IsCustom) continue;
+                    if (item.IsCustom) 
+                        continue;
                     try
                     {
                         _logger.LogInformation(
-                            "Updating stock for order {OrderId}, item: MerchId={MerchId}, Size={Size}, Quantity={Quantity}",
+                            "Updating stock for order {OrderId} item: MerchId={MerchId}, Size={Size}, Quantity={Quantity}",
                             orderId, item.MerchId, item.Size, item.Quantity);
 
-                        await _orderRepository.UpdateStockAsync(item);
+                        await _orderRepository.UpdateStockAsync(item); 
                     }
                     catch (InvalidOperationException ex) when (ex.Message.Contains("Insufficient stock"))
                     {
-                        _logger.LogWarning("Insufficient stock for item: {Item}. Rolling back order {OrderId}.",
+                        _logger.LogWarning("Insufficient stock for item {Item}, rolling back orderId {OrderId}.",
                             item, orderId);
 
                         try
@@ -67,11 +69,10 @@ public class OrderService : IOrderService
                         throw;
                     }
                 }
-                catch (Exception ex) when (!(ex is InvalidOperationException &&
-                                             ex.Message.Contains("Insufficient stock")))
+                catch (Exception ex) when (!(ex is InvalidOperationException && ex.Message.Contains("Insufficient stock")))
                 {
                     _logger.LogError(ex, "Error inserting order item for order {OrderId}", orderId);
-
+    
                     try
                     {
                         await _orderRepository.DeleteOrderAsync(orderId);
@@ -89,7 +90,7 @@ public class OrderService : IOrderService
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("Insufficient stock"))
         {
-            _logger.LogWarning(ex, "Insufficient stock error during order creation");
+            _logger.LogWarning(ex, "Insufficient stock error during order creatio");
             throw;
         }
         catch (Exception ex)
@@ -103,6 +104,7 @@ public class OrderService : IOrderService
     {
         return await _orderRepository.GetAllOrdersAsync();
     }
+    
 
     public async Task<OrderDto?> GetOrderByIdAsync(int id)
     {
@@ -118,7 +120,7 @@ public class OrderService : IOrderService
 
     public async Task<List<OrderDto>> GetOrdersByUserIdAsync(int userId)
     {
-        _logger.LogInformation("Getting orders for user ID: {UserId}", userId);
+        _logger.LogInformation("Getting orders for userId {UserId}", userId); 
         return await _orderRepository.GetOrdersByUserIdAsync(userId);
     }
 
@@ -127,10 +129,11 @@ public class OrderService : IOrderService
         _logger.LogInformation("Adding message for order {OrderId}", messageDto.OrderId);
         return await _orderRepository.AddOrderMessageAsync(messageDto);
     }
-
+ 
+    
     public async Task<List<OrderMessageDto>> GetOrderMessagesAsync(int orderId)
     {
-        _logger.LogInformation("Getting messages for order {OrderId}", orderId);
+        _logger.LogInformation("Getting messages for order {OrderId}", orderId); 
         return await _orderRepository.GetOrderMessagesAsync(orderId);
     }
 }

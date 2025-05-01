@@ -31,50 +31,41 @@ describe('RatingService', () => {
   });
 
   describe('insertRating', () => {
-    it('should send a POST request with the correct rating data', () => {
-      // Create test rating data
+    it('should send a POST request with the rating data', () => {
       const testRating: RatingDto = {
         merchId: 1,
         rating: 4.5,
-        description: 'Great product!'
+        description: 'great product'
       };
 
-      // Expected response
       const mockResponse = {
         id: 123,
         ...testRating,
         createdAt: new Date().toISOString()
       };
 
-      // Call the service method
       service.insertRating(testRating).subscribe(response => {
         expect(response).toEqual(mockResponse);
       });
 
-      // Check the request was made correctly
-      const req = httpMock.expectOne(`${environment.apiUrl}/api/rating`);
-      expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual(testRating);
-      
-      // Mock the response
-      req.flush(mockResponse);
+      const request = httpMock.expectOne(`${environment.apiUrl}/api/rating`);
+      expect(request.request.method).toBe('POST');
+      expect(request.request.body).toEqual(testRating);
+      request.flush(mockResponse);
     });
 
-    it('should handle errors when inserting a rating', () => {
-      // Create test rating data with invalid properties
+    it('should handle error when inserting a rating', () => {
       const invalidRating: RatingDto = {
-        merchId: -1, // Invalid ID
-        rating: 6, // Rating out of range
-        description: ''  // Empty description
+        merchId: -1,
+        rating: 6,
+        description: ''
       };
 
-      // Expected error response
       const errorResponse = {
         status: 400,
         statusText: 'Bad Request'
       };
 
-      // Call the service method
       let errorResult: any;
       service.insertRating(invalidRating).subscribe({
         next: () => fail('Expected an error, not success'),
@@ -83,12 +74,9 @@ describe('RatingService', () => {
         }
       });
 
-      // Check the request
-      const req = httpMock.expectOne(`${environment.apiUrl}/api/rating`);
-      expect(req.request.method).toBe('POST');
-      
-      // Respond with mock error
-      req.flush('Invalid rating data', errorResponse);
+      const request = httpMock.expectOne(`${environment.apiUrl}/api/rating`);
+      expect(request.request.method).toBe('POST');
+      request.flush('Invalid rating data', errorResponse);
     });
   });
 });

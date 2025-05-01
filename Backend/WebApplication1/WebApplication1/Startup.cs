@@ -43,7 +43,6 @@ public class Startup
                 });
         });
 
-        // Register the DbContext with dependency injection
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer(_configuration.GetConnectionString("DefaultConnection")));
 

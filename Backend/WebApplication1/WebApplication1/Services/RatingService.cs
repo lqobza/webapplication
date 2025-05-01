@@ -23,3 +23,4 @@ public class RatingService : IRatingService
         return _ratingRepository.GetRatingsForMerchandise(merchId);
     }
 }
+

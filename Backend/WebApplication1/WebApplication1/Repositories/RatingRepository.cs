@@ -18,7 +18,10 @@ public class RatingRepository : IRatingRepository
     public virtual bool AddRating(RatingCreateDto ratingCreateDto)
     {
         const string checkMerchCommand = "SELECT COUNT(*) FROM Merch WHERE id = @MerchId";
-        var checkParams = new[] { new SqlParameter("@MerchId", ratingCreateDto.MerchId) };
+        var checkParams = new[]  {
+            new SqlParameter("@MerchId", ratingCreateDto.MerchId)
+        };
+        
         var merchExists = Convert.ToInt32(_db.ExecuteScalar(checkMerchCommand, checkParams)) > 0;
 
         if (!merchExists)
@@ -29,14 +32,15 @@ public class RatingRepository : IRatingRepository
 
         const string insertCommand =
             "INSERT INTO Ratings (merch_id, rating, description) VALUES (@MerchId, @Rating, @Description)";
-        var insertParams = new[]
-        {
+        
+        var insertParams = new[]{
             new SqlParameter("@MerchId", ratingCreateDto.MerchId),
             new SqlParameter("@Rating", ratingCreateDto.Rating),
             new SqlParameter("@Description", !string.IsNullOrEmpty(ratingCreateDto.Description) ? ratingCreateDto.Description : DBNull.Value)
         };
 
         var rowsAffected = _db.ExecuteNonQuery(insertCommand, insertParams);
+        
         return rowsAffected > 0;
     }
 
@@ -48,7 +52,7 @@ public class RatingRepository : IRatingRepository
 
         using var reader = _db.ExecuteReader(command, parameters);
 
-        while (reader.Read())
+        while (reader.Read()) 
         {
             var rating = new RatingDto
             {
@@ -62,5 +66,6 @@ public class RatingRepository : IRatingRepository
         }
 
         return ratings;
+        
     }
 }
