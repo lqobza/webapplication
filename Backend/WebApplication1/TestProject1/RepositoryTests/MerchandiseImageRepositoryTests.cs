@@ -1,5 +1,8 @@
 using System.Data;
 using System.Data.SqlClient;
+using Microsoft.Extensions.Logging;
+using Moq;
+using NUnit.Framework;
 using WebApplication1.Repositories;
 using WebApplication1.Repositories.Interface;
 
@@ -30,7 +33,7 @@ public class MerchandiseImageRepositoryTests
         //Arrange
         const int merchandiseId = 1;
         _mockReader.SetupSequence(r => r.Read())
-            .Returns(true)  //first call returns true 
+            .Returns(true)  //first  
             .Returns(true)   //second call
             .Returns(false); //third call
         
